@@ -878,7 +878,7 @@
         const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         const Config = {
             API: location.origin,
-            WS: `${wsProtocol}//${location.host}`
+            WS: `${wsProtocol}//${location.host}/ssh`
         };
 
         const State = {
