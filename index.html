@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器管理面板</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            /* 暗色主题 */
+            --color-bg-deep: #111;
+            --color-bg-1: #1a1a1a;
+            --color-bg-2: #202020;
+            --color-bg-3: #2a2a2a;
+            --color-bg-acrylic: rgba(32, 32, 32, 0.85);
+            --color-accent: #0078D7;
+            --color-accent-hover: #1a86dc;
+            --color-accent-light: rgba(0, 120, 215, 0.3);
+            --color-text: #fff;
+            --color-text-2: #a0a0a0;
+            --color-text-3: #6a6a6a;
+            --color-border: #3a3a3a;
+            --color-success: #107c10;
+            --color-warning: #ff8c00;
+            --color-error: #e81123;
+            --sidebar-width: 240px;
+            --sidebar-collapsed: 60px;
+            --terminal-bg: #1a1a1a;
+        }
+
+        /* 亮色主题 */
+        [data-theme="light"] {
+            --color-bg-deep: #f0f2f5;
+            --color-bg-1: #ffffff;
+            --color-bg-2: #f5f5f5;
+            --color-bg-3: #e8e8e8;
+            --color-bg-acrylic: rgba(255, 255, 255, 0.85);
+            --color-text: #1a1a1a;
+            --color-text-2: #666666;
+            --color-text-3: #999999;
+            --color-border: #d0d0d0;
+            --terminal-bg: #1a1a1a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--color-bg-deep);
+            color: var(--color-text);
+            height: 100vh;
+            overflow: hidden;
+            transition: background .3s, color .3s;
+        }
+
+        /* 登录 */
+        .login-overlay {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+            transition: opacity .4s, visibility .4s;
+        }
+        [data-theme="light"] .login-overlay {
+            background: linear-gradient(135deg, #667eea, #764ba2, #6B8DD6);
+        }
+        .login-overlay.hidden { opacity: 0; visibility: hidden; }
+        .login-box {
+            width: 380px; padding: 32px;
+            background: var(--color-bg-acrylic);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            transition: background .3s, border-color .3s;
+        }
+        .login-box h1 { text-align: center; margin-bottom: 8px; font-size: 22px; }
+        .login-box p { text-align: center; color: var(--color-text-2); margin-bottom: 24px; font-size: 14px; }
+        .login-box .icon { text-align: center; font-size: 48px; color: var(--color-accent); margin-bottom: 16px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; color: var(--color-text-2); font-size: 13px; }
+        .form-input {
+            width: 100%; padding: 12px 14px;
+            background: var(--color-bg-2); border: 1px solid var(--color-border);
+            border-radius: 6px; color: var(--color-text); font-size: 14px;
+            transition: border-color .2s, box-shadow .2s, background .3s;
+        }
+        .form-input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-light); }
+        .form-input::placeholder { color: var(--color-text-3); }
+        .login-error { color: var(--color-error); font-size: 13px; margin-bottom: 12px; display: none; }
+        .login-error.show { display: block; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 12px 20px; background: var(--color-accent); color: #fff;
+            border: none; border-radius: 6px; font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: background .2s, transform .1s;
+        }
+        .btn:hover { background: var(--color-accent-hover); }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-block { width: 100%; }
+        .btn-secondary { background: var(--color-bg-3); border: 1px solid var(--color-border); color: var(--color-text); }
+        .btn-secondary:hover { background: var(--color-border); }
+        .btn-success { background: var(--color-success); }
+        .btn-danger { background: var(--color-error); }
+        .btn-sm { padding: 8px 14px; font-size: 13px; }
+        .btn-icon { padding: 8px; min-width: 36px; }
+
+        /* 仪表板 */
+        .dashboard { display: flex; height: 100vh; opacity: 0; visibility: hidden; transition: opacity .4s, visibility .4s; }
+        .dashboard.visible { opacity: 1; visibility: visible; }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: var(--sidebar-width); height: 100vh;
+            background: var(--color-bg-acrylic); backdrop-filter: blur(20px);
+            border-right: 1px solid var(--color-border);
+            display: flex; flex-direction: column;
+            transition: width .3s cubic-bezier(.4,0,.2,1), background .3s, border-color .3s;
+            flex-shrink: 0; overflow: hidden;
+        }
+        .sidebar.collapsed { width: var(--sidebar-collapsed); }
+        .sidebar-header {
+            padding: 20px; border-bottom: 1px solid var(--color-border);
+            display: flex; align-items: center; gap: 12px;
+            transition: border-color .3s;
+        }
+        .sidebar-logo {
+            width: 28px; height: 28px; background: var(--color-accent);
+            border-radius: 6px; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; color: #fff;
+        }
+        .sidebar-title { font-size: 16px; font-weight: 600; white-space: nowrap; transition: opacity .2s; }
+        .sidebar.collapsed .sidebar-title { opacity: 0; }
+        .sidebar-nav { flex: 1; padding: 12px; overflow-y: auto; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px; margin-bottom: 4px; border-radius: 8px;
+            cursor: pointer; transition: background .15s;
+            position: relative; --x: 50%; --y: 50%;
+        }
+        .nav-item::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle 120px at var(--x) var(--y), rgba(0,120,215,0.1), transparent);
+            opacity: 0; transition: opacity .15s; pointer-events: none;
+        }
+        .nav-item:hover::before { opacity: 1; }
+        .nav-item:hover { background: var(--color-bg-3); }
+        .nav-item.active { background: var(--color-accent-light); }
+        .nav-item i { width: 20px; text-align: center; flex-shrink: 0; }
+        .nav-item span { white-space: nowrap; transition: opacity .2s; }
+        .sidebar.collapsed .nav-item span { opacity: 0; }
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--color-border); transition: border-color .3s; }
+        .toggle-btn {
+            width: 100%; padding: 12px; background: var(--color-bg-2);
+            border: 1px solid var(--color-border); border-radius: 8px;
+            color: var(--color-text-2); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: background .15s, color .15s, border-color .3s;
+        }
+        .toggle-btn:hover { background: var(--color-bg-3); color: var(--color-text); }
+        .toggle-btn span { transition: opacity .2s; }
+        .sidebar.collapsed .toggle-btn span { opacity: 0; width: 0; }
+        .toggle-btn i { transition: transform .3s; }
+        .sidebar.collapsed .toggle-btn i { transform: rotate(180deg); }
+
+        /* 主题切换 */
+        .theme-toggle {
+            position: fixed; top: 20px; right: 20px; z-index: 100;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--color-bg-2); border: 1px solid var(--color-border);
+            color: var(--color-text); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .3s, border-color .3s, transform .2s;
+            font-size: 18px;
+        }
+        .theme-toggle:hover { transform: scale(1.1); background: var(--color-bg-3); }
+
+        /* 主内容 */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header {
+            padding: 20px; border-bottom: 1px solid var(--color-border);
+            background: var(--color-bg-1);
+            transition: background .3s, border-color .3s;
+        }
+        .header h2 { font-size: 18px; display: flex; align-items: center; gap: 12px; }
+        .header h2 i { color: var(--color-accent); }
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        .view { display: none; height: 100%; flex-direction: column; }
+        .view.active { display: flex; }
+
+        /* SSH */
+        .toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end; }
+        .input-group { display: flex; flex-direction: column; gap: 4px; }
+        .input-group label { font-size: 12px; color: var(--color-text-2); }
+        .input-group .form-input { min-width: 120px; padding: 10px 12px; }
+        .hosts-section { margin-bottom: 20px; }
+        .hosts-section h3 { font-size: 13px; color: var(--color-text-2); margin-bottom: 12px; }
+        .hosts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .host-card {
+            background: var(--color-bg-2); border: 1px solid var(--color-border);
+            border-radius: 8px; padding: 14px; cursor: pointer;
+            transition: background .15s, border-color .15s;
+            position: relative; --x: 50%; --y: 50%;
+        }
+        .host-card::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle 150px at var(--x) var(--y), var(--color-accent-light), transparent);
+            opacity: 0; transition: opacity .15s; pointer-events: none; border-radius: 8px;
+        }
+        .host-card:hover::before { opacity: 0.5; }
+        .host-card:hover { background: var(--color-bg-3); }
+        .host-card.connected { border-color: var(--color-success); }
+        .host-card-content { position: relative; z-index: 1; }
+        .host-info { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .host-info i { font-size: 18px; color: var(--color-accent); }
+        .host-ip { font-family: Consolas, monospace; font-size: 14px; font-weight: 500; }
+        .host-details { font-size: 12px; color: var(--color-text-3); margin-bottom: 10px; }
+        .host-actions { display: flex; gap: 8px; }
+        .host-actions .btn { flex: 1; padding: 6px 10px; font-size: 12px; }
+        .host-delete {
+            position: absolute; top: 8px; right: 8px;
+            background: none; border: none; color: var(--color-text-3);
+            cursor: pointer; padding: 4px; border-radius: 4px;
+            transition: color .15s, background .15s;
+        }
+        .host-delete:hover { color: var(--color-error); background: rgba(232,17,35,0.1); }
+        .terminal-box {
+            flex: 1; background: var(--terminal-bg); border: 1px solid var(--color-border);
+            border-radius: 8px; padding: 12px; min-height: 300px;
+            display: flex; flex-direction: column;
+        }
+        .terminal-header {
+            display: flex; align-items: center; gap: 8px;
+            padding-bottom: 12px; border-bottom: 1px solid var(--color-border); margin-bottom: 12px;
+        }
+        .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .terminal-dot.red { background: var(--color-error); }
+        .terminal-dot.yellow { background: var(--color-warning); }
+        .terminal-dot.green { background: var(--color-success); }
+        .terminal-title { flex: 1; margin-left: 12px; color: #a0a0a0; font-size: 13px; }
+        .terminal-status { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+        .terminal-status.connected { color: var(--color-success); }
+        .terminal-status.disconnected { color: #6a6a6a; }
+        #terminal { flex: 1; }
+
+        /* SFTP */
+        .sftp-status {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; background: var(--color-bg-2);
+            border-radius: 8px; margin-bottom: 20px;
+            transition: background .3s, border-color .3s;
+        }
+        .sftp-status.connected { border: 1px solid var(--color-success); }
+        .sftp-status.disconnected { border: 1px solid var(--color-border); }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-text-3); }
+        .sftp-status.connected .status-dot { background: var(--color-success); }
+        .sftp-status-text { flex: 1; font-size: 14px; }
+        .file-pane {
+            flex: 1; background: var(--color-bg-1); border: 1px solid var(--color-border);
+            border-radius: 8px; display: flex; flex-direction: column; overflow: hidden;
+            min-height: 300px; transition: background .3s, border-color .3s;
+        }
+        .file-pane-header {
+            padding: 12px 16px; background: var(--color-bg-2);
+            border-bottom: 1px solid var(--color-border);
+            display: flex; align-items: center; justify-content: space-between;
+            transition: background .3s, border-color .3s;
+        }
+        .file-pane-header h3 { font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .file-pane-header h3 i { color: var(--color-accent); }
+        .file-pane-actions { display: flex; gap: 8px; }
+        .file-path {
+            padding: 8px 16px; background: var(--color-bg-deep);
+            border-bottom: 1px solid var(--color-border);
+            display: flex; align-items: center; gap: 8px;
+            transition: background .3s, border-color .3s;
+        }
+        .file-path-input {
+            flex: 1; background: transparent; border: none;
+            color: var(--color-text); font-family: Consolas, monospace; font-size: 12px;
+        }
+        .file-path-input:focus { outline: none; }
+        .file-path-btn {
+            background: none; border: none; color: var(--color-text-2);
+            cursor: pointer; padding: 4px;
+        }
+        .file-path-btn:hover { color: var(--color-accent); }
+        .file-list-header {
+            display: grid; grid-template-columns: 36px 1fr 90px 140px;
+            gap: 12px; padding: 8px 16px; font-size: 12px;
+            color: var(--color-text-3); border-bottom: 1px solid var(--color-border);
+            transition: border-color .3s;
+        }
+        .file-list { flex: 1; overflow-y: auto; padding: 8px; }
+        .file-item {
+            display: grid; grid-template-columns: 36px 1fr 90px 140px;
+            gap: 12px; align-items: center; padding: 8px 12px;
+            border-radius: 6px; cursor: pointer; transition: background .15s;
+        }
+        .file-item:hover { background: var(--color-bg-2); }
+        .file-item.selected { background: var(--color-accent-light); }
+        .file-item i { font-size: 16px; text-align: center; }
+        .file-item i.fa-folder { color: var(--color-warning); }
+        .file-item i.fa-file { color: var(--color-text-2); }
+        .file-item i.fa-file-code { color: var(--color-accent); }
+        .file-item i.fa-file-image { color: #e91e63; }
+        .file-item i.fa-file-archive { color: #9c27b0; }
+        .file-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-size { font-size: 12px; color: var(--color-text-3); text-align: right; }
+        .file-modified { font-size: 12px; color: var(--color-text-3); }
+        .upload-area {
+            margin-top: 20px; padding: 24px; background: var(--color-bg-1);
+            border: 2px dashed var(--color-border); border-radius: 8px; text-align: center;
+            transition: background .3s, border-color .3s;
+        }
+        .upload-area.drag-over { border-color: var(--color-accent); background: var(--color-accent-light); }
+        .upload-area i { font-size: 40px; color: var(--color-text-3); margin-bottom: 12px; }
+        .upload-area p { color: var(--color-text-2); margin-bottom: 16px; font-size: 14px; }
+        .upload-btns { display: flex; gap: 12px; justify-content: center; }
+        .upload-progress { margin-top: 16px; display: none; }
+        .upload-progress.active { display: block; }
+        .progress-bar { height: 6px; background: var(--color-bg-2); border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--color-accent); transition: width .3s; }
+        .progress-text { font-size: 12px; color: var(--color-text-2); text-align: center; margin-top: 8px; }
+        .hidden-input { display: none; }
+
+        /* Admin */
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .admin-card {
+            background: var(--color-bg-1); border: 1px solid var(--color-border);
+            border-radius: 8px; padding: 20px;
+            transition: background .3s, border-color .3s;
+        }
+        .admin-card h3 { font-size: 15px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .admin-card h3 i { color: var(--color-accent); }
+        .user-list { max-height: 400px; overflow-y: auto; }
+        .user-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px; background: var(--color-bg-2); border-radius: 6px; margin-bottom: 8px;
+            transition: background .3s;
+        }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .user-avatar {
+            width: 36px; height: 36px; background: var(--color-accent);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 14px;
+        }
+        .user-name { font-size: 14px; font-weight: 500; }
+        .user-role { font-size: 12px; color: var(--color-text-3); }
+        .user-actions { display: flex; gap: 6px; }
+        .badge { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-admin { background: var(--color-accent-light); color: var(--color-accent); }
+        .badge-user { background: var(--color-bg-3); color: var(--color-text-2); }
+        .add-user-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+        .add-user-form h4 { font-size: 13px; color: var(--color-text-2); margin-bottom: 12px; }
+        .form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        .form-row .form-group { flex: 1; margin-bottom: 0; }
+        .form-row .form-input { padding: 10px 12px; }
+        select.form-input { cursor: pointer; }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+        .stat-value { font-size: 28px; font-weight: 600; color: var(--color-accent); }
+        .stat-label { color: var(--color-text-2); font-size: 13px; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: var(--color-bg-1); border: 1px solid var(--color-border);
+            border-radius: 12px; padding: 24px; width: 400px; max-width: 90%;
+            transform: scale(0.95); transition: transform .25s, background .3s, border-color .3s;
+        }
+        .modal-overlay.active .modal { transform: scale(1); }
+        .modal h3 { font-size: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .modal h3 i { color: var(--color-accent); }
+        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .modal-actions .btn { flex: 1; }
+
+        /* Toast */
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+        .toast {
+            padding: 12px 20px; background: var(--color-bg-2); border: 1px solid var(--color-border);
+            border-radius: 8px; display: flex; align-items: center; gap: 12px;
+            animation: slideIn .3s ease; transition: background .3s, border-color .3s;
+        }
+        .toast.success { border-left: 3px solid var(--color-success); }
+        .toast.error { border-left: 3px solid var(--color-error); }
+        .toast.info { border-left: 3px solid var(--color-accent); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Empty */
+        .empty { text-align: center; padding: 40px; color: var(--color-text-2); }
+        .empty i { font-size: 40px; color: var(--color-text-3); margin-bottom: 12px; }
+        .empty p { font-size: 14px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--color-bg-1); }
+        ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-text-3); }
+        .xterm { padding: 8px; }
+    </style>
+</head>
+<body>
+    <!-- 主题切换 -->
+    <button class="theme-toggle" id="themeToggle" title="切换主题">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <!-- 登录 -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <div class="icon"><i class="fas fa-server"></i></div>
+            <h1>服务器管理面板</h1>
+            <p>请登录以访问控制台</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" class="form-input" id="loginUser" placeholder="admin" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" class="form-input" id="loginPass" placeholder="admin" autocomplete="current-password">
+                </div>
+                <div class="login-error" id="loginError"><i class="fas fa-exclamation-circle"></i> 用户名或密码错误</div>
+                <button type="submit" class="btn btn-block"><i class="fas fa-sign-in-alt"></i> 登录</button>
+                <div style="text-align:center;margin:16px 0;color:var(--color-text-3);font-size:13px">── 或者 ──</div>
+                <button type="button" class="btn btn-block btn-secondary" id="guestLoginBtn"><i class="fas fa-user-clock"></i> 访客登录</button>
+                <p style="text-align:center;font-size:11px;color:var(--color-text-3);margin-top:12px">访客关闭网页后数据自动清除</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- 仪表板 -->
+    <div class="dashboard" id="dashboard">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><i class="fas fa-cloud"></i></div>
+                <span class="sidebar-title">ServerHub</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" data-view="ssh"><i class="fas fa-terminal"></i><span>SSH 终端</span></div>
+                <div class="nav-item" data-view="sftp"><i class="fas fa-folder-tree"></i><span>SFTP 管理</span></div>
+                <div class="nav-item" data-view="admin" id="adminNav" style="display:none"><i class="fas fa-user-shield"></i><span>用户管理</span></div>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-chevron-left"></i><span>收起</span></button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <!-- SSH -->
+            <div class="view active" id="view-ssh">
+                <div class="header"><h2><i class="fas fa-terminal"></i> SSH 终端</h2></div>
+                <div class="content">
+                    <div class="toolbar">
+                        <div class="input-group">
+                            <label>主机地址</label>
+                            <input type="text" class="form-input" id="sshHost" placeholder="192.168.1.100">
+                        </div>
+                        <div class="input-group">
+                            <label>端口</label>
+                            <input type="number" class="form-input" id="sshPort" value="22" style="width:70px">
+                        </div>
+                        <div class="input-group">
+                            <label>用户名</label>
+                            <input type="text" class="form-input" id="sshUser" placeholder="root">
+                        </div>
+                        <div class="input-group">
+                            <label>密码</label>
+                            <input type="password" class="form-input" id="sshPass" placeholder="密码">
+                        </div>
+                        <div class="input-group" style="justify-content:flex-end">
+                            <label>&nbsp;</label>
+                            <button class="btn" id="saveHostBtn"><i class="fas fa-plus"></i> 保存主机</button>
+                        </div>
+                    </div>
+                    <div class="hosts-section">
+                        <h3>已保存的主机</h3>
+                        <div class="hosts-grid" id="hostsGrid"></div>
+                    </div>
+                    <div class="terminal-box">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="terminal-title" id="termTitle">终端 - 未连接</span>
+                            <div class="terminal-status disconnected" id="termStatus"><i class="fas fa-circle"></i><span>未连接</span></div>
+                        </div>
+                        <div id="terminal"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SFTP -->
+            <div class="view" id="view-sftp">
+                <div class="header"><h2><i class="fas fa-folder-tree"></i> SFTP 管理</h2></div>
+                <div class="content">
+                    <div class="toolbar">
+                        <div class="input-group">
+                            <label>主机地址</label>
+                            <input type="text" class="form-input" id="sftpHost" placeholder="192.168.1.100">
+                        </div>
+                        <div class="input-group">
+                            <label>端口</label>
+                            <input type="number" class="form-input" id="sftpPort" value="22" style="width:70px">
+                        </div>
+                        <div class="input-group">
+                            <label>用户名</label>
+                            <input type="text" class="form-input" id="sftpUser" placeholder="root">
+                        </div>
+                        <div class="input-group">
+                            <label>密码</label>
+                            <input type="password" class="form-input" id="sftpPass" placeholder="密码">
+                        </div>
+                        <div class="input-group" style="justify-content:flex-end">
+                            <label>&nbsp;</label>
+                            <button class="btn btn-success" id="sftpConnectBtn"><i class="fas fa-plug"></i> 连接</button>
+                        </div>
+                    </div>
+                    <div class="sftp-status disconnected" id="sftpStatus">
+                        <div class="status-dot"></div>
+                        <span class="sftp-status-text" id="sftpStatusText">未连接</span>
+                        <button class="btn btn-danger btn-sm" id="sftpDisconnectBtn" style="display:none"><i class="fas fa-times"></i> 断开</button>
+                    </div>
+                    <div class="file-pane">
+                        <div class="file-pane-header">
+                            <h3><i class="fas fa-server"></i> 远程文件</h3>
+                            <div class="file-pane-actions">
+                                <button class="btn btn-sm btn-secondary" id="sftpRefreshBtn" disabled><i class="fas fa-sync-alt"></i> 刷新</button>
+                                <button class="btn btn-sm btn-secondary" id="sftpMkdirBtn" disabled><i class="fas fa-folder-plus"></i> 新建</button>
+                                <button class="btn btn-sm btn-success" id="sftpDownloadBtn" disabled><i class="fas fa-download"></i> 下载</button>
+                                <button class="btn btn-sm btn-danger" id="sftpDeleteBtn" disabled><i class="fas fa-trash"></i> 删除</button>
+                            </div>
+                        </div>
+                        <div class="file-path">
+                            <button class="file-path-btn" id="navBackBtn" title="后退" disabled><i class="fas fa-arrow-left"></i></button>
+                            <button class="file-path-btn" id="navForwardBtn" title="前进" disabled><i class="fas fa-arrow-right"></i></button>
+                            <button class="file-path-btn" id="navUpBtn" title="上级目录"><i class="fas fa-level-up-alt"></i></button>
+                            <i class="fas fa-folder-open" style="margin-left:8px"></i>
+                            <input type="text" class="file-path-input" id="remotePath" value="/">
+                            <button class="file-path-btn" id="goPathBtn" title="跳转"><i class="fas fa-arrow-right"></i></button>
+                        </div>
+                        <div class="file-list-header">
+                            <span></span><span>名称 <small style="color:var(--color-text-3);font-weight:normal">(Ctrl+点击多选)</small></span><span style="text-align:right">大小</span><span>修改时间 <span id="selectedCount" style="color:var(--color-accent);margin-left:8px"></span></span>
+                        </div>
+                        <div class="file-list" id="fileList">
+                            <div class="empty"><i class="fas fa-plug"></i><p>请先连接服务器</p></div>
+                        </div>
+                    </div>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>拖拽文件到此处，或点击下方按钮上传</p>
+                        <div class="upload-btns">
+                            <button class="btn" id="uploadFilesBtn" disabled><i class="fas fa-file-upload"></i> 上传文件</button>
+                            <button class="btn btn-secondary" id="uploadFolderBtn" disabled><i class="fas fa-folder-upload"></i> 上传文件夹</button>
+                        </div>
+                        <div class="upload-progress" id="uploadProgress">
+                            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                            <div class="progress-text" id="progressText">上传中...</div>
+                        </div>
+                    </div>
+                    <input type="file" class="hidden-input" id="fileInput" multiple>
+                    <input type="file" class="hidden-input" id="folderInput" webkitdirectory directory multiple>
+                </div>
+            </div>
+
+            <!-- Admin -->
+            <div class="view" id="view-admin">
+                <div class="header"><h2><i class="fas fa-user-shield"></i> 用户管理</h2></div>
+                <div class="content">
+                    <div class="admin-grid">
+                        <div class="admin-card">
+                            <h3><i class="fas fa-users"></i> 用户列表</h3>
+                            <div class="user-list" id="userList"></div>
+                            <div class="add-user-form">
+                                <h4>添加新用户</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>用户名</label>
+                                        <input type="text" class="form-input" id="newUsername" placeholder="用户名">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>密码</label>
+                                        <input type="password" class="form-input" id="newPassword" placeholder="密码">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>角色</label>
+                                        <select class="form-input" id="newRole">
+                                            <option value="user">普通用户</option>
+                                            <option value="admin">管理员</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="justify-content:flex-end;display:flex;align-items:flex-end">
+                                        <button class="btn" id="addUserBtn"><i class="fas fa-user-plus"></i> 添加用户</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="admin-card">
+                            <h3><i class="fas fa-chart-line"></i> 系统统计</h3>
+                            <div class="stat-grid">
+                                <div><div class="stat-value" id="statUsers">0</div><div class="stat-label">用户总数</div></div>
+                                <div><div class="stat-value" id="statGuests">0</div><div class="stat-label">在线访客</div></div>
+                                <div><div class="stat-value" id="statHosts">0</div><div class="stat-label">已保存主机</div></div>
+                                <div><div class="stat-value" id="statUptime">0</div><div class="stat-label">运行时间(秒)</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: 新建文件夹 -->
+    <div class="modal-overlay" id="mkdirModal">
+        <div class="modal">
+            <h3><i class="fas fa-folder-plus"></i> 新建文件夹</h3>
+            <div class="form-group">
+                <label>文件夹名称</label>
+                <input type="text" class="form-input" id="mkdirName" placeholder="新文件夹">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="mkdirCancel">取消</button>
+                <button class="btn" id="mkdirConfirm">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: 修改密码 -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal">
+            <h3><i class="fas fa-key"></i> 修改密码</h3>
+            <input type="hidden" id="passwordUsername">
+            <div class="form-group">
+                <label>用户: <strong id="passwordUserDisplay"></strong></label>
+            </div>
+            <div class="form-group">
+                <label>新密码</label>
+                <input type="password" class="form-input" id="newPasswordInput" placeholder="输入新密码">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="passwordCancel">取消</button>
+                <button class="btn" id="passwordConfirm">确认修改</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toasts"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const Config = {
+            API: location.origin,
+            WS: `${wsProtocol}//${location.host}`
+        };
+
+        const State = {
+            loggedIn: false,
+            isAdmin: false,
+            isGuest: false,
+            guestId: null,
+            username: '',
+            hosts: [],
+            sshConnected: false,
+            sftpConnected: false,
+            sftpSession: null,
+            currentPath: '/',
+            selectedFiles: [],
+            filesTransferred: 0,
+            theme: 'dark',
+            // 导航历史
+            navHistory: [],
+            navIndex: -1
+        };
+
+        const Storage = {
+            getTheme() { return localStorage.getItem('theme') || 'dark'; },
+            setTheme(t) { localStorage.setItem('theme', t); }
+        };
+
+        // 主题
+        const Theme = {
+            init() {
+                State.theme = Storage.getTheme();
+                this.apply();
+                document.getElementById('themeToggle').addEventListener('click', () => this.toggle());
+            },
+            apply() {
+                document.documentElement.setAttribute('data-theme', State.theme);
+                const icon = document.querySelector('#themeToggle i');
+                icon.className = State.theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            },
+            toggle() {
+                State.theme = State.theme === 'dark' ? 'light' : 'dark';
+                Storage.setTheme(State.theme);
+                this.apply();
+            }
+        };
+
+        const Toast = {
+            show(msg, type = 'info') {
+                const el = document.createElement('div');
+                el.className = `toast ${type}`;
+                el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i><span>${msg}</span>`;
+                document.getElementById('toasts').appendChild(el);
+                setTimeout(() => { el.style.animation = 'slideIn .3s reverse'; setTimeout(() => el.remove(), 300); }, 3500);
+            },
+            success(m) { this.show(m, 'success'); },
+            error(m) { this.show(m, 'error'); },
+            info(m) { this.show(m, 'info'); }
+        };
+
+        // 用户管理
+        const Users = {
+            async load() {
+                try {
+                    const res = await fetch(`${Config.API}/api/users`);
+                    const users = await res.json();
+                    this.render(users);
+                    document.getElementById('statUsers').textContent = users.length;
+                } catch (e) {
+                    Toast.error('加载用户失败');
+                }
+            },
+            render(users) {
+                const el = document.getElementById('userList');
+                el.innerHTML = users.map(u => `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <div class="user-avatar"><i class="fas fa-user"></i></div>
+                            <div>
+                                <div class="user-name">${u.username}</div>
+                                <div class="user-role">${u.role === 'admin' ? '管理员' : '普通用户'}</div>
+                            </div>
+                        </div>
+                        <div class="user-actions">
+                            <span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}">${u.role === 'admin' ? '管理员' : '用户'}</span>
+                            <button class="btn btn-sm btn-secondary btn-icon" onclick="Users.showPasswordModal('${u.username}')" title="修改密码"><i class="fas fa-key"></i></button>
+                            ${u.username !== 'admin' ? `<button class="btn btn-sm btn-danger btn-icon" onclick="Users.delete('${u.username}')" title="删除"><i class="fas fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            },
+            async add() {
+                const username = document.getElementById('newUsername').value.trim();
+                const password = document.getElementById('newPassword').value;
+                const role = document.getElementById('newRole').value;
+                if (!username || !password) {
+                    Toast.error('请输入用户名和密码');
+                    return;
+                }
+                try {
+                    const res = await fetch(`${Config.API}/api/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password, role })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        Toast.success('用户创建成功');
+                        document.getElementById('newUsername').value = '';
+                        document.getElementById('newPassword').value = '';
+                        this.load();
+                    } else {
+                        Toast.error(data.error);
+                    }
+                } catch (e) {
+                    Toast.error('创建失败: ' + e.message);
+                }
+            },
+            async delete(username) {
+                if (!confirm(`确定要删除用户 "${username}" 吗？`)) return;
+                try {
+                    const res = await fetch(`${Config.API}/api/users/${username}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (res.ok) {
+                        Toast.success('用户已删除');
+                        this.load();
+                    } else {
+                        Toast.error(data.error);
+                    }
+                } catch (e) {
+                    Toast.error('删除失败: ' + e.message);
+                }
+            },
+            showPasswordModal(username) {
+                document.getElementById('passwordUsername').value = username;
+                document.getElementById('passwordUserDisplay').textContent = username;
+                document.getElementById('newPasswordInput').value = '';
+                document.getElementById('passwordModal').classList.add('active');
+            },
+            async changePassword() {
+                const username = document.getElementById('passwordUsername').value;
+                const password = document.getElementById('newPasswordInput').value;
+                if (!password) {
+                    Toast.error('请输入新密码');
+                    return;
+                }
+                try {
+                    const res = await fetch(`${Config.API}/api/users/${username}/password`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        Toast.success('密码修改成功');
+                        document.getElementById('passwordModal').classList.remove('active');
+                    } else {
+                        Toast.error(data.error);
+                    }
+                } catch (e) {
+                    Toast.error('修改失败: ' + e.message);
+                }
+            }
+        };
+        window.Users = Users;
+
+        // 终端
+        const Terminal_ = {
+            term: null, fit: null, ws: null, host: null,
+            init() {
+                this.term = new Terminal({
+                    theme: {
+                        background: '#1a1a1a', foreground: '#fff', cursor: '#0078D7',
+                        selection: 'rgba(0,120,215,0.3)',
+                        black: '#1a1a1a', red: '#e81123', green: '#107c10', yellow: '#ff8c00',
+                        blue: '#0078D7', magenta: '#881798', cyan: '#3a96dd', white: '#ccc'
+                    },
+                    fontFamily: 'Consolas, Monaco, monospace',
+                    fontSize: 14, cursorBlink: true
+                });
+                this.fit = new FitAddon.FitAddon();
+                this.term.loadAddon(this.fit);
+                this.term.open(document.getElementById('terminal'));
+                this.doFit();
+                this.welcome();
+                window.addEventListener('resize', () => this.doFit());
+                this.term.onData(data => {
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'data', data }));
+                    }
+                });
+                this.term.onResize(({ cols, rows }) => {
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+                    }
+                });
+            },
+            doFit() { try { this.fit.fit(); } catch {} },
+            welcome() {
+                this.term.writeln('');
+                this.term.writeln('\x1b[1;34m  ╔══════════════════════════════════════════╗\x1b[0m');
+                this.term.writeln('\x1b[1;34m  ║\x1b[0m    \x1b[1;36mServer Management Dashboard\x1b[0m          \x1b[1;34m║\x1b[0m');
+                this.term.writeln('\x1b[1;34m  ╚══════════════════════════════════════════╝\x1b[0m');
+                this.term.writeln('');
+                this.term.writeln('\x1b[90m  输入连接信息后点击 SSH 按钮连接服务器\x1b[0m');
+                this.term.writeln('');
+            },
+            connect(host, port, user, pass) {
+                if (this.ws) this.ws.close();
+                this.term.clear();
+                this.term.writeln(`\x1b[33m正在连接 ${user}@${host}:${port}...\x1b[0m\n`);
+                this.ws = new WebSocket(Config.WS);
+                this.ws.onopen = () => {
+                    this.ws.send(JSON.stringify({ type: 'connect', host, port: +port, username: user, password: pass }));
+                };
+                this.ws.onmessage = (e) => {
+                    const msg = JSON.parse(e.data);
+                    switch (msg.type) {
+                        case 'connected':
+                            State.sshConnected = true;
+                            this.host = host;
+                            this.updateStatus(true);
+                            Toast.success(`已连接到 ${host}`);
+                            this.doFit();
+                            break;
+                        case 'data': this.term.write(msg.data); break;
+                        case 'error':
+                            this.term.writeln(`\x1b[31m错误: ${msg.message}\x1b[0m`);
+                            Toast.error(msg.message);
+                            break;
+                        case 'disconnected':
+                            State.sshConnected = false;
+                            this.host = null;
+                            this.updateStatus(false);
+                            this.term.writeln('\n\x1b[33m连接已断开\x1b[0m');
+                            Toast.info('SSH 连接已断开');
+                            break;
+                    }
+                };
+                this.ws.onerror = () => {
+                    this.term.writeln('\x1b[31m连接失败，请确保后端服务正在运行\x1b[0m');
+                    Toast.error('WebSocket 连接失败');
+                };
+                this.ws.onclose = () => {
+                    if (State.sshConnected) {
+                        State.sshConnected = false;
+                        this.updateStatus(false);
+                    }
+                };
+            },
+            updateStatus(connected) {
+                const status = document.getElementById('termStatus');
+                const title = document.getElementById('termTitle');
+                if (connected) {
+                    status.className = 'terminal-status connected';
+                    status.innerHTML = '<i class="fas fa-circle"></i><span>已连接</span>';
+                    title.textContent = `终端 - ${this.host}`;
+                } else {
+                    status.className = 'terminal-status disconnected';
+                    status.innerHTML = '<i class="fas fa-circle"></i><span>未连接</span>';
+                    title.textContent = '终端 - 未连接';
+                }
+            }
+        };
+
+        // SFTP
+        const SFTP = {
+            async connect(host, port, user, pass) {
+                try {
+                    const payload = { host, port: +port, username: user, password: pass };
+                    if (State.isGuest && State.guestId) {
+                        payload.guestId = State.guestId;
+                    }
+                    const res = await fetch(`${Config.API}/api/sftp/connect`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        State.sftpConnected = true;
+                        State.sftpSession = data.sessionId;
+                        // 重置导航历史
+                        State.navHistory = [];
+                        State.navIndex = -1;
+                        this.updateStatus(true, host);
+                        Toast.success(`SFTP 已连接到 ${host}`);
+                        await this.getHome();
+                        await this.navigate(State.currentPath);
+                        this.enableBtns(true);
+                    } else {
+                        Toast.error(data.error || '连接失败');
+                    }
+                } catch (e) {
+                    Toast.error('连接失败: ' + e.message);
+                }
+            },
+            async disconnect() {
+                if (!State.sftpSession) return;
+                try { await fetch(`${Config.API}/api/sftp/disconnect/${State.sftpSession}`, { method: 'POST' }); } catch {}
+                State.sftpConnected = false;
+                State.sftpSession = null;
+                State.currentPath = '/';
+                State.navHistory = [];
+                State.navIndex = -1;
+                this.updateStatus(false);
+                this.enableBtns(false);
+                this.updateNavBtns();
+                this.renderFiles([]);
+                Toast.info('SFTP 已断开');
+            },
+            async getHome() {
+                if (!State.sftpSession) return;
+                try {
+                    const res = await fetch(`${Config.API}/api/sftp/home/${State.sftpSession}`);
+                    const data = await res.json();
+                    if (res.ok) {
+                        State.currentPath = data.path;
+                        document.getElementById('remotePath').value = data.path;
+                    }
+                } catch {}
+            },
+            // 导航到路径（添加到历史）
+            async navigate(path, addToHistory = true) {
+                if (!State.sftpSession) return;
+                try {
+                    const res = await fetch(`${Config.API}/api/sftp/list/${State.sftpSession}?path=${encodeURIComponent(path)}`);
+                    const data = await res.json();
+                    if (res.ok) {
+                        State.currentPath = data.path;
+                        document.getElementById('remotePath').value = data.path;
+                        State.selectedFiles = [];
+                        this.renderFiles(data.files);
+                        // 添加到历史
+                        if (addToHistory) {
+                            // 如果不在历史末尾，截断后面的
+                            if (State.navIndex < State.navHistory.length - 1) {
+                                State.navHistory = State.navHistory.slice(0, State.navIndex + 1);
+                            }
+                            State.navHistory.push(data.path);
+                            State.navIndex = State.navHistory.length - 1;
+                        }
+                        this.updateNavBtns();
+                    } else {
+                        Toast.error(data.error);
+                    }
+                } catch (e) {
+                    Toast.error('列表错误: ' + e.message);
+                }
+            },
+            // 后退
+            goBack() {
+                if (State.navIndex > 0) {
+                    State.navIndex--;
+                    this.navigate(State.navHistory[State.navIndex], false);
+                }
+            },
+            // 前进
+            goForward() {
+                if (State.navIndex < State.navHistory.length - 1) {
+                    State.navIndex++;
+                    this.navigate(State.navHistory[State.navIndex], false);
+                }
+            },
+            // 上级目录
+            goUp() {
+                const parts = State.currentPath.split('/').filter(p => p);
+                parts.pop();
+                const parentPath = '/' + parts.join('/');
+                this.navigate(parentPath);
+            },
+            // 更新导航按钮状态
+            updateNavBtns() {
+                document.getElementById('navBackBtn').disabled = State.navIndex <= 0;
+                document.getElementById('navForwardBtn').disabled = State.navIndex >= State.navHistory.length - 1;
+            },
+            // 更新选中计数
+            updateSelectionCount() {
+                const count = State.selectedFiles.filter(f => f.name !== '..').length;
+                const el = document.getElementById('selectedCount');
+                el.textContent = count > 0 ? `已选 ${count} 项` : '';
+            },
+            async list(path) {
+                await this.navigate(path);
+            },
+            async mkdir(name) {
+                if (!State.sftpSession) return;
+                const p = State.currentPath === '/' ? `/${name}` : `${State.currentPath}/${name}`;
+                try {
+                    const res = await fetch(`${Config.API}/api/sftp/mkdir/${State.sftpSession}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path: p })
+                    });
+                    if (res.ok) {
+                        Toast.success('文件夹创建成功');
+                        await this.list(State.currentPath);
+                    } else {
+                        const d = await res.json();
+                        Toast.error(d.error);
+                    }
+                } catch (e) {
+                    Toast.error(e.message);
+                }
+            },
+            async delete_() {
+                if (!State.sftpSession || State.selectedFiles.length === 0) return;
+                const f = State.selectedFiles[0];
+                const p = State.currentPath === '/' ? `/${f.name}` : `${State.currentPath}/${f.name}`;
+                try {
+                    const res = await fetch(`${Config.API}/api/sftp/delete/${State.sftpSession}?path=${encodeURIComponent(p)}&type=${f.type}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        Toast.success('删除成功');
+                        State.selectedFiles = [];
+                        await this.list(State.currentPath);
+                    } else {
+                        const d = await res.json();
+                        Toast.error(d.error);
+                    }
+                } catch (e) {
+                    Toast.error(e.message);
+                }
+            },
+            async upload(files) {
+                if (!State.sftpSession || files.length === 0) return;
+                const form = new FormData();
+                const paths = [];
+                for (const f of files) {
+                    form.append('files', f);
+                    paths.push(f.webkitRelativePath || f.name);
+                }
+                form.append('remotePath', State.currentPath);
+                form.append('paths', JSON.stringify(paths));
+                this.showProgress(true);
+                try {
+                    const res = await fetch(`${Config.API}/api/sftp/upload/${State.sftpSession}`, { method: 'POST', body: form });
+                    const data = await res.json();
+                    if (res.ok) {
+                        State.filesTransferred += data.results.length;
+                        document.getElementById('statFiles').textContent = State.filesTransferred;
+                        Toast.success(data.message);
+                        if (data.errors.length > 0) data.errors.forEach(e => Toast.error(`失败: ${e.file}`));
+                        await this.list(State.currentPath);
+                    } else {
+                        Toast.error(data.error);
+                    }
+                } catch (e) {
+                    Toast.error(e.message);
+                } finally {
+                    this.showProgress(false);
+                }
+            },
+            showProgress(show) {
+                const el = document.getElementById('uploadProgress');
+                document.getElementById('progressFill').style.width = show ? '100%' : '0';
+                el.classList.toggle('active', show);
+            },
+            updateStatus(connected, host = '') {
+                const el = document.getElementById('sftpStatus');
+                const txt = document.getElementById('sftpStatusText');
+                const disconnBtn = document.getElementById('sftpDisconnectBtn');
+                const connBtn = document.getElementById('sftpConnectBtn');
+                if (connected) {
+                    el.classList.remove('disconnected'); el.classList.add('connected');
+                    txt.textContent = `已连接到 ${host}`;
+                    disconnBtn.style.display = 'inline-flex'; connBtn.disabled = true;
+                } else {
+                    el.classList.remove('connected'); el.classList.add('disconnected');
+                    txt.textContent = '未连接';
+                    disconnBtn.style.display = 'none'; connBtn.disabled = false;
+                }
+            },
+            async download() {
+                if (!State.sftpSession || State.selectedFiles.length === 0) {
+                    Toast.error('请先选择要下载的文件');
+                    return;
+                }
+                // 过滤掉 ".."
+                const files = State.selectedFiles.filter(f => f.name !== '..');
+                if (files.length === 0) {
+                    Toast.error('请选择有效的文件');
+                    return;
+                }
+                // 单个普通文件直接下载
+                if (files.length === 1 && files[0].type !== 'folder') {
+                    const f = files[0];
+                    const filePath = State.currentPath === '/' ? `/${f.name}` : `${State.currentPath}/${f.name}`;
+                    const url = `${Config.API}/api/sftp/download/${State.sftpSession}?path=${encodeURIComponent(filePath)}`;
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = f.name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    Toast.success(`正在下载: ${f.name}`);
+                } else {
+                    // 多文件或文件夹，打包下载
+                    Toast.info(`正在打包 ${files.length} 个项目...`);
+                    try {
+                        const res = await fetch(`${Config.API}/api/sftp/download-zip/${State.sftpSession}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ files, basePath: State.currentPath })
+                        });
+                        if (res.ok) {
+                            const blob = await res.blob();
+                            const zipName = files.length === 1 ? `${files[0].name}.zip` : `download_${Date.now()}.zip`;
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = zipName;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            Toast.success('下载完成');
+                        } else {
+                            const data = await res.json();
+                            Toast.error(data.error || '下载失败');
+                        }
+                    } catch (e) {
+                        Toast.error('下载失败: ' + e.message);
+                    }
+                }
+            },
+            enableBtns(enabled) {
+                document.getElementById('sftpRefreshBtn').disabled = !enabled;
+                document.getElementById('sftpMkdirBtn').disabled = !enabled;
+                document.getElementById('sftpDownloadBtn').disabled = !enabled;
+                document.getElementById('sftpDeleteBtn').disabled = !enabled;
+                document.getElementById('uploadFilesBtn').disabled = !enabled;
+                document.getElementById('uploadFolderBtn').disabled = !enabled;
+            },
+            renderFiles(files) {
+                const el = document.getElementById('fileList');
+                if (!files || files.length === 0) {
+                    el.innerHTML = State.sftpConnected
+                        ? '<div class="empty"><i class="fas fa-folder-open"></i><p>空目录</p></div>'
+                        : '<div class="empty"><i class="fas fa-plug"></i><p>请先连接服务器</p></div>';
+                    return;
+                }
+                const items = State.currentPath !== '/' ? [{ name: '..', type: 'folder', size: '', modified: '' }, ...files] : files;
+                el.innerHTML = items.map(f => `
+                    <div class="file-item" data-name="${f.name}" data-type="${f.type}">
+                        <i class="fas ${this.getIcon(f)}"></i>
+                        <span class="file-name">${f.name}</span>
+                        <span class="file-size">${this.formatSize(f.size)}</span>
+                        <span class="file-modified">${this.formatDate(f.modified)}</span>
+                    </div>
+                `).join('');
+                el.querySelectorAll('.file-item').forEach(item => {
+                    item.addEventListener('click', e => {
+                        if (!e.ctrlKey && !e.shiftKey) el.querySelectorAll('.file-item').forEach(i => i.classList.remove('selected'));
+                        item.classList.toggle('selected');
+                        State.selectedFiles = [...el.querySelectorAll('.file-item.selected')].map(i => ({ name: i.dataset.name, type: i.dataset.type }));
+                        this.updateSelectionCount();
+                    });
+                    item.addEventListener('dblclick', () => {
+                        if (item.dataset.type === 'folder') {
+                            let newPath;
+                            if (item.dataset.name === '..') {
+                                this.goUp();
+                            } else {
+                                newPath = State.currentPath === '/' ? `/${item.dataset.name}` : `${State.currentPath}/${item.dataset.name}`;
+                                this.navigate(newPath);
+                            }
+                        }
+                    });
+                });
+            },
+            getIcon(f) {
+                if (f.type === 'folder') return 'fa-folder';
+                const ext = f.name.split('.').pop().toLowerCase();
+                const map = { js: 'fa-file-code', ts: 'fa-file-code', py: 'fa-file-code', html: 'fa-file-code', css: 'fa-file-code', json: 'fa-file-code', png: 'fa-file-image', jpg: 'fa-file-image', jpeg: 'fa-file-image', gif: 'fa-file-image', zip: 'fa-file-archive', tar: 'fa-file-archive', gz: 'fa-file-archive' };
+                return map[ext] || 'fa-file';
+            },
+            formatSize(b) {
+                if (!b) return '-';
+                const u = ['B', 'KB', 'MB', 'GB'];
+                let i = 0, s = b;
+                while (s >= 1024 && i < u.length - 1) { s /= 1024; i++; }
+                return `${s.toFixed(1)} ${u[i]}`;
+            },
+            formatDate(d) {
+                if (!d) return '-';
+                const dt = new Date(d);
+                return `${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            }
+        };
+
+        // 主机管理（服务端存储）
+        const Hosts = {
+            getUserId() {
+                return State.isGuest ? State.guestId : State.username;
+            },
+            async load() {
+                const userId = this.getUserId();
+                if (!userId) return;
+                try {
+                    const res = await fetch(`${Config.API}/api/userdata/${userId}/hosts`);
+                    State.hosts = await res.json();
+                    this.render();
+                    document.getElementById('statHosts').textContent = State.hosts.length;
+                } catch (e) {
+                    console.error('加载主机列表失败:', e);
+                    State.hosts = [];
+                    this.render();
+                }
+            },
+            async add(h) {
+                const userId = this.getUserId();
+                if (!userId) return;
+                try {
+                    const res = await fetch(`${Config.API}/api/userdata/${userId}/hosts`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(h)
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        Toast.success('主机已保存');
+                        await this.load();
+                    } else {
+                        Toast.error(data.error || '保存失败');
+                    }
+                } catch (e) {
+                    Toast.error('保存失败: ' + e.message);
+                }
+            },
+            async remove(i) {
+                const userId = this.getUserId();
+                if (!userId) return;
+                try {
+                    const res = await fetch(`${Config.API}/api/userdata/${userId}/hosts/${i}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        Toast.info('主机已删除');
+                        await this.load();
+                    }
+                } catch (e) {
+                    Toast.error('删除失败');
+                }
+            },
+            render() {
+                const el = document.getElementById('hostsGrid');
+                if (State.hosts.length === 0) {
+                    el.innerHTML = '<div class="empty"><i class="fas fa-server"></i><p>暂无保存的主机</p></div>';
+                    return;
+                }
+                el.innerHTML = State.hosts.map((h, i) => `
+                    <div class="host-card ${Terminal_.host === h.host ? 'connected' : ''}" data-index="${i}">
+                        <button class="host-delete" data-index="${i}"><i class="fas fa-times"></i></button>
+                        <div class="host-card-content">
+                            <div class="host-info"><i class="fas fa-server"></i><span class="host-ip">${h.host}</span></div>
+                            <div class="host-details">${h.user}@${h.host}:${h.port}</div>
+                            <div class="host-actions">
+                                <button class="btn btn-sm ssh-btn" data-index="${i}"><i class="fas fa-terminal"></i> SSH</button>
+                                <button class="btn btn-sm btn-secondary sftp-btn" data-index="${i}"><i class="fas fa-folder"></i> SFTP</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                el.querySelectorAll('.host-delete').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); this.remove(+btn.dataset.index); }));
+                el.querySelectorAll('.ssh-btn').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); const h = State.hosts[+btn.dataset.index]; Terminal_.connect(h.host, h.port, h.user, h.pass); }));
+                el.querySelectorAll('.sftp-btn').forEach(btn => btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const h = State.hosts[+btn.dataset.index];
+                    UI.switchView('sftp');
+                    document.getElementById('sftpHost').value = h.host;
+                    document.getElementById('sftpPort').value = h.port;
+                    document.getElementById('sftpUser').value = h.user;
+                    document.getElementById('sftpPass').value = h.pass;
+                    SFTP.connect(h.host, h.port, h.user, h.pass);
+                }));
+            }
+        };
+
+        // UI
+        const UI = {
+            init() {
+                Theme.init();
+
+                // 登录
+                document.getElementById('loginForm').addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const user = document.getElementById('loginUser').value.trim();
+                    const pass = document.getElementById('loginPass').value;
+                    try {
+                        const res = await fetch(`${Config.API}/api/auth/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: user, password: pass })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            State.loggedIn = true;
+                            State.isAdmin = data.role === 'admin';
+                            State.isGuest = false;
+                            State.username = user;
+                            this.showDashboard();
+                        } else {
+                            document.getElementById('loginError').classList.add('show');
+                            setTimeout(() => document.getElementById('loginError').classList.remove('show'), 3000);
+                        }
+                    } catch (e) {
+                        Toast.error('登录失败');
+                    }
+                });
+
+                // 访客登录
+                document.getElementById('guestLoginBtn').addEventListener('click', async () => {
+                    try {
+                        const res = await fetch(`${Config.API}/api/auth/guest`, { method: 'POST' });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            State.loggedIn = true;
+                            State.isAdmin = false;
+                            State.isGuest = true;
+                            State.guestId = data.guestId;
+                            State.username = data.username;
+                            this.showDashboard();
+                            Toast.info(`欢迎 ${data.username}，关闭网页后数据将自动清除`);
+                        }
+                    } catch (e) {
+                        Toast.error('访客登录失败');
+                    }
+                });
+
+                // 访客关闭网页时自动登出
+                window.addEventListener('beforeunload', () => {
+                    if (State.isGuest && State.guestId) {
+                        navigator.sendBeacon(`${Config.API}/api/auth/guest/logout/${State.guestId}`);
+                    }
+                });
+
+                // 页面隐藏时也尝试清理（移动端）
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'hidden' && State.isGuest && State.guestId) {
+                        navigator.sendBeacon(`${Config.API}/api/auth/guest/logout/${State.guestId}`);
+                    }
+                });
+
+                // 侧边栏
+                document.getElementById('toggleSidebar').addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.toggle('collapsed');
+                    setTimeout(() => Terminal_.doFit(), 300);
+                });
+
+                // 导航
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', () => this.switchView(item.dataset.view));
+                    item.addEventListener('mousemove', e => {
+                        const rect = item.getBoundingClientRect();
+                        item.style.setProperty('--x', `${e.clientX - rect.left}px`);
+                        item.style.setProperty('--y', `${e.clientY - rect.top}px`);
+                    });
+                });
+
+                // SSH
+                document.getElementById('saveHostBtn').addEventListener('click', () => {
+                    const host = document.getElementById('sshHost').value.trim();
+                    const port = document.getElementById('sshPort').value || 22;
+                    const user = document.getElementById('sshUser').value.trim();
+                    const pass = document.getElementById('sshPass').value;
+                    if (host && user) Hosts.add({ host, port, user, pass });
+                    else Toast.error('请输入主机地址和用户名');
+                });
+
+                // SFTP
+                document.getElementById('sftpConnectBtn').addEventListener('click', () => {
+                    const host = document.getElementById('sftpHost').value.trim();
+                    const port = document.getElementById('sftpPort').value || 22;
+                    const user = document.getElementById('sftpUser').value.trim();
+                    const pass = document.getElementById('sftpPass').value;
+                    if (host && user) SFTP.connect(host, port, user, pass);
+                    else Toast.error('请输入主机地址和用户名');
+                });
+                document.getElementById('sftpDisconnectBtn').addEventListener('click', () => SFTP.disconnect());
+                document.getElementById('sftpRefreshBtn').addEventListener('click', () => SFTP.list(State.currentPath));
+                document.getElementById('sftpMkdirBtn').addEventListener('click', () => document.getElementById('mkdirModal').classList.add('active'));
+                document.getElementById('sftpDownloadBtn').addEventListener('click', () => SFTP.download());
+                document.getElementById('sftpDeleteBtn').addEventListener('click', () => { if (State.selectedFiles.length && confirm(`删除 "${State.selectedFiles[0].name}"?`)) SFTP.delete_(); });
+                document.getElementById('goPathBtn').addEventListener('click', () => { if (State.sftpConnected) SFTP.navigate(document.getElementById('remotePath').value.trim()); });
+                document.getElementById('remotePath').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('goPathBtn').click(); });
+                // 导航按钮
+                document.getElementById('navBackBtn').addEventListener('click', () => SFTP.goBack());
+                document.getElementById('navForwardBtn').addEventListener('click', () => SFTP.goForward());
+                document.getElementById('navUpBtn').addEventListener('click', () => SFTP.goUp());
+
+                // 上传
+                document.getElementById('uploadFilesBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+                document.getElementById('uploadFolderBtn').addEventListener('click', () => document.getElementById('folderInput').click());
+                document.getElementById('fileInput').addEventListener('change', e => { if (e.target.files.length) { SFTP.upload([...e.target.files]); e.target.value = ''; } });
+                document.getElementById('folderInput').addEventListener('change', e => { if (e.target.files.length) { SFTP.upload([...e.target.files]); e.target.value = ''; } });
+
+                // 拖放
+                const area = document.getElementById('uploadArea');
+                area.addEventListener('dragover', e => { e.preventDefault(); if (State.sftpConnected) area.classList.add('drag-over'); });
+                area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
+                area.addEventListener('drop', e => { e.preventDefault(); area.classList.remove('drag-over'); if (State.sftpConnected && e.dataTransfer.files.length) SFTP.upload([...e.dataTransfer.files]); });
+
+                // Modal: 新建文件夹
+                document.getElementById('mkdirCancel').addEventListener('click', () => document.getElementById('mkdirModal').classList.remove('active'));
+                document.getElementById('mkdirConfirm').addEventListener('click', () => {
+                    const name = document.getElementById('mkdirName').value.trim();
+                    if (name) { SFTP.mkdir(name); document.getElementById('mkdirModal').classList.remove('active'); document.getElementById('mkdirName').value = ''; }
+                });
+                document.getElementById('mkdirName').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('mkdirConfirm').click(); });
+                document.getElementById('mkdirModal').addEventListener('click', e => { if (e.target.id === 'mkdirModal') e.target.classList.remove('active'); });
+
+                // Modal: 修改密码
+                document.getElementById('passwordCancel').addEventListener('click', () => document.getElementById('passwordModal').classList.remove('active'));
+                document.getElementById('passwordConfirm').addEventListener('click', () => Users.changePassword());
+                document.getElementById('newPasswordInput').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('passwordConfirm').click(); });
+                document.getElementById('passwordModal').addEventListener('click', e => { if (e.target.id === 'passwordModal') e.target.classList.remove('active'); });
+
+                // 用户管理
+                document.getElementById('addUserBtn').addEventListener('click', () => Users.add());
+
+                // Reveal 效果
+                document.addEventListener('mousemove', e => {
+                    document.querySelectorAll('.host-card').forEach(el => {
+                        const rect = el.getBoundingClientRect();
+                        el.style.setProperty('--x', `${e.clientX - rect.left}px`);
+                        el.style.setProperty('--y', `${e.clientY - rect.top}px`);
+                    });
+                });
+
+                // 更新运行时间和访客数
+                setInterval(async () => {
+                    try {
+                        const res = await fetch(`${Config.API}/api/health`);
+                        const data = await res.json();
+                        document.getElementById('statUptime').textContent = Math.floor(data.uptime);
+                        // 更新访客数
+                        if (State.isAdmin) {
+                            const guestRes = await fetch(`${Config.API}/api/guests/count`);
+                            const guestData = await guestRes.json();
+                            document.getElementById('statGuests').textContent = guestData.count;
+                        }
+                    } catch {}
+                }, 5000);
+            },
+            showDashboard() {
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('dashboard').classList.add('visible');
+                if (State.isAdmin) {
+                    document.getElementById('adminNav').style.display = 'flex';
+                    Users.load();
+                }
+                Terminal_.init();
+                Hosts.load();
+            },
+            switchView(name) {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === name));
+                document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${name}`));
+                if (name === 'ssh') setTimeout(() => Terminal_.doFit(), 100);
+                if (name === 'admin' && State.isAdmin) Users.load();
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => UI.init());
+    })();
+    </script>
+</body>
+</html>
