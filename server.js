@@ -422,7 +422,11 @@ app.put('/api/users/:username/role', (req, res) => {
 // ============================================
 // WebSocket 服务器 - SSH 连接
 // ============================================
-const wss = new WebSocket.Server({ server, path: '/ssh' });
+const wss = new WebSocket.Server({
+    server,
+    path: '/ssh',
+    perMessageDeflate: false  // 禁用压缩，避免兼容性问题
+});
 
 wss.on('connection', (ws, req) => {
     console.log(`[WS] 新连接来自: ${req.socket.remoteAddress}`);

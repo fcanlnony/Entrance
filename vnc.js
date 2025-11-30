@@ -12,6 +12,7 @@ class VNCProxy {
     constructor() {
         this.sessions = new Map();
         this.sessionCounter = 0;
+        this.wss = null;
     }
 
     /**
@@ -20,11 +21,20 @@ class VNCProxy {
      * @param {string} path - WebSocket 路径
      */
     init(server, path = '/vnc') {
-        this.wss = new WebSocket.Server({
-            server,
-            path,
-            // 支持二进制数据
-            perMessageDeflate: false
+        // 使用 noServer 模式，手动处理 upgrade
+        this.wss = new WebSocket.Server({ noServer: true });
+        this.path = path;
+
+        // 监听 HTTP server 的 upgrade 事件
+        server.on('upgrade', (request, socket, head) => {
+            const pathname = new url.URL(request.url, 'http://localhost').pathname;
+
+            if (pathname === path || pathname.startsWith(path + '?')) {
+                this.wss.handleUpgrade(request, socket, head, (ws) => {
+                    this.wss.emit('connection', ws, request);
+                });
+            }
+            // 其他路径交给其他 WebSocket.Server 处理
         });
 
         this.wss.on('connection', (ws, req) => {
