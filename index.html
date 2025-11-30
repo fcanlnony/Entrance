@@ -446,6 +446,7 @@
             <nav class="sidebar-nav">
                 <div class="nav-item active" data-view="ssh"><i class="fas fa-terminal"></i><span>SSH 终端</span></div>
                 <div class="nav-item" data-view="sftp"><i class="fas fa-folder-tree"></i><span>SFTP 管理</span></div>
+                <div class="nav-item" data-view="serial"><i class="fas fa-microchip"></i><span>串口终端</span></div>
                 <div class="nav-item" data-view="admin" id="adminNav" style="display:none"><i class="fas fa-user-shield"></i><span>用户管理</span></div>
             </nav>
             <div class="sidebar-footer">
@@ -567,6 +568,107 @@
                     </div>
                     <input type="file" class="hidden-input" id="fileInput" multiple>
                     <input type="file" class="hidden-input" id="folderInput" webkitdirectory directory multiple>
+                </div>
+            </div>
+
+            <!-- Serial -->
+            <div class="view" id="view-serial">
+                <div class="header"><h2><i class="fas fa-microchip"></i> 串口终端</h2></div>
+                <div class="content">
+                    <div class="toolbar">
+                        <div class="input-group">
+                            <label>波特率</label>
+                            <select class="form-input" id="serialBaudRate" style="width:120px">
+                                <option value="9600">9600</option>
+                                <option value="19200">19200</option>
+                                <option value="38400">38400</option>
+                                <option value="57600">57600</option>
+                                <option value="115200" selected>115200</option>
+                                <option value="230400">230400</option>
+                                <option value="460800">460800</option>
+                                <option value="921600">921600</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>数据位</label>
+                            <select class="form-input" id="serialDataBits" style="width:80px">
+                                <option value="7">7</option>
+                                <option value="8" selected>8</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>停止位</label>
+                            <select class="form-input" id="serialStopBits" style="width:80px">
+                                <option value="1" selected>1</option>
+                                <option value="2">2</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>校验位</label>
+                            <select class="form-input" id="serialParity" style="width:100px">
+                                <option value="none" selected>无</option>
+                                <option value="even">偶校验</option>
+                                <option value="odd">奇校验</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>流控制</label>
+                            <select class="form-input" id="serialFlowControl" style="width:120px">
+                                <option value="none" selected>无</option>
+                                <option value="hardware">硬件</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="justify-content:flex-end">
+                            <label>&nbsp;</label>
+                            <button class="btn btn-success" id="serialConnectBtn"><i class="fas fa-plug"></i> 连接串口</button>
+                        </div>
+                    </div>
+                    <div class="sftp-status disconnected" id="serialStatus">
+                        <div class="status-dot"></div>
+                        <span class="sftp-status-text" id="serialStatusText">未连接</span>
+                        <button class="btn btn-danger btn-sm" id="serialDisconnectBtn" style="display:none"><i class="fas fa-times"></i> 断开</button>
+                    </div>
+                    <div id="serialNotSupported" style="display:none;padding:20px;background:var(--color-bg-2);border-radius:8px;margin-bottom:20px">
+                        <p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 浏览器不支持 Web Serial API</p>
+                        <p style="color:var(--color-text-2);font-size:13px">请使用 Chrome 89+ 或 Edge 89+ 浏览器，并确保使用 HTTPS 或 localhost 访问。</p>
+                    </div>
+                    <div class="terminal-box">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="terminal-title" id="serialTermTitle">串口终端 - 未连接</span>
+                            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+                                <label style="font-size:12px;color:var(--color-text-2)">
+                                    <input type="checkbox" id="serialAutoScroll" checked> 自动滚动
+                                </label>
+                                <label style="font-size:12px;color:var(--color-text-2)">
+                                    <input type="checkbox" id="serialShowHex"> HEX显示
+                                </label>
+                                <button class="btn btn-sm btn-secondary" id="serialClearBtn"><i class="fas fa-eraser"></i> 清屏</button>
+                            </div>
+                        </div>
+                        <div id="serialTerminal"></div>
+                    </div>
+                    <div class="toolbar" style="margin-top:16px">
+                        <div class="input-group" style="flex:1">
+                            <label>发送数据</label>
+                            <div style="display:flex;gap:8px">
+                                <input type="text" class="form-input" id="serialSendInput" placeholder="输入要发送的数据..." style="flex:1">
+                                <select class="form-input" id="serialSendMode" style="width:100px">
+                                    <option value="text">文本</option>
+                                    <option value="hex">HEX</option>
+                                </select>
+                                <select class="form-input" id="serialLineEnding" style="width:100px">
+                                    <option value="">无</option>
+                                    <option value="\n" selected>LF (\\n)</option>
+                                    <option value="\r">CR (\\r)</option>
+                                    <option value="\r\n">CRLF (\\r\\n)</option>
+                                </select>
+                                <button class="btn" id="serialSendBtn" disabled><i class="fas fa-paper-plane"></i> 发送</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1339,6 +1441,238 @@
             }
         };
 
+        // 串口终端 (WebSerial API)
+        const Serial = {
+            port: null,
+            reader: null,
+            writer: null,
+            term: null,
+            fit: null,
+            connected: false,
+            readLoop: null,
+
+            init() {
+                // 检查浏览器支持
+                if (!('serial' in navigator)) {
+                    document.getElementById('serialNotSupported').style.display = 'block';
+                    document.getElementById('serialConnectBtn').disabled = true;
+                    return;
+                }
+
+                // 初始化终端
+                this.term = new Terminal({
+                    theme: {
+                        background: '#1a1a1a', foreground: '#fff', cursor: '#0078D7',
+                        selection: 'rgba(0,120,215,0.3)',
+                        black: '#1a1a1a', red: '#e81123', green: '#107c10', yellow: '#ff8c00',
+                        blue: '#0078D7', magenta: '#881798', cyan: '#3a96dd', white: '#ccc'
+                    },
+                    fontFamily: 'Consolas, Monaco, monospace',
+                    fontSize: 14, cursorBlink: true,
+                    convertEol: true
+                });
+                this.fit = new FitAddon.FitAddon();
+                this.term.loadAddon(this.fit);
+                this.term.open(document.getElementById('serialTerminal'));
+                this.doFit();
+                this.welcome();
+
+                window.addEventListener('resize', () => this.doFit());
+
+                // 终端输入处理
+                this.term.onData(data => {
+                    if (this.connected && this.writer) {
+                        this.write(data);
+                    }
+                });
+
+                // 绑定事件
+                document.getElementById('serialConnectBtn').addEventListener('click', () => this.connect());
+                document.getElementById('serialDisconnectBtn').addEventListener('click', () => this.disconnect());
+                document.getElementById('serialClearBtn').addEventListener('click', () => { this.term.clear(); this.welcome(); });
+                document.getElementById('serialSendBtn').addEventListener('click', () => this.sendData());
+                document.getElementById('serialSendInput').addEventListener('keypress', e => { if (e.key === 'Enter') this.sendData(); });
+            },
+
+            doFit() {
+                try { this.fit.fit(); } catch {}
+            },
+
+            welcome() {
+                this.term.writeln('');
+                this.term.writeln('\x1b[1;34m  ╔══════════════════════════════════════════╗\x1b[0m');
+                this.term.writeln('\x1b[1;34m  ║\x1b[0m    \x1b[1;36mSerial Terminal (WebSerial)\x1b[0m          \x1b[1;34m║\x1b[0m');
+                this.term.writeln('\x1b[1;34m  ╚══════════════════════════════════════════╝\x1b[0m');
+                this.term.writeln('');
+                this.term.writeln('\x1b[90m  点击 "连接串口" 按钮选择串口设备\x1b[0m');
+                this.term.writeln('');
+            },
+
+            async connect() {
+                try {
+                    // 请求串口
+                    this.port = await navigator.serial.requestPort();
+
+                    // 获取配置
+                    const baudRate = parseInt(document.getElementById('serialBaudRate').value);
+                    const dataBits = parseInt(document.getElementById('serialDataBits').value);
+                    const stopBits = parseInt(document.getElementById('serialStopBits').value);
+                    const parity = document.getElementById('serialParity').value;
+                    const flowControl = document.getElementById('serialFlowControl').value;
+
+                    // 打开串口
+                    await this.port.open({
+                        baudRate,
+                        dataBits,
+                        stopBits,
+                        parity,
+                        flowControl
+                    });
+
+                    this.connected = true;
+                    this.updateStatus(true);
+                    this.term.clear();
+                    this.term.writeln(`\x1b[32m串口已连接 (${baudRate} bps)\x1b[0m\n`);
+
+                    // 设置读写
+                    const textDecoder = new TextDecoderStream();
+                    const readableStreamClosed = this.port.readable.pipeTo(textDecoder.writable);
+                    this.reader = textDecoder.readable.getReader();
+
+                    const textEncoder = new TextEncoderStream();
+                    const writableStreamClosed = textEncoder.readable.pipeTo(this.port.writable);
+                    this.writer = textEncoder.writable.getWriter();
+
+                    // 开始读取
+                    this.readLoop = this.startReading();
+
+                    Toast.success('串口已连接');
+                } catch (e) {
+                    if (e.name !== 'NotFoundError') {
+                        Toast.error('连接失败: ' + e.message);
+                        this.term.writeln(`\x1b[31m连接失败: ${e.message}\x1b[0m`);
+                    }
+                }
+            },
+
+            async startReading() {
+                const showHex = () => document.getElementById('serialShowHex').checked;
+                const autoScroll = () => document.getElementById('serialAutoScroll').checked;
+
+                try {
+                    while (this.connected) {
+                        const { value, done } = await this.reader.read();
+                        if (done) break;
+                        if (value) {
+                            if (showHex()) {
+                                const hex = Array.from(new TextEncoder().encode(value))
+                                    .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+                                    .join(' ');
+                                this.term.write(`\x1b[33m${hex}\x1b[0m `);
+                            } else {
+                                this.term.write(value);
+                            }
+                            if (autoScroll()) {
+                                this.term.scrollToBottom();
+                            }
+                        }
+                    }
+                } catch (e) {
+                    if (this.connected) {
+                        this.term.writeln(`\n\x1b[31m读取错误: ${e.message}\x1b[0m`);
+                    }
+                }
+            },
+
+            async write(data) {
+                if (this.writer) {
+                    try {
+                        await this.writer.write(data);
+                    } catch (e) {
+                        console.error('写入错误:', e);
+                    }
+                }
+            },
+
+            async sendData() {
+                if (!this.connected) return;
+
+                let data = document.getElementById('serialSendInput').value;
+                const mode = document.getElementById('serialSendMode').value;
+                const lineEnding = document.getElementById('serialLineEnding').value;
+
+                if (!data) return;
+
+                if (mode === 'hex') {
+                    // HEX 模式：将空格分隔的十六进制字符串转换为字节
+                    const hexBytes = data.replace(/\s/g, '').match(/.{1,2}/g);
+                    if (hexBytes) {
+                        const bytes = hexBytes.map(h => parseInt(h, 16));
+                        const uint8 = new Uint8Array(bytes);
+                        await this.writer.write(new TextDecoder().decode(uint8));
+                    }
+                } else {
+                    // 文本模式
+                    data += lineEnding.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                    await this.write(data);
+                }
+
+                document.getElementById('serialSendInput').value = '';
+            },
+
+            async disconnect() {
+                this.connected = false;
+
+                try {
+                    if (this.reader) {
+                        await this.reader.cancel();
+                        this.reader = null;
+                    }
+                    if (this.writer) {
+                        await this.writer.close();
+                        this.writer = null;
+                    }
+                    if (this.port) {
+                        await this.port.close();
+                        this.port = null;
+                    }
+                } catch (e) {
+                    console.error('断开错误:', e);
+                }
+
+                this.updateStatus(false);
+                this.term.writeln('\n\x1b[33m串口已断开\x1b[0m');
+                Toast.info('串口已断开');
+            },
+
+            updateStatus(connected) {
+                const status = document.getElementById('serialStatus');
+                const text = document.getElementById('serialStatusText');
+                const disconnBtn = document.getElementById('serialDisconnectBtn');
+                const connBtn = document.getElementById('serialConnectBtn');
+                const sendBtn = document.getElementById('serialSendBtn');
+                const title = document.getElementById('serialTermTitle');
+
+                if (connected) {
+                    status.classList.remove('disconnected');
+                    status.classList.add('connected');
+                    text.textContent = '已连接';
+                    disconnBtn.style.display = 'inline-flex';
+                    connBtn.disabled = true;
+                    sendBtn.disabled = false;
+                    title.textContent = '串口终端 - 已连接';
+                } else {
+                    status.classList.remove('connected');
+                    status.classList.add('disconnected');
+                    text.textContent = '未连接';
+                    disconnBtn.style.display = 'none';
+                    connBtn.disabled = false;
+                    sendBtn.disabled = true;
+                    title.textContent = '串口终端 - 未连接';
+                }
+            }
+        };
+
         // UI
         const UI = {
             init() {
@@ -1513,12 +1847,14 @@
                     Users.load();
                 }
                 Terminal_.init();
+                Serial.init();
                 Hosts.load();
             },
             switchView(name) {
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === name));
                 document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${name}`));
                 if (name === 'ssh') setTimeout(() => Terminal_.doFit(), 100);
+                if (name === 'serial') setTimeout(() => Serial.doFit(), 100);
                 if (name === 'admin' && State.isAdmin) Users.load();
             }
         };
