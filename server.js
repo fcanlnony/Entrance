@@ -12,6 +12,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
+const vncProxy = require('./vnc');
 
 const app = express();
 const server = http.createServer(app);
@@ -843,6 +844,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // ============================================
+// 初始化 VNC 代理服务
+// ============================================
+vncProxy.init(server, '/vnc');
+
+// ============================================
 // 启动服务器
 // ============================================
 server.listen(PORT, () => {
@@ -856,6 +862,7 @@ server.listen(PORT, () => {
 ║   功能:                                                   ║
 ║   - SSH 终端 (WebSocket)                                  ║
 ║   - SFTP 文件管理 (REST API)                              ║
+║   - VNC 远程桌面 (WebSocket 代理)                         ║
 ║   - 文件/文件夹上传                                       ║
 ║   - 用户管理 (REST API)                                   ║
 ║                                                           ║
@@ -865,9 +872,12 @@ server.listen(PORT, () => {
 
 process.on('SIGINT', () => {
     console.log('\n正在关闭服务器...');
+    // 关闭 SFTP 会话
     for (const [sessionId, session] of sftpSessions) {
         session.client.end();
     }
+    // 关闭 VNC 会话
+    vncProxy.closeAll();
     if (fs.existsSync(UPLOAD_DIR)) {
         fs.rmSync(UPLOAD_DIR, { recursive: true, force: true });
     }
