@@ -1,6 +1,6 @@
 # Server Management Dashboard
 
-基于 Web 的服务器管理面板，支持 SSH 终端和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题。
+基于 Web 的服务器管理面板，支持 SSH 终端、VNC 远程桌面、WebSerial 串口终端和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题。
 
 ## 功能特性
 
@@ -9,6 +9,18 @@
 - xterm.js 终端模拟器
 - 支持终端窗口大小自适应
 - 连接状态实时显示
+
+### VNC 远程桌面
+- 基于 noVNC 的远程桌面连接
+- 支持 WebSocket 代理连接
+- 全屏模式支持
+- 实时画面传输
+
+### WebSerial 串口终端
+- 浏览器原生串口通信（Web Serial API）
+- 支持自定义波特率配置
+- xterm.js 终端显示
+- 适用于硬件调试、嵌入式开发
 
 ### SFTP 文件管理
 - 远程文件浏览与导航
@@ -164,7 +176,7 @@ systemctl restart server-dashboard
 
 ### SSH (WebSocket)
 
-WebSocket 连接到 `ws://host:port`，消息格式：
+WebSocket 连接到 `ws://host:port/ssh`，消息格式：
 
 ```javascript
 // 连接
@@ -178,6 +190,16 @@ WebSocket 连接到 `ws://host:port`，消息格式：
 
 // 断开连接
 { "type": "disconnect" }
+```
+
+### VNC (WebSocket)
+
+WebSocket 连接到 `ws://host:port/vnc`，代理转发到目标 VNC 服务器。
+
+消息格式：
+```javascript
+// 初始连接时发送目标信息
+{ "type": "connect", "host": "192.168.1.1", "port": 5900 }
 ```
 
 ## 截图
