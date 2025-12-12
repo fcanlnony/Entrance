@@ -1,6 +1,6 @@
-# Server Management Dashboard
+# Entrance Tools
 
-基于 Web 的服务器管理面板，支持 SSH 终端、VNC 远程桌面、WebSerial 串口终端和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题。
+基于 Web 的服务器管理工具，支持 SSH 终端、VNC 远程桌面、WebSerial 串口终端和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题。
 
 ## 功能特性
 
@@ -74,48 +74,6 @@ npm start
 
 访问 http://localhost:3000
 
-### Debian 服务器部署
-
-```bash
-# 下载并运行安装脚本
-sudo bash install.sh
-```
-
-安装脚本会：
-1. 安装 Node.js 20.x
-2. 复制文件到 `/opt/server-dashboard`
-3. 创建 systemd 服务
-4. 启动服务并设置开机自启
-
-### 服务管理命令
-
-```bash
-# 查看状态
-systemctl status server-dashboard
-
-# 查看日志
-journalctl -u server-dashboard -f
-
-# 重启服务
-systemctl restart server-dashboard
-
-# 停止服务
-systemctl stop server-dashboard
-```
-
-### 修改端口
-
-编辑 `/etc/systemd/system/server-dashboard.service`：
-```ini
-Environment=PORT=3000  # 修改为你想要的端口
-```
-
-然后重新加载并重启：
-```bash
-systemctl daemon-reload
-systemctl restart server-dashboard
-```
-
 ## 默认账号
 
 | 用户名 | 密码 | 角色 |
@@ -131,7 +89,6 @@ systemctl restart server-dashboard
 ├── index.html      # 前端页面（单文件）
 ├── server.js       # 后端服务器
 ├── package.json    # 依赖配置
-├── install.sh      # Debian 安装脚本
 ├── users.json      # 用户数据（自动生成）
 └── userdata/       # 用户数据目录（自动生成）
     ├── admin.json  # admin 的主机列表
@@ -227,14 +184,6 @@ Voltage:3.3
 - 每行一个数据点，以换行符分隔
 - 自动为每个变量分配不同颜色
 - 可同时显示多个变量的实时波形
-
-## 截图
-
-### 暗色主题
-![Dark Theme](https://via.placeholder.com/800x500/1a1a1a/0078D7?text=Dark+Theme)
-
-### 亮色主题
-![Light Theme](https://via.placeholder.com/800x500/ffffff/0078D7?text=Light+Theme)
 
 ## 安全说明
 

@@ -1,7 +1,7 @@
 {
-  "name": "server-management-dashboard",
+  "name": "entrance-tools",
   "version": "1.0.0",
-  "description": "Web-based Server Management Dashboard with SSH and SFTP",
+  "description": "Entrance Tools - Web-based server management with SSH, VNC, WebSerial and SFTP",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

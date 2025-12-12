@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Server Management Dashboard - 基于 Web 的服务器管理面板，支持 SSH 终端和 SFTP 文件管理。
+Entrance Tools - 基于 Web 的服务器管理工具，支持 SSH 终端、VNC 远程桌面、WebSerial 串口终端和 SFTP 文件管理。
 
 ## Build and Development Commands
 
@@ -30,7 +30,6 @@ node server.js
 ├── index.html      # 前端单文件应用（HTML + CSS + JavaScript）
 ├── server.js       # Express 后端服务器
 ├── package.json    # 依赖配置
-├── install.sh      # Debian 服务器安装脚本
 ├── users.json      # 用户账号数据（运行时生成）
 └── userdata/       # 用户数据目录（运行时生成）
 ```
