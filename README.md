@@ -20,7 +20,14 @@
 - 浏览器原生串口通信（Web Serial API）
 - 支持自定义波特率配置
 - xterm.js 终端显示
-- 适用于硬件调试、嵌入式开发
+- **实时波形可视化** - 类示波器功能
+  - 自动检测 `Variable:Value` 格式数据
+  - 动态创建多变量曲线
+  - 滑动窗口显示（可调节 50-1000 采样点）
+  - 实时图例显示当前值
+  - 暂停/继续/清除功能
+- **演示模式** - 无需真实串口即可测试波形功能
+- 适用于硬件调试、嵌入式开发、ADC 数据可视化
 
 ### SFTP 文件管理
 - 远程文件浏览与导航
@@ -136,6 +143,8 @@ systemctl restart server-dashboard
 ### 前端
 - 原生 HTML/CSS/JavaScript
 - [xterm.js](https://xtermjs.org/) - 终端模拟器
+- [Chart.js](https://www.chartjs.org/) - 波形可视化图表
+- [noVNC](https://novnc.com/) - VNC 客户端
 - [Font Awesome](https://fontawesome.com/) - 图标库
 
 ### 后端
@@ -201,6 +210,23 @@ WebSocket 连接到 `ws://host:port/vnc`，代理转发到目标 VNC 服务器�
 // 初始连接时发送目标信息
 { "type": "connect", "host": "192.168.1.1", "port": 5900 }
 ```
+
+### 波形数据格式 (WebSerial)
+
+串口终端支持自动解析波形数据，格式为 `VariableName:NumericValue`：
+
+```
+ADC1:1024
+Temp:25.5
+Sin:-0.866
+Voltage:3.3
+```
+
+- 变量名：字母开头，可包含字母、数字、下划线
+- 数值：整数或浮点数，支持负数
+- 每行一个数据点，以换行符分隔
+- 自动为每个变量分配不同颜色
+- 可同时显示多个变量的实时波形
 
 ## 截图
 

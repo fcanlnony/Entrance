@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@nicktomlin/novnc@0.0.5/core/css/base.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         :root {
             /* 暗色主题 */
@@ -459,6 +460,109 @@
         .vnc-placeholder p {
             font-size: 14px;
         }
+
+        /* Waveform Visualization */
+        .waveform-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background: var(--color-bg-acrylic);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            display: none;
+            transition: all .3s ease;
+        }
+        .waveform-container.active {
+            display: block;
+        }
+        .waveform-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--color-bg-2);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .waveform-header h4 {
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .waveform-header h4 i {
+            color: var(--color-accent);
+        }
+        .waveform-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .waveform-controls label {
+            font-size: 11px;
+            color: var(--color-text-2);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .waveform-controls input[type="number"] {
+            width: 60px;
+            padding: 4px 6px;
+            font-size: 11px;
+            background: var(--color-bg-3);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            color: var(--color-text);
+        }
+        .waveform-chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 40px);
+            padding: 8px;
+        }
+        .waveform-chart-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .waveform-legend {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: var(--color-bg-acrylic);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11px;
+            z-index: 10;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .waveform-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .waveform-legend-item:last-child {
+            margin-bottom: 0;
+        }
+        .waveform-legend-color {
+            width: 12px;
+            height: 3px;
+            border-radius: 1px;
+        }
+        .waveform-legend-label {
+            color: var(--color-text-2);
+        }
+        .waveform-legend-value {
+            color: var(--color-text);
+            font-family: Consolas, monospace;
+            margin-left: auto;
+        }
     </style>
 </head>
 <body>
@@ -727,12 +831,29 @@
                         <div class="input-group" style="justify-content:flex-end">
                             <label>&nbsp;</label>
                             <button class="btn btn-success" id="serialConnectBtn"><i class="fas fa-plug"></i> 连接串口</button>
+                            <button class="btn btn-secondary" id="serialDemoBtn" title="模拟数据演示"><i class="fas fa-flask"></i> 演示</button>
                         </div>
                     </div>
                     <div class="sftp-status disconnected" id="serialStatus">
                         <div class="status-dot"></div>
                         <span class="sftp-status-text" id="serialStatusText">未连接</span>
+                        <button class="btn btn-sm btn-secondary" id="serialWaveformBtn" title="波形显示"><i class="fas fa-chart-line"></i> 波形</button>
                         <button class="btn btn-danger btn-sm" id="serialDisconnectBtn" style="display:none"><i class="fas fa-times"></i> 断开</button>
+                    </div>
+                    <!-- Waveform Visualization Container -->
+                    <div class="waveform-container" id="waveformContainer">
+                        <div class="waveform-header">
+                            <h4><i class="fas fa-chart-line"></i> 波形显示</h4>
+                            <div class="waveform-controls">
+                                <label>窗口大小: <input type="number" id="waveformWindowSize" value="200" min="50" max="1000" step="50"></label>
+                                <button class="btn btn-sm btn-secondary" id="waveformPauseBtn"><i class="fas fa-pause"></i></button>
+                                <button class="btn btn-sm btn-secondary" id="waveformClearBtn"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="waveform-chart-wrapper">
+                            <canvas id="waveformCanvas"></canvas>
+                            <div class="waveform-legend" id="waveformLegend"></div>
+                        </div>
                     </div>
                     <div id="serialNotSupported" style="display:none;padding:20px;background:var(--color-bg-2);border-radius:8px;margin-bottom:20px">
                         <p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 浏览器不支持 Web Serial API</p>
@@ -1553,6 +1674,252 @@
             }
         };
 
+        // Waveform Visualizer - ES6 Class for oscilloscope-like visualization
+        class WaveformVisualizer {
+            constructor(canvasId, legendId, options = {}) {
+                this.canvas = document.getElementById(canvasId);
+                this.legendEl = document.getElementById(legendId);
+                this.ctx = this.canvas.getContext('2d');
+
+                // Configuration
+                this.windowSize = options.windowSize || 200;
+                this.paused = false;
+                this.datasets = new Map(); // Map<string, { data: number[], color: string, latestValue: number }>
+                this.chart = null;
+                this.frameId = null;
+                this.pendingUpdates = false;
+
+                // Color palette for auto-assignment
+                this.colorPalette = [
+                    '#0078D7', '#107c10', '#e81123', '#ff8c00',
+                    '#881798', '#3a96dd', '#00cc6a', '#f7630c',
+                    '#ea005e', '#00b7c3', '#8764b8', '#567c73'
+                ];
+                this.colorIndex = 0;
+
+                this._initChart();
+            }
+
+            _initChart() {
+                const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+                this.chart = new Chart(this.ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: []
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false, // Disable animation for performance
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: {
+                                display: false // We use custom legend
+                            },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: isDark ? 'rgba(32,32,32,0.9)' : 'rgba(255,255,255,0.9)',
+                                titleColor: isDark ? '#fff' : '#1a1a1a',
+                                bodyColor: isDark ? '#a0a0a0' : '#666',
+                                borderColor: isDark ? '#3a3a3a' : '#d0d0d0',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                grid: {
+                                    color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: isDark ? '#6a6a6a' : '#999',
+                                    maxTicksLimit: 10,
+                                    font: { size: 10 }
+                                }
+                            },
+                            y: {
+                                display: true,
+                                grid: {
+                                    color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: isDark ? '#6a6a6a' : '#999',
+                                    font: { size: 10 }
+                                }
+                            }
+                        },
+                        elements: {
+                            point: {
+                                radius: 0 // Hide points for performance
+                            },
+                            line: {
+                                tension: 0.2,
+                                borderWidth: 2
+                            }
+                        }
+                    }
+                });
+
+                // Generate initial labels
+                this._updateLabels();
+            }
+
+            _updateLabels() {
+                const labels = [];
+                for (let i = 0; i < this.windowSize; i++) {
+                    labels.push(i.toString());
+                }
+                this.chart.data.labels = labels;
+            }
+
+            _getNextColor() {
+                const color = this.colorPalette[this.colorIndex % this.colorPalette.length];
+                this.colorIndex++;
+                return color;
+            }
+
+            _ensureDataset(key) {
+                if (!this.datasets.has(key)) {
+                    const color = this._getNextColor();
+                    const data = new Array(this.windowSize).fill(null);
+                    this.datasets.set(key, { data, color, latestValue: 0 });
+
+                    // Add to chart
+                    this.chart.data.datasets.push({
+                        label: key,
+                        data: [...data],
+                        borderColor: color,
+                        backgroundColor: color + '20',
+                        fill: false
+                    });
+
+                    this._updateLegend();
+                }
+                return this.datasets.get(key);
+            }
+
+            _updateLegend() {
+                if (!this.legendEl) return;
+
+                let html = '';
+                this.datasets.forEach((dataset, key) => {
+                    const valueStr = dataset.latestValue !== null ? dataset.latestValue.toFixed(2) : '-';
+                    html += `
+                        <div class="waveform-legend-item">
+                            <div class="waveform-legend-color" style="background:${dataset.color}"></div>
+                            <span class="waveform-legend-label">${key}</span>
+                            <span class="waveform-legend-value">${valueStr}</span>
+                        </div>
+                    `;
+                });
+                this.legendEl.innerHTML = html;
+            }
+
+            pushData(key, value) {
+                if (this.paused) return;
+
+                const numValue = parseFloat(value);
+                if (isNaN(numValue)) return;
+
+                const dataset = this._ensureDataset(key);
+                dataset.data.push(numValue);
+                dataset.latestValue = numValue;
+
+                // Maintain sliding window
+                while (dataset.data.length > this.windowSize) {
+                    dataset.data.shift();
+                }
+
+                // Pad with nulls if needed
+                while (dataset.data.length < this.windowSize) {
+                    dataset.data.unshift(null);
+                }
+
+                this.pendingUpdates = true;
+                this._scheduleRender();
+            }
+
+            _scheduleRender() {
+                if (this.frameId) return;
+
+                this.frameId = requestAnimationFrame(() => {
+                    this.frameId = null;
+                    if (this.pendingUpdates) {
+                        this._render();
+                        this.pendingUpdates = false;
+                    }
+                });
+            }
+
+            _render() {
+                // Update chart datasets
+                let idx = 0;
+                this.datasets.forEach((dataset, key) => {
+                    if (this.chart.data.datasets[idx]) {
+                        this.chart.data.datasets[idx].data = [...dataset.data];
+                    }
+                    idx++;
+                });
+
+                this.chart.update('none'); // Update without animation
+                this._updateLegend();
+            }
+
+            setWindowSize(size) {
+                this.windowSize = Math.max(50, Math.min(1000, size));
+                this._updateLabels();
+
+                // Resize all datasets
+                this.datasets.forEach((dataset) => {
+                    while (dataset.data.length > this.windowSize) {
+                        dataset.data.shift();
+                    }
+                    while (dataset.data.length < this.windowSize) {
+                        dataset.data.unshift(null);
+                    }
+                });
+
+                this._render();
+            }
+
+            pause() {
+                this.paused = true;
+            }
+
+            resume() {
+                this.paused = false;
+            }
+
+            togglePause() {
+                this.paused = !this.paused;
+                return this.paused;
+            }
+
+            clear() {
+                this.datasets.clear();
+                this.chart.data.datasets = [];
+                this.colorIndex = 0;
+                this._updateLegend();
+                this.chart.update('none');
+            }
+
+            destroy() {
+                if (this.frameId) {
+                    cancelAnimationFrame(this.frameId);
+                }
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+            }
+        }
+
         // 串口终端 (WebSerial API)
         const Serial = {
             port: null,
@@ -1562,6 +1929,14 @@
             fit: null,
             connected: false,
             readLoop: null,
+            // Waveform visualization
+            waveformVisualizer: null,
+            waveformActive: false,
+            lineBuffer: '', // Buffer for line-based parsing
+            // Demo mode
+            demoMode: false,
+            demoInterval: null,
+            demoTime: 0,
 
             init() {
                 // 检查浏览器支持
@@ -1604,6 +1979,117 @@
                 document.getElementById('serialClearBtn').addEventListener('click', () => { this.term.clear(); this.welcome(); });
                 document.getElementById('serialSendBtn').addEventListener('click', () => this.sendData());
                 document.getElementById('serialSendInput').addEventListener('keypress', e => { if (e.key === 'Enter') this.sendData(); });
+
+                // Waveform event handlers
+                document.getElementById('serialWaveformBtn').addEventListener('click', () => this.toggleWaveform());
+                document.getElementById('waveformPauseBtn').addEventListener('click', () => this.toggleWaveformPause());
+                document.getElementById('waveformClearBtn').addEventListener('click', () => this.clearWaveform());
+                document.getElementById('waveformWindowSize').addEventListener('change', (e) => {
+                    if (this.waveformVisualizer) {
+                        this.waveformVisualizer.setWindowSize(parseInt(e.target.value));
+                    }
+                });
+
+                // Demo mode button
+                document.getElementById('serialDemoBtn').addEventListener('click', () => this.startDemo());
+            },
+
+            // Start demo mode - simulates waveform data without real serial port
+            startDemo() {
+                if (this.connected || this.demoMode) {
+                    Toast.info('请先断开当前连接');
+                    return;
+                }
+
+                this.demoMode = true;
+                this.connected = true;
+                this.demoTime = 0;
+                this.updateStatus(true, true);
+                this.term.clear();
+                this.term.writeln('\x1b[32m演示模式已启动 (模拟数据)\x1b[0m');
+                this.term.writeln('\x1b[90m生成 Sin, Cos, Sin3Hz, ADC, Temp 五个变量的模拟数据\x1b[0m');
+                this.term.writeln('\x1b[90m点击 "波形" 按钮查看实时波形\x1b[0m\n');
+
+                // Auto-enable waveform view
+                if (!this.waveformActive) {
+                    this.toggleWaveform();
+                }
+
+                Toast.success('演示模式已启动');
+
+                // Start generating demo data at 50Hz
+                this.demoInterval = setInterval(() => {
+                    const t = this.demoTime;
+
+                    // Generate waveform data
+                    const sin = Math.sin(2 * Math.PI * 1.0 * t).toFixed(3);
+                    const cos = Math.cos(2 * Math.PI * 1.0 * t).toFixed(3);
+                    const sin3 = (0.5 * Math.sin(2 * Math.PI * 3.0 * t)).toFixed(3);
+                    const adcBase = 2048 + 1800 * Math.sin(2 * Math.PI * 0.5 * t);
+                    const adc = Math.floor(Math.max(0, Math.min(4095, adcBase + (Math.random() - 0.5) * 100)));
+                    const temp = (25 + 5 * Math.sin(2 * Math.PI * 0.1 * t) + (Math.random() - 0.5) * 0.4).toFixed(2);
+
+                    // Process as if received from serial
+                    const lines = [
+                        `Sin:${sin}`,
+                        `Cos:${cos}`,
+                        `Sin3Hz:${sin3}`,
+                        `ADC:${adc}`,
+                        `Temp:${temp}`
+                    ];
+
+                    lines.forEach(line => {
+                        const waveformData = this.parseWaveformLine(line);
+                        if (waveformData && this.waveformActive && this.waveformVisualizer) {
+                            this.waveformVisualizer.pushData(waveformData.key, waveformData.value);
+                        }
+                    });
+
+                    this.demoTime += 0.02; // 50Hz = 20ms interval
+                }, 20);
+            },
+
+            // Toggle waveform visualization
+            toggleWaveform() {
+                const container = document.getElementById('waveformContainer');
+                const btn = document.getElementById('serialWaveformBtn');
+
+                this.waveformActive = !this.waveformActive;
+                container.classList.toggle('active', this.waveformActive);
+                btn.classList.toggle('btn-secondary', !this.waveformActive);
+                btn.classList.toggle('btn-success', this.waveformActive);
+
+                if (this.waveformActive && !this.waveformVisualizer) {
+                    // Initialize waveform visualizer on first activation
+                    const windowSize = parseInt(document.getElementById('waveformWindowSize').value) || 200;
+                    this.waveformVisualizer = new WaveformVisualizer('waveformCanvas', 'waveformLegend', { windowSize });
+                }
+            },
+
+            // Toggle pause for waveform
+            toggleWaveformPause() {
+                if (!this.waveformVisualizer) return;
+                const paused = this.waveformVisualizer.togglePause();
+                const btn = document.getElementById('waveformPauseBtn');
+                btn.innerHTML = paused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+            },
+
+            // Clear waveform data
+            clearWaveform() {
+                if (this.waveformVisualizer) {
+                    this.waveformVisualizer.clear();
+                }
+            },
+
+            // Parse data line for waveform format (Variable:Value)
+            parseWaveformLine(line) {
+                // Match format: VariableName:NumericValue
+                // Examples: ADC1:1024, Temp:25.5, Sin:-0.5
+                const match = line.trim().match(/^([A-Za-z_][A-Za-z0-9_]*):(-?\d+\.?\d*)$/);
+                if (match) {
+                    return { key: match[1], value: parseFloat(match[2]) };
+                }
+                return null;
             },
 
             doFit() {
@@ -1676,14 +2162,48 @@
                         const { value, done } = await this.reader.read();
                         if (done) break;
                         if (value) {
-                            if (showHex()) {
-                                const hex = Array.from(new TextEncoder().encode(value))
-                                    .map(b => b.toString(16).padStart(2, '0').toUpperCase())
-                                    .join(' ');
-                                this.term.write(`\x1b[33m${hex}\x1b[0m `);
-                            } else {
-                                this.term.write(value);
+                            // Buffer incoming data for line-based parsing
+                            this.lineBuffer += value;
+
+                            // Process complete lines
+                            let newlineIdx;
+                            while ((newlineIdx = this.lineBuffer.indexOf('\n')) !== -1) {
+                                const line = this.lineBuffer.substring(0, newlineIdx).replace(/\r$/, '');
+                                this.lineBuffer = this.lineBuffer.substring(newlineIdx + 1);
+
+                                // Try to parse as waveform data
+                                const waveformData = this.parseWaveformLine(line);
+                                if (waveformData && this.waveformActive && this.waveformVisualizer) {
+                                    // Route to waveform visualizer
+                                    this.waveformVisualizer.pushData(waveformData.key, waveformData.value);
+                                } else {
+                                    // Not waveform data or waveform inactive - print to terminal
+                                    if (showHex()) {
+                                        const hex = Array.from(new TextEncoder().encode(line + '\n'))
+                                            .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+                                            .join(' ');
+                                        this.term.write(`\x1b[33m${hex}\x1b[0m `);
+                                    } else {
+                                        this.term.writeln(line);
+                                    }
+                                }
                             }
+
+                            // Handle partial data (no newline yet) - only if buffer gets too large
+                            // or contains non-waveform data that should be displayed immediately
+                            if (this.lineBuffer.length > 256) {
+                                // Flush buffer to terminal if it gets too large
+                                if (showHex()) {
+                                    const hex = Array.from(new TextEncoder().encode(this.lineBuffer))
+                                        .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+                                        .join(' ');
+                                    this.term.write(`\x1b[33m${hex}\x1b[0m `);
+                                } else {
+                                    this.term.write(this.lineBuffer);
+                                }
+                                this.lineBuffer = '';
+                            }
+
                             if (autoScroll()) {
                                 this.term.scrollToBottom();
                             }
@@ -1734,6 +2254,20 @@
 
             async disconnect() {
                 this.connected = false;
+                this.lineBuffer = ''; // Clear the line buffer
+
+                // Stop demo mode if active
+                if (this.demoMode) {
+                    if (this.demoInterval) {
+                        clearInterval(this.demoInterval);
+                        this.demoInterval = null;
+                    }
+                    this.demoMode = false;
+                    this.updateStatus(false);
+                    this.term.writeln('\n\x1b[33m演示模式已停止\x1b[0m');
+                    Toast.info('演示模式已停止');
+                    return;
+                }
 
                 try {
                     if (this.reader) {
@@ -1757,28 +2291,31 @@
                 Toast.info('串口已断开');
             },
 
-            updateStatus(connected) {
+            updateStatus(connected, isDemo = false) {
                 const status = document.getElementById('serialStatus');
                 const text = document.getElementById('serialStatusText');
                 const disconnBtn = document.getElementById('serialDisconnectBtn');
                 const connBtn = document.getElementById('serialConnectBtn');
+                const demoBtn = document.getElementById('serialDemoBtn');
                 const sendBtn = document.getElementById('serialSendBtn');
                 const title = document.getElementById('serialTermTitle');
 
                 if (connected) {
                     status.classList.remove('disconnected');
                     status.classList.add('connected');
-                    text.textContent = '已连接';
+                    text.textContent = isDemo ? '演示模式' : '已连接';
                     disconnBtn.style.display = 'inline-flex';
                     connBtn.disabled = true;
-                    sendBtn.disabled = false;
-                    title.textContent = '串口终端 - 已连接';
+                    demoBtn.disabled = true;
+                    sendBtn.disabled = isDemo; // Disable send in demo mode
+                    title.textContent = isDemo ? '串口终端 - 演示模式' : '串口终端 - 已连接';
                 } else {
                     status.classList.remove('connected');
                     status.classList.add('disconnected');
                     text.textContent = '未连接';
                     disconnBtn.style.display = 'none';
                     connBtn.disabled = false;
+                    demoBtn.disabled = false;
                     sendBtn.disabled = true;
                     title.textContent = '串口终端 - 未连接';
                 }
