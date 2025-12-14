@@ -435,8 +435,7 @@ app.put('/api/users/:username/role', (req, res) => {
 // WebSocket 服务器 - SSH 连接
 // ============================================
 const wss = new WebSocket.Server({
-    server,
-    path: '/ssh',
+    noServer: true,
     perMessageDeflate: false  // 禁用压缩，避免兼容性问题
 });
 
@@ -882,6 +881,22 @@ app.get('/api/localshell/status', (req, res) => {
         shell: localShell.getDefaultShell(),
         platform: localShell.getPlatform()
     });
+});
+
+// ============================================
+// 统一 WebSocket upgrade 处理
+// ============================================
+server.on('upgrade', (request, socket, head) => {
+    const pathname = new (require('url').URL)(request.url, 'http://localhost').pathname;
+
+    if (pathname === '/ssh') {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit('connection', ws, request);
+        });
+    } else if (pathname === '/localshell' && localShell.isAvailable()) {
+        localShell.handleUpgrade(request, socket, head);
+    }
+    // /vnc 由 vncProxy 自己处理
 });
 
 // ============================================

@@ -677,6 +677,14 @@
                         <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
                             <span id="shellInfo" style="font-size:12px;color:var(--color-text-3)"></span>
                         </div>
+                        <input type="text" id="shellPathInput" placeholder="Shell 路径 (留空使用默认)" style="width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-bg-2);color:var(--color-text-1);font-size:13px" list="shellPathList">
+                        <datalist id="shellPathList">
+                            <option value="/bin/bash">
+                            <option value="/bin/zsh">
+                            <option value="/bin/sh">
+                            <option value="/usr/bin/fish">
+                            <option value="/bin/tcsh">
+                        </datalist>
                         <button class="btn btn-success btn-sm" id="shellStartBtn"><i class="fas fa-play"></i> 启动</button>
                         <button class="btn btn-danger btn-sm" id="shellStopBtn" style="display:none"><i class="fas fa-stop"></i> 停止</button>
                     </div>
@@ -2490,15 +2498,20 @@
                     this.ws.close();
                 }
 
+                const shellPath = document.getElementById('shellPathInput').value.trim();
                 const wsUrl = `${Config.WS.replace('/ssh', '/localshell')}`;
                 this.ws = new WebSocket(wsUrl);
 
                 this.ws.onopen = () => {
-                    this.ws.send(JSON.stringify({
+                    const msg = {
                         type: 'start',
                         cols: this.term.cols,
                         rows: this.term.rows
-                    }));
+                    };
+                    if (shellPath) {
+                        msg.shell = shellPath;
+                    }
+                    this.ws.send(JSON.stringify(msg));
                 };
 
                 this.ws.onmessage = (e) => {

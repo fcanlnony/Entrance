@@ -26,19 +26,25 @@ const shellSessions = new Map();
  * @param {http.Server} server - HTTP 服务器实例
  * @param {string} wsPath - WebSocket 路径，默认 '/localshell'
  */
+// 存储 WebSocket 服务器实例
+let localShellWss = null;
+let localShellPath = '/localshell';
+
 function init(server, wsPath = '/localshell') {
     if (!isLinux) {
         console.warn('[LocalShell] 跳过初始化 - 仅支持 Linux 系统');
-        return { available: false, reason: 'not_linux' };
+        return { available: false, reason: 'not_linux', wss: null, path: wsPath };
     }
 
-    const wss = new WebSocket.Server({
-        server,
-        path: wsPath,
+    localShellPath = wsPath;
+    localShellWss = new WebSocket.Server({
+        noServer: true,
         perMessageDeflate: false
     });
 
     console.log(`[LocalShell] WebSocket 服务已启动: ${wsPath}`);
+
+    const wss = localShellWss;
 
     wss.on('connection', (ws, req) => {
         console.log(`[LocalShell] 新连接来自: ${req.socket.remoteAddress}`);
@@ -57,7 +63,29 @@ function init(server, wsPath = '/localshell') {
                             shellProcess.kill();
                         }
 
-                        const shell = getDefaultShell();
+                        // 使用客户端指定的 shell 或默认 shell
+                        let shell = data.shell || getDefaultShell();
+
+                        // 安全检查：验证 shell 路径
+                        if (data.shell) {
+                            // 只允许绝对路径
+                            if (!data.shell.startsWith('/')) {
+                                ws.send(JSON.stringify({ type: 'error', message: 'Shell 路径必须是绝对路径' }));
+                                return;
+                            }
+                            // 检查文件是否存在且可执行
+                            if (!fs.existsSync(data.shell)) {
+                                ws.send(JSON.stringify({ type: 'error', message: `Shell 不存在: ${data.shell}` }));
+                                return;
+                            }
+                            try {
+                                fs.accessSync(data.shell, fs.constants.X_OK);
+                            } catch {
+                                ws.send(JSON.stringify({ type: 'error', message: `Shell 不可执行: ${data.shell}` }));
+                                return;
+                            }
+                        }
+
                         const cwd = data.cwd || os.homedir();
                         const cols = data.cols || 80;
                         const rows = data.rows || 24;
@@ -196,7 +224,25 @@ function init(server, wsPath = '/localshell') {
         });
     });
 
-    return { available: true, wss };
+    return { available: true, wss: localShellWss, path: wsPath };
+}
+
+/**
+ * 处理 WebSocket upgrade 请求
+ */
+function handleUpgrade(request, socket, head) {
+    if (localShellWss) {
+        localShellWss.handleUpgrade(request, socket, head, (ws) => {
+            localShellWss.emit('connection', ws, request);
+        });
+    }
+}
+
+/**
+ * 获取 WebSocket 路径
+ */
+function getPath() {
+    return localShellPath;
 }
 
 /**
@@ -239,5 +285,7 @@ module.exports = {
     isAvailable,
     getSessionCount,
     getDefaultShell,
-    getPlatform
+    getPlatform,
+    handleUpgrade,
+    getPath
 };
