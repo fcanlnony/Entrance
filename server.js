@@ -13,6 +13,7 @@ const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
 const vncProxy = require('./vnc');
+const localShell = require('./local-shell');
 
 const app = express();
 const server = http.createServer(app);
@@ -259,6 +260,17 @@ app.post('/api/auth/login', (req, res) => {
         res.json({ success: true, username, role: result.role });
     } else {
         res.status(401).json({ success: false, error: '用户名或密码错误' });
+    }
+});
+
+// 验证已保存的登录状态
+app.post('/api/auth/verify', (req, res) => {
+    const { username } = req.body;
+    const user = UserManager.get(username);
+    if (user) {
+        res.json({ success: true, username, role: user.role });
+    } else {
+        res.status(401).json({ success: false, error: '用户不存在' });
     }
 });
 
@@ -853,6 +865,25 @@ app.get('/api/health', (req, res) => {
 vncProxy.init(server, '/vnc');
 
 // ============================================
+// 初始化本地 Shell 服务
+// ============================================
+const localShellService = localShell.init(server, '/localshell');
+if (localShellService.available) {
+    console.log('[Server] 本地 Shell 服务已启用');
+} else {
+    console.log('[Server] 本地 Shell 服务不可用 (需要安装 node-pty)');
+}
+
+// 添加本地 shell 状态检查 API
+app.get('/api/localshell/status', (req, res) => {
+    res.json({
+        available: localShell.isAvailable(),
+        sessions: localShell.getSessionCount(),
+        shell: localShell.getDefaultShell()
+    });
+});
+
+// ============================================
 // 启动服务器
 // ============================================
 server.listen(PORT, () => {
@@ -882,6 +913,8 @@ process.on('SIGINT', () => {
     }
     // 关闭 VNC 会话
     vncProxy.closeAll();
+    // 关闭本地 Shell 会话
+    localShell.closeAll();
     if (fs.existsSync(UPLOAD_DIR)) {
         fs.rmSync(UPLOAD_DIR, { recursive: true, force: true });
     }

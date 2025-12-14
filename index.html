@@ -586,6 +586,10 @@
                     <label>密码</label>
                     <input type="password" class="form-input" id="loginPass" placeholder="admin" autocomplete="current-password">
                 </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                    <input type="checkbox" id="rememberMe" style="width:auto;cursor:pointer">
+                    <label for="rememberMe" style="margin:0;cursor:pointer;color:var(--color-text-2)">记住我（7天内自动登录）</label>
+                </div>
                 <div class="login-error" id="loginError"><i class="fas fa-exclamation-circle"></i> 用户名或密码错误</div>
                 <button type="submit" class="btn btn-block"><i class="fas fa-sign-in-alt"></i> 登录</button>
                 <div style="text-align:center;margin:16px 0;color:var(--color-text-3);font-size:13px">── 或者 ──</div>
@@ -604,6 +608,7 @@
             </div>
             <nav class="sidebar-nav">
                 <div class="nav-item active" data-view="ssh"><i class="fas fa-terminal"></i><span>SSH 终端</span></div>
+                <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>本地 Shell</span></div>
                 <div class="nav-item" data-view="sftp"><i class="fas fa-folder-tree"></i><span>SFTP 管理</span></div>
                 <div class="nav-item" data-view="vnc"><i class="fas fa-desktop"></i><span>VNC 远程</span></div>
                 <div class="nav-item" data-view="serial"><i class="fas fa-microchip"></i><span>串口终端</span></div>
@@ -654,6 +659,38 @@
                             <div class="terminal-status disconnected" id="termStatus"><i class="fas fa-circle"></i><span>未连接</span></div>
                         </div>
                         <div id="terminal"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local Shell -->
+            <div class="view" id="view-shell">
+                <div class="header"><h2><i class="fas fa-laptop-code"></i> 本地 Shell</h2></div>
+                <div class="content">
+                    <div id="shellNotAvailable" style="display:none;padding:20px;background:var(--color-bg-2);border-radius:8px;margin-bottom:20px">
+                        <p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 本地 Shell 服务不可用</p>
+                        <p style="color:var(--color-text-2);font-size:13px">服务器需要安装 node-pty 依赖。运行: <code style="background:var(--color-bg-3);padding:2px 6px;border-radius:4px">npm install node-pty</code></p>
+                    </div>
+                    <div class="sftp-status disconnected" id="shellStatus">
+                        <div class="status-dot"></div>
+                        <span class="sftp-status-text" id="shellStatusText">未启动</span>
+                        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+                            <span id="shellInfo" style="font-size:12px;color:var(--color-text-3)"></span>
+                        </div>
+                        <button class="btn btn-success btn-sm" id="shellStartBtn"><i class="fas fa-play"></i> 启动</button>
+                        <button class="btn btn-danger btn-sm" id="shellStopBtn" style="display:none"><i class="fas fa-stop"></i> 停止</button>
+                    </div>
+                    <div class="terminal-box">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="terminal-title" id="shellTermTitle">本地终端 - 未启动</span>
+                            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+                                <button class="btn btn-sm btn-secondary" id="shellClearBtn"><i class="fas fa-eraser"></i> 清屏</button>
+                            </div>
+                        </div>
+                        <div id="shellTerminal"></div>
                     </div>
                 </div>
             </div>
@@ -1023,7 +1060,33 @@
 
         const Storage = {
             getTheme() { return localStorage.getItem('theme') || 'dark'; },
-            setTheme(t) { localStorage.setItem('theme', t); }
+            setTheme(t) { localStorage.setItem('theme', t); },
+
+            // 登录状态管理
+            saveLogin(username, isAdmin, rememberMe = false) {
+                if (rememberMe) {
+                    const loginData = { username, isAdmin, timestamp: Date.now() };
+                    localStorage.setItem('loginData', JSON.stringify(loginData));
+                }
+            },
+            getLogin() {
+                try {
+                    const data = localStorage.getItem('loginData');
+                    if (!data) return null;
+                    const loginData = JSON.parse(data);
+                    // 登录状态7天后过期
+                    if (Date.now() - loginData.timestamp > 7 * 24 * 60 * 60 * 1000) {
+                        this.clearLogin();
+                        return null;
+                    }
+                    return loginData;
+                } catch (e) {
+                    return null;
+                }
+            },
+            clearLogin() {
+                localStorage.removeItem('loginData');
+            }
         };
 
         // 主题
@@ -2322,6 +2385,191 @@
             }
         };
 
+        // 本地 Shell
+        const LocalShell = {
+            term: null,
+            fit: null,
+            ws: null,
+            connected: false,
+            available: false,
+            shellInfo: '',
+
+            async init() {
+                // 检查服务是否可用
+                try {
+                    const res = await fetch(`${Config.API}/api/localshell/status`);
+                    const data = await res.json();
+                    this.available = data.available;
+                    this.shellInfo = data.shell || '';
+                    if (!this.available) {
+                        document.getElementById('shellNotAvailable').style.display = 'block';
+                        document.getElementById('shellStartBtn').disabled = true;
+                    } else {
+                        document.getElementById('shellInfo').textContent = this.shellInfo;
+                    }
+                } catch (e) {
+                    console.error('[LocalShell] 检查状态失败:', e);
+                    document.getElementById('shellNotAvailable').style.display = 'block';
+                    document.getElementById('shellStartBtn').disabled = true;
+                }
+
+                // 初始化终端
+                this.term = new Terminal({
+                    theme: {
+                        background: '#1a1a1a', foreground: '#fff', cursor: '#0078D7',
+                        selection: 'rgba(0,120,215,0.3)',
+                        black: '#1a1a1a', red: '#e81123', green: '#107c10', yellow: '#ff8c00',
+                        blue: '#0078D7', magenta: '#881798', cyan: '#3a96dd', white: '#ccc'
+                    },
+                    fontFamily: 'Consolas, Monaco, monospace',
+                    fontSize: 14,
+                    cursorBlink: true
+                });
+                this.fit = new FitAddon.FitAddon();
+                this.term.loadAddon(this.fit);
+                this.term.open(document.getElementById('shellTerminal'));
+                this.doFit();
+                this.welcome();
+
+                window.addEventListener('resize', () => this.doFit());
+
+                // 终端输入处理
+                this.term.onData(data => {
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'data', data }));
+                    }
+                });
+
+                this.term.onResize(({ cols, rows }) => {
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+                    }
+                });
+
+                // 绑定事件
+                document.getElementById('shellStartBtn').addEventListener('click', () => this.start());
+                document.getElementById('shellStopBtn').addEventListener('click', () => this.stop());
+                document.getElementById('shellClearBtn').addEventListener('click', () => {
+                    this.term.clear();
+                    if (!this.connected) this.welcome();
+                });
+            },
+
+            doFit() {
+                try { this.fit.fit(); } catch {}
+            },
+
+            welcome() {
+                this.term.writeln('');
+                this.term.writeln('\x1b[1;34m  ╔══════════════════════════════════════════╗\x1b[0m');
+                this.term.writeln('\x1b[1;34m  ║\x1b[0m          \x1b[1;36mLocal Shell Terminal\x1b[0m            \x1b[1;34m║\x1b[0m');
+                this.term.writeln('\x1b[1;34m  ╚══════════════════════════════════════════╝\x1b[0m');
+                this.term.writeln('');
+                this.term.writeln('\x1b[90m  点击 "启动" 按钮开启本地终端\x1b[0m');
+                this.term.writeln('');
+            },
+
+            start() {
+                if (!this.available) {
+                    Toast.error('本地 Shell 服务不可用');
+                    return;
+                }
+
+                if (this.ws) {
+                    this.ws.close();
+                }
+
+                const wsUrl = `${Config.WS.replace('/ssh', '/localshell')}`;
+                this.ws = new WebSocket(wsUrl);
+
+                this.ws.onopen = () => {
+                    this.ws.send(JSON.stringify({
+                        type: 'start',
+                        cols: this.term.cols,
+                        rows: this.term.rows
+                    }));
+                };
+
+                this.ws.onmessage = (e) => {
+                    try {
+                        const msg = JSON.parse(e.data);
+                        switch (msg.type) {
+                            case 'started':
+                                this.connected = true;
+                                this.term.clear();
+                                this.updateStatus(true, msg.shell);
+                                Toast.success('本地 Shell 已启动');
+                                this.doFit();
+                                break;
+                            case 'data':
+                                this.term.write(msg.data);
+                                break;
+                            case 'exit':
+                                this.connected = false;
+                                this.updateStatus(false);
+                                this.term.writeln(`\n\x1b[33mShell 已退出 (code: ${msg.exitCode})\x1b[0m`);
+                                Toast.info('Shell 已退出');
+                                break;
+                            case 'error':
+                                Toast.error(msg.message);
+                                this.term.writeln(`\x1b[31m错误: ${msg.message}\x1b[0m`);
+                                break;
+                        }
+                    } catch (err) {
+                        console.error('[LocalShell] 消息解析错误:', err);
+                    }
+                };
+
+                this.ws.onerror = () => {
+                    this.term.writeln('\x1b[31m连接失败，请确保后端服务正在运行\x1b[0m');
+                    Toast.error('WebSocket 连接失败');
+                };
+
+                this.ws.onclose = () => {
+                    if (this.connected) {
+                        this.connected = false;
+                        this.updateStatus(false);
+                    }
+                };
+            },
+
+            stop() {
+                if (this.ws) {
+                    this.ws.send(JSON.stringify({ type: 'stop' }));
+                    this.ws.close();
+                    this.ws = null;
+                }
+                this.connected = false;
+                this.updateStatus(false);
+                this.term.writeln('\n\x1b[33mShell 已停止\x1b[0m');
+                Toast.info('Shell 已停止');
+            },
+
+            updateStatus(running, shell = '') {
+                const status = document.getElementById('shellStatus');
+                const text = document.getElementById('shellStatusText');
+                const startBtn = document.getElementById('shellStartBtn');
+                const stopBtn = document.getElementById('shellStopBtn');
+                const title = document.getElementById('shellTermTitle');
+
+                if (running) {
+                    status.classList.remove('disconnected');
+                    status.classList.add('connected');
+                    text.textContent = '运行中';
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-flex';
+                    title.textContent = `本地终端 - ${shell || this.shellInfo}`;
+                } else {
+                    status.classList.remove('connected');
+                    status.classList.add('disconnected');
+                    text.textContent = '未启动';
+                    startBtn.style.display = 'inline-flex';
+                    stopBtn.style.display = 'none';
+                    title.textContent = '本地终端 - 未启动';
+                }
+            }
+        };
+
         // VNC 远程桌面
         const VNCModule = {
             initialized: false,
@@ -2439,11 +2687,15 @@
             init() {
                 Theme.init();
 
+                // 检查保存的登录状态
+                this.checkSavedLogin();
+
                 // 登录
                 document.getElementById('loginForm').addEventListener('submit', async e => {
                     e.preventDefault();
                     const user = document.getElementById('loginUser').value.trim();
                     const pass = document.getElementById('loginPass').value;
+                    const rememberMe = document.getElementById('rememberMe').checked;
                     try {
                         const res = await fetch(`${Config.API}/api/auth/login`, {
                             method: 'POST',
@@ -2456,6 +2708,8 @@
                             State.isAdmin = data.role === 'admin';
                             State.isGuest = false;
                             State.username = user;
+                            // 保存登录状态
+                            Storage.saveLogin(user, State.isAdmin, rememberMe);
                             this.showDashboard();
                         } else {
                             document.getElementById('loginError').classList.add('show');
@@ -2620,14 +2874,56 @@
                     Users.load();
                 }
                 Terminal_.init();
+                LocalShell.init();
                 Serial.init();
                 VNCModule.init();
                 Hosts.load();
+            },
+            async checkSavedLogin() {
+                const savedLogin = Storage.getLogin();
+                if (savedLogin) {
+                    // 验证保存的登录是否仍然有效
+                    try {
+                        const res = await fetch(`${Config.API}/api/auth/verify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: savedLogin.username })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            State.loggedIn = true;
+                            State.isAdmin = savedLogin.isAdmin;
+                            State.isGuest = false;
+                            State.username = savedLogin.username;
+                            this.showDashboard();
+                            Toast.success(`欢迎回来，${savedLogin.username}`);
+                        } else {
+                            // 验证失败，清除保存的登录状态
+                            Storage.clearLogin();
+                        }
+                    } catch (e) {
+                        console.error('自动登录验证失败:', e);
+                        Storage.clearLogin();
+                    }
+                }
+            },
+            logout() {
+                // 清除登录状态
+                Storage.clearLogin();
+                State.loggedIn = false;
+                State.isAdmin = false;
+                State.isGuest = false;
+                State.username = '';
+                // 显示登录页面
+                document.getElementById('dashboard').classList.remove('visible');
+                document.getElementById('loginOverlay').classList.remove('hidden');
+                Toast.info('已退出登录');
             },
             switchView(name) {
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === name));
                 document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${name}`));
                 if (name === 'ssh') setTimeout(() => Terminal_.doFit(), 100);
+                if (name === 'shell') setTimeout(() => LocalShell.doFit(), 100);
                 if (name === 'serial') setTimeout(() => Serial.doFit(), 100);
                 if (name === 'admin' && State.isAdmin) Users.load();
             }

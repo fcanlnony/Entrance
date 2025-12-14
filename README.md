@@ -1,6 +1,6 @@
 # Entrance Tools
 
-基于 Web 的服务器管理工具，支持 SSH 终端、VNC 远程桌面、WebSerial 串口终端和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题。
+基于 Web 的服务器管理工具，支持 SSH 终端、本地 Shell 终端、VNC 远程桌面、WebSerial 串口终端和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题。
 
 ## 功能特性
 
@@ -9,6 +9,14 @@
 - xterm.js 终端模拟器
 - 支持终端窗口大小自适应
 - 连接状态实时显示
+
+### 本地 Shell 终端
+- 在浏览器中访问服务器本地终端
+- 基于 node-pty 的原生 shell 体验
+- 支持 Windows (cmd/PowerShell) 和 Linux/macOS (bash/zsh)
+- 256 色彩支持
+- 终端大小自适应
+- **可选功能**：需要 node-pty 编译成功才可用
 
 ### VNC 远程桌面
 - 基于 noVNC 的远程桌面连接
@@ -88,6 +96,8 @@ npm start
 .
 ├── index.html      # 前端页面（单文件）
 ├── server.js       # 后端服务器
+├── local-shell.js  # 本地 Shell 模块
+├── vnc.js          # VNC 代理模块
 ├── package.json    # 依赖配置
 ├── users.json      # 用户数据（自动生成）
 └── userdata/       # 用户数据目录（自动生成）
@@ -108,8 +118,13 @@ npm start
 - [Express](https://expressjs.com/) - Web 框架
 - [ws](https://github.com/websockets/ws) - WebSocket
 - [ssh2](https://github.com/mscdex/ssh2) - SSH 客户端
+- [node-pty](https://github.com/microsoft/node-pty) - 本地终端（可选）
 - [multer](https://github.com/expressjs/multer) - 文件上传
 - [archiver](https://github.com/archiverjs/node-archiver) - ZIP 打包
+
+> **注意**：node-pty 是原生模块，需要编译环境。如编译失败，本地 Shell 功能将不可用，但不影响其他功能。
+>
+> openSUSE 安装编译依赖：`sudo zypper install gcc-c++ make python3-devel`
 
 ## API 接口
 
@@ -168,6 +183,28 @@ WebSocket 连接到 `ws://host:port/vnc`，代理转发到目标 VNC 服务器�
 { "type": "connect", "host": "192.168.1.1", "port": 5900 }
 ```
 
+### 本地 Shell (WebSocket)
+
+WebSocket 连接到 `ws://host:port/localshell`，访问服务器本地终端。
+
+消息格式：
+```javascript
+// 启动 shell
+{ "type": "start", "cols": 80, "rows": 24, "cwd": "/home/user" }
+
+// 发送输入
+{ "type": "data", "data": "ls -la\n" }
+
+// 调整窗口大小
+{ "type": "resize", "cols": 120, "rows": 40 }
+
+// 停止 shell
+{ "type": "stop" }
+```
+
+状态检查 API：
+- `GET /api/localshell/status` - 获取本地 shell 服务状态
+
 ### 波形数据格式 (WebSerial)
 
 串口终端支持自动解析波形数据，格式为 `VariableName:NumericValue`：
@@ -194,6 +231,10 @@ Voltage:3.3
   - 定期更新依赖包
 - SSH/SFTP 凭据仅保存在用户浏览器本地或服务端用户数据中
 - 访客数据在关闭网页后自动清除
+- **本地 Shell 安全提示**：本地 Shell 功能允许直接访问服务器终端，请确保：
+  - 仅在受信任的网络环境中使用
+  - 限制访问权限给授权用户
+  - 生产环境中考虑禁用此功能或添加额外认证
 
 ## 许可证
 
