@@ -869,9 +869,9 @@ vncProxy.init(server, '/vnc');
 // ============================================
 const localShellService = localShell.init(server, '/localshell');
 if (localShellService.available) {
-    console.log('[Server] 本地 Shell 服务已启用');
+    console.log('[Server] 本地 Shell 服务已启用 (Linux)');
 } else {
-    console.log('[Server] 本地 Shell 服务不可用 (需要安装 node-pty)');
+    console.log('[Server] 本地 Shell 服务不可用 (仅支持 Linux)');
 }
 
 // 添加本地 shell 状态检查 API
@@ -879,7 +879,8 @@ app.get('/api/localshell/status', (req, res) => {
     res.json({
         available: localShell.isAvailable(),
         sessions: localShell.getSessionCount(),
-        shell: localShell.getDefaultShell()
+        shell: localShell.getDefaultShell(),
+        platform: localShell.getPlatform()
     });
 });
 

@@ -608,7 +608,7 @@
             </div>
             <nav class="sidebar-nav">
                 <div class="nav-item active" data-view="ssh"><i class="fas fa-terminal"></i><span>SSH 终端</span></div>
-                <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>本地 Shell</span></div>
+                <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>本地 Shell</span><span id="shellLinuxBadge" style="font-size:10px;background:var(--color-accent);color:#fff;padding:2px 6px;border-radius:4px;margin-left:auto;display:none">Linux</span></div>
                 <div class="nav-item" data-view="sftp"><i class="fas fa-folder-tree"></i><span>SFTP 管理</span></div>
                 <div class="nav-item" data-view="vnc"><i class="fas fa-desktop"></i><span>VNC 远程</span></div>
                 <div class="nav-item" data-view="serial"><i class="fas fa-microchip"></i><span>串口终端</span></div>
@@ -669,7 +669,7 @@
                 <div class="content">
                     <div id="shellNotAvailable" style="display:none;padding:20px;background:var(--color-bg-2);border-radius:8px;margin-bottom:20px">
                         <p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 本地 Shell 服务不可用</p>
-                        <p style="color:var(--color-text-2);font-size:13px">服务器需要安装 node-pty 依赖。运行: <code style="background:var(--color-bg-3);padding:2px 6px;border-radius:4px">npm install node-pty</code></p>
+                        <p id="shellNotAvailableReason" style="color:var(--color-text-2);font-size:13px">此功能仅支持 Linux 服务器</p>
                     </div>
                     <div class="sftp-status disconnected" id="shellStatus">
                         <div class="status-dot"></div>
@@ -2401,9 +2401,19 @@
                     const data = await res.json();
                     this.available = data.available;
                     this.shellInfo = data.shell || '';
+                    this.platform = data.platform || 'unknown';
+
+                    // 显示 Linux 标签
+                    document.getElementById('shellLinuxBadge').style.display = 'inline';
+
                     if (!this.available) {
                         document.getElementById('shellNotAvailable').style.display = 'block';
                         document.getElementById('shellStartBtn').disabled = true;
+                        // 显示具体原因
+                        if (this.platform !== 'linux') {
+                            document.getElementById('shellNotAvailableReason').innerHTML =
+                                `此功能仅支持 Linux 服务器<br><small style="color:var(--color-text-3)">当前服务器: ${this.platform}</small>`;
+                        }
                     } else {
                         document.getElementById('shellInfo').textContent = this.shellInfo;
                     }
@@ -2411,6 +2421,7 @@
                     console.error('[LocalShell] 检查状态失败:', e);
                     document.getElementById('shellNotAvailable').style.display = 'block';
                     document.getElementById('shellStartBtn').disabled = true;
+                    document.getElementById('shellLinuxBadge').style.display = 'inline';
                 }
 
                 // 初始化终端
