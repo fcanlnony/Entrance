@@ -12,11 +12,11 @@
 
 ### 本地 Shell 终端
 - 在浏览器中访问服务器本地终端
-- 基于 node-pty 的原生 shell 体验
-- 支持 Windows (cmd/PowerShell) 和 Linux/macOS (bash/zsh)
+- 基于 script + child_process 实现，无需编译原生模块
+- **仅支持 Linux 系统**
+- 支持自定义 Shell（bash/zsh/fish 等）
 - 256 色彩支持
 - 终端大小自适应
-- **可选功能**：需要 node-pty 编译成功才可用
 
 ### VNC 远程桌面
 - 基于 noVNC 的远程桌面连接
@@ -118,13 +118,11 @@ npm start
 - [Express](https://expressjs.com/) - Web 框架
 - [ws](https://github.com/websockets/ws) - WebSocket
 - [ssh2](https://github.com/mscdex/ssh2) - SSH 客户端
-- [node-pty](https://github.com/microsoft/node-pty) - 本地终端（可选）
+- script + child_process - 本地终端（Linux 原生，无需编译）
 - [multer](https://github.com/expressjs/multer) - 文件上传
 - [archiver](https://github.com/archiverjs/node-archiver) - ZIP 打包
 
-> **注意**：node-pty 是原生模块，需要编译环境。如编译失败，本地 Shell 功能将不可用，但不影响其他功能。
->
-> openSUSE 安装编译依赖：`sudo zypper install gcc-c++ make python3-devel`
+> **注意**：本地 Shell 功能仅支持 Linux 系统，使用 `script` 命令实现 PTY 功能，无需额外编译依赖。
 
 ## API 接口
 
@@ -231,7 +229,7 @@ Voltage:3.3
   - 定期更新依赖包
 - SSH/SFTP 凭据仅保存在用户浏览器本地或服务端用户数据中
 - 访客数据在关闭网页后自动清除
-- **本地 Shell 安全提示**：本地 Shell 功能允许直接访问服务器终端，请确保：
+- **本地 Shell 安全提示**（仅 Linux）：本地 Shell 功能允许直接访问服务器终端，请确保：
   - 仅在受信任的网络环境中使用
   - 限制访问权限给授权用户
   - 生产环境中考虑禁用此功能或添加额外认证
