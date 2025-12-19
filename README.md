@@ -236,7 +236,7 @@ Voltage:3.3
 
 ## 许可证
 
-MIT License
+GPL-3.0 License
 
 ## 贡献
 
