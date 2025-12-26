@@ -2110,9 +2110,11 @@
                     ];
 
                     lines.forEach(line => {
-                        const waveformData = this.parseWaveformLine(line);
-                        if (waveformData && this.waveformActive && this.waveformVisualizer) {
-                            this.waveformVisualizer.pushData(waveformData.key, waveformData.value);
+                        const waveformDataArray = this.parseWaveformLine(line);
+                        if (waveformDataArray && this.waveformActive && this.waveformVisualizer) {
+                            waveformDataArray.forEach(data => {
+                                this.waveformVisualizer.pushData(data.key, data.value);
+                            });
                         }
                     });
 
@@ -2153,14 +2155,26 @@
             },
 
             // Parse data line for waveform format (Variable:Value)
+            // Supports both single value and comma-separated multiple values
             parseWaveformLine(line) {
                 // Match format: VariableName:NumericValue
-                // Examples: ADC1:1024, Temp:25.5, Sin:-0.5
-                const match = line.trim().match(/^([A-Za-z_][A-Za-z0-9_]*):(-?\d+\.?\d*)$/);
-                if (match) {
-                    return { key: match[1], value: parseFloat(match[2]) };
+                // Examples:
+                //   Single: ADC1:1024, Temp:25.5, Sin:-0.5
+                //   Multiple: a:2, b:4, temp:25.5
+                const trimmedLine = line.trim();
+
+                // Try to parse as comma-separated values first
+                const pairs = trimmedLine.split(',').map(pair => pair.trim());
+                const results = [];
+
+                for (const pair of pairs) {
+                    const match = pair.match(/^([A-Za-z_][A-Za-z0-9_]*):(-?\d+\.?\d*)$/);
+                    if (match) {
+                        results.push({ key: match[1], value: parseFloat(match[2]) });
+                    }
                 }
-                return null;
+
+                return results.length > 0 ? results : null;
             },
 
             doFit() {
@@ -2243,20 +2257,22 @@
                                 this.lineBuffer = this.lineBuffer.substring(newlineIdx + 1);
 
                                 // Try to parse as waveform data
-                                const waveformData = this.parseWaveformLine(line);
-                                if (waveformData && this.waveformActive && this.waveformVisualizer) {
-                                    // Route to waveform visualizer
-                                    this.waveformVisualizer.pushData(waveformData.key, waveformData.value);
+                                const waveformDataArray = this.parseWaveformLine(line);
+                                if (waveformDataArray && this.waveformActive && this.waveformVisualizer) {
+                                    // Route to waveform visualizer - process all parsed values
+                                    waveformDataArray.forEach(data => {
+                                        this.waveformVisualizer.pushData(data.key, data.value);
+                                    });
+                                }
+
+                                // Always print to terminal
+                                if (showHex()) {
+                                    const hex = Array.from(new TextEncoder().encode(line + '\n'))
+                                        .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+                                        .join(' ');
+                                    this.term.write(`\x1b[33m${hex}\x1b[0m `);
                                 } else {
-                                    // Not waveform data or waveform inactive - print to terminal
-                                    if (showHex()) {
-                                        const hex = Array.from(new TextEncoder().encode(line + '\n'))
-                                            .map(b => b.toString(16).padStart(2, '0').toUpperCase())
-                                            .join(' ');
-                                        this.term.write(`\x1b[33m${hex}\x1b[0m `);
-                                    } else {
-                                        this.term.writeln(line);
-                                    }
+                                    this.term.writeln(line);
                                 }
                             }
 
