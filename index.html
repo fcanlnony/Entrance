@@ -461,6 +461,57 @@
             font-size: 14px;
         }
 
+        /* Stat Chart Visualization */
+        .statchart-container {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            background: var(--color-bg-acrylic);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            display: none;
+            transition: all .3s ease;
+        }
+        .statchart-container.active {
+            display: block;
+        }
+        .statchart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--color-bg-2);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .statchart-header h4 {
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .statchart-header h4 i {
+            color: var(--color-accent);
+        }
+        .statchart-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .statchart-chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 40px);
+            padding: 8px;
+        }
+        .statchart-chart-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
         /* Waveform Visualization */
         .waveform-container {
             position: relative;
@@ -883,6 +934,7 @@
                         <div class="status-dot"></div>
                         <span class="sftp-status-text" id="serialStatusText">未连接</span>
                         <button class="btn btn-sm btn-secondary" id="serialWaveformBtn" title="波形显示"><i class="fas fa-chart-line"></i> 波形</button>
+                        <button class="btn btn-sm btn-secondary" id="serialStatChartBtn" title="统计图"><i class="fas fa-chart-bar"></i> 统计</button>
                         <button class="btn btn-danger btn-sm" id="serialDisconnectBtn" style="display:none"><i class="fas fa-times"></i> 断开</button>
                     </div>
                     <!-- Waveform Visualization Container -->
@@ -898,6 +950,18 @@
                         <div class="waveform-chart-wrapper">
                             <canvas id="waveformCanvas"></canvas>
                             <div class="waveform-legend" id="waveformLegend"></div>
+                        </div>
+                    </div>
+                    <!-- Stat Chart Visualization Container -->
+                    <div class="statchart-container" id="statChartContainer">
+                        <div class="statchart-header">
+                            <h4><i class="fas fa-chart-bar"></i> 统计图</h4>
+                            <div class="statchart-controls">
+                                <button class="btn btn-sm btn-secondary" id="statChartClearBtn"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="statchart-chart-wrapper">
+                            <canvas id="statChartCanvas"></canvas>
                         </div>
                     </div>
                     <div id="serialNotSupported" style="display:none;padding:20px;background:var(--color-bg-2);border-radius:8px;margin-bottom:20px">
@@ -1991,6 +2055,212 @@
             }
         }
 
+        // StatChart Visualizer - Bar chart for statistics data
+        // Format: var:[a:2, b:3, c:5, d:6] or multiple: var1:[a:4, b:6], var2:[a:6, b:3]
+        class StatChartVisualizer {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.chart = null;
+                this.datasets = new Map(); // Map<varName, Map<subKey, value>>
+                this.frameId = null;
+                this.pendingUpdates = false;
+
+                // Color palette for sub-variables (a, b, c, d, etc.)
+                this.colorPalette = [
+                    '#0078D7', '#107c10', '#e81123', '#ff8c00',
+                    '#881798', '#3a96dd', '#00cc6a', '#f7630c',
+                    '#ea005e', '#00b7c3', '#8764b8', '#567c73',
+                    '#c239b3', '#6b69d6', '#038387', '#ca5010'
+                ];
+                this.subKeyColors = new Map(); // Map<subKey, color>
+                this.colorIndex = 0;
+
+                this._initChart();
+            }
+
+            _initChart() {
+                const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+                this.chart = new Chart(this.ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: [], // Variable names (var1, var2, ...)
+                        datasets: [] // Each dataset is a sub-key (a, b, c, d, ...)
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 300 },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: isDark ? '#a0a0a0' : '#666',
+                                    font: { size: 11 },
+                                    boxWidth: 12,
+                                    padding: 8
+                                }
+                            },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: isDark ? 'rgba(32,32,32,0.9)' : 'rgba(255,255,255,0.9)',
+                                titleColor: isDark ? '#fff' : '#1a1a1a',
+                                bodyColor: isDark ? '#a0a0a0' : '#666',
+                                borderColor: isDark ? '#3a3a3a' : '#d0d0d0',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                grid: {
+                                    color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: isDark ? '#a0a0a0' : '#666',
+                                    font: { size: 11 }
+                                }
+                            },
+                            y: {
+                                display: true,
+                                beginAtZero: true,
+                                grid: {
+                                    color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: isDark ? '#a0a0a0' : '#666',
+                                    font: { size: 11 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            _getColorForSubKey(subKey) {
+                if (!this.subKeyColors.has(subKey)) {
+                    const color = this.colorPalette[this.colorIndex % this.colorPalette.length];
+                    this.subKeyColors.set(subKey, color);
+                    this.colorIndex++;
+                }
+                return this.subKeyColors.get(subKey);
+            }
+
+            // Parse format: var:[a:2, b:3, c:5] or var1:[a:4, b:6], var2:[a:6, b:3]
+            parseStatLine(line) {
+                const results = [];
+                // Match pattern: varName:[key:value, key:value, ...]
+                const regex = /([A-Za-z_][A-Za-z0-9_]*):\s*\[([^\]]+)\]/g;
+                let match;
+
+                while ((match = regex.exec(line)) !== null) {
+                    const varName = match[1];
+                    const content = match[2];
+                    const pairs = {};
+
+                    // Parse key:value pairs inside brackets
+                    const pairRegex = /([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(-?\d+\.?\d*)/g;
+                    let pairMatch;
+                    while ((pairMatch = pairRegex.exec(content)) !== null) {
+                        pairs[pairMatch[1]] = parseFloat(pairMatch[2]);
+                    }
+
+                    if (Object.keys(pairs).length > 0) {
+                        results.push({ varName, pairs });
+                    }
+                }
+
+                return results.length > 0 ? results : null;
+            }
+
+            pushData(varName, pairs) {
+                if (!this.datasets.has(varName)) {
+                    this.datasets.set(varName, new Map());
+                }
+                const varData = this.datasets.get(varName);
+
+                for (const [subKey, value] of Object.entries(pairs)) {
+                    varData.set(subKey, value);
+                }
+
+                this.pendingUpdates = true;
+                this._scheduleRender();
+            }
+
+            _scheduleRender() {
+                if (this.frameId) return;
+
+                this.frameId = requestAnimationFrame(() => {
+                    this.frameId = null;
+                    if (this.pendingUpdates) {
+                        this._render();
+                        this.pendingUpdates = false;
+                    }
+                });
+            }
+
+            _render() {
+                // Collect all unique sub-keys across all variables
+                const allSubKeys = new Set();
+                this.datasets.forEach((varData) => {
+                    varData.forEach((_, subKey) => allSubKeys.add(subKey));
+                });
+
+                // Sort sub-keys for consistent ordering
+                const sortedSubKeys = Array.from(allSubKeys).sort();
+
+                // Variable names as labels
+                const varNames = Array.from(this.datasets.keys());
+
+                // Build datasets (one per sub-key)
+                const chartDatasets = sortedSubKeys.map(subKey => {
+                    const color = this._getColorForSubKey(subKey);
+                    const data = varNames.map(varName => {
+                        const varData = this.datasets.get(varName);
+                        return varData.has(subKey) ? varData.get(subKey) : 0;
+                    });
+
+                    return {
+                        label: subKey,
+                        data: data,
+                        backgroundColor: color + 'CC',
+                        borderColor: color,
+                        borderWidth: 1
+                    };
+                });
+
+                this.chart.data.labels = varNames;
+                this.chart.data.datasets = chartDatasets;
+                this.chart.update('none');
+            }
+
+            clear() {
+                this.datasets.clear();
+                this.subKeyColors.clear();
+                this.colorIndex = 0;
+                this.chart.data.labels = [];
+                this.chart.data.datasets = [];
+                this.chart.update('none');
+            }
+
+            destroy() {
+                if (this.frameId) {
+                    cancelAnimationFrame(this.frameId);
+                }
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+            }
+        }
+
         // 串口终端 (WebSerial API)
         const Serial = {
             port: null,
@@ -2003,6 +2273,9 @@
             // Waveform visualization
             waveformVisualizer: null,
             waveformActive: false,
+            // Stat chart visualization
+            statChartVisualizer: null,
+            statChartActive: false,
             lineBuffer: '', // Buffer for line-based parsing
             // Demo mode
             demoMode: false,
@@ -2061,6 +2334,10 @@
                     }
                 });
 
+                // Stat chart event handlers
+                document.getElementById('serialStatChartBtn').addEventListener('click', () => this.toggleStatChart());
+                document.getElementById('statChartClearBtn').addEventListener('click', () => this.clearStatChart());
+
                 // Demo mode button
                 document.getElementById('serialDemoBtn').addEventListener('click', () => this.startDemo());
             },
@@ -2078,8 +2355,9 @@
                 this.updateStatus(true, true);
                 this.term.clear();
                 this.term.writeln('\x1b[32m演示模式已启动 (模拟数据)\x1b[0m');
-                this.term.writeln('\x1b[90m生成 Sin, Cos, Sin3Hz, ADC, Temp 五个变量的模拟数据\x1b[0m');
-                this.term.writeln('\x1b[90m点击 "波形" 按钮查看实时波形\x1b[0m\n');
+                this.term.writeln('\x1b[90m波形数据: Sin, Cos, Sin3Hz, ADC, Temp\x1b[0m');
+                this.term.writeln('\x1b[90m统计数据: stats:[a:x, b:x, c:x, d:x] 格式\x1b[0m');
+                this.term.writeln('\x1b[90m点击 "波形" 或 "统计" 按钮查看实时图表\x1b[0m\n');
 
                 // Auto-enable waveform view
                 if (!this.waveformActive) {
@@ -2118,6 +2396,25 @@
                         }
                     });
 
+                    // Generate stat chart data every 500ms (every 25 frames)
+                    if (Math.floor(this.demoTime * 50) % 25 === 0) {
+                        const a = Math.floor(Math.random() * 10 + 1);
+                        const b = Math.floor(Math.random() * 10 + 1);
+                        const c = Math.floor(Math.random() * 10 + 1);
+                        const d = Math.floor(Math.random() * 10 + 1);
+                        const statLine = `stats:[a:${a}, b:${b}, c:${c}, d:${d}]`;
+
+                        // Parse and display stat chart data
+                        if (this.statChartActive && this.statChartVisualizer) {
+                            const statData = this.statChartVisualizer.parseStatLine(statLine);
+                            if (statData) {
+                                statData.forEach(item => {
+                                    this.statChartVisualizer.pushData(item.varName, item.pairs);
+                                });
+                            }
+                        }
+                    }
+
                     this.demoTime += 0.02; // 50Hz = 20ms interval
                 }, 20);
             },
@@ -2152,6 +2449,33 @@
                 if (this.waveformVisualizer) {
                     this.waveformVisualizer.clear();
                 }
+            },
+
+            // Toggle stat chart visualization
+            toggleStatChart() {
+                const container = document.getElementById('statChartContainer');
+                const btn = document.getElementById('serialStatChartBtn');
+
+                this.statChartActive = !this.statChartActive;
+                container.classList.toggle('active', this.statChartActive);
+                btn.classList.toggle('btn-secondary', !this.statChartActive);
+                btn.classList.toggle('btn-success', this.statChartActive);
+
+                if (this.statChartActive && !this.statChartVisualizer) {
+                    this.statChartVisualizer = new StatChartVisualizer('statChartCanvas');
+                }
+            },
+
+            // Clear stat chart data
+            clearStatChart() {
+                if (this.statChartVisualizer) {
+                    this.statChartVisualizer.clear();
+                }
+            },
+
+            // Check if line matches stat chart format (var:[a:2, b:3])
+            isStatChartFormat(line) {
+                return /[A-Za-z_][A-Za-z0-9_]*:\s*\[[^\]]+\]/.test(line);
             },
 
             // Parse data line for waveform format (Variable:Value)
@@ -2256,13 +2580,27 @@
                                 const line = this.lineBuffer.substring(0, newlineIdx).replace(/\r$/, '');
                                 this.lineBuffer = this.lineBuffer.substring(newlineIdx + 1);
 
-                                // Try to parse as waveform data
-                                const waveformDataArray = this.parseWaveformLine(line);
-                                if (waveformDataArray && this.waveformActive && this.waveformVisualizer) {
-                                    // Route to waveform visualizer - process all parsed values
-                                    waveformDataArray.forEach(data => {
-                                        this.waveformVisualizer.pushData(data.key, data.value);
-                                    });
+                                // Check if line matches stat chart format (var:[a:2, b:3])
+                                const isStatData = this.isStatChartFormat(line);
+
+                                // Parse stat chart data if format matches
+                                if (isStatData && this.statChartActive && this.statChartVisualizer) {
+                                    const statData = this.statChartVisualizer.parseStatLine(line);
+                                    if (statData) {
+                                        statData.forEach(item => {
+                                            this.statChartVisualizer.pushData(item.varName, item.pairs);
+                                        });
+                                    }
+                                }
+
+                                // Only parse as waveform if NOT stat chart format
+                                if (!isStatData) {
+                                    const waveformDataArray = this.parseWaveformLine(line);
+                                    if (waveformDataArray && this.waveformActive && this.waveformVisualizer) {
+                                        waveformDataArray.forEach(data => {
+                                            this.waveformVisualizer.pushData(data.key, data.value);
+                                        });
+                                    }
                                 }
 
                                 // Always print to terminal
