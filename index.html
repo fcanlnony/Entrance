@@ -258,26 +258,40 @@
         .sys-stats-hint {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
+            justify-content: space-between;
             padding: 6px 12px;
             font-size: 12px;
-            color: var(--color-text-3);
             cursor: pointer;
-            transition: color .2s, background .2s;
+            transition: background .2s;
         }
         .sys-stats-hint:hover {
-            color: var(--color-accent);
             background: var(--color-bg-3);
         }
-        .sys-stats-hint i {
+        .sys-stats-hint .hint-stats {
+            display: flex;
+            gap: 16px;
+        }
+        .sys-stats-hint .hint-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sys-stats-hint .hint-cpu { color: #0078D7; }
+        .sys-stats-hint .hint-mem { color: #107c10; }
+        .sys-stats-hint .hint-disk { color: #ff8c00; }
+        .sys-stats-hint .hint-expand {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--color-text-3);
             font-size: 11px;
         }
-        .sys-stats-container.active .sys-stats-hint {
-            display: none;
+        .sys-stats-hint:hover .hint-expand {
+            color: var(--color-accent);
         }
         .sys-stats-panel {
             display: none;
+            border-top: 1px solid var(--color-border);
         }
         .sys-stats-container.active .sys-stats-panel {
             display: block;
@@ -285,44 +299,16 @@
         .sys-stats-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 10px 16px;
+            justify-content: flex-end;
+            padding: 8px 12px;
             background: var(--color-bg-2);
             border-bottom: 1px solid var(--color-border);
-        }
-        .sys-stats-header h4 {
-            font-size: 13px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .sys-stats-header h4 i {
-            color: var(--color-accent);
         }
         .sys-stats-controls {
             display: flex;
             gap: 8px;
             align-items: center;
         }
-        .sys-stats-info {
-            display: flex;
-            gap: 16px;
-            font-size: 12px;
-            color: var(--color-text-2);
-        }
-        .sys-stats-info .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .sys-stats-info .stat-value {
-            font-weight: 600;
-            color: var(--color-text);
-        }
-        .sys-stats-info .stat-cpu { color: #0078D7; }
-        .sys-stats-info .stat-mem { color: #107c10; }
-        .sys-stats-info .stat-disk { color: #ff8c00; }
         .sys-stats-chart-wrapper {
             position: relative;
             width: 100%;
@@ -803,29 +789,33 @@
                     <!-- System Stats Monitor -->
                     <div class="sys-stats-container" id="sysStatsContainer">
                         <div class="sys-stats-hint" id="sysStatsHint">
-                            <i class="fas fa-chart-area"></i>
-                            <span>点击开启系统监控 (CPU / 内存 / 磁盘)</span>
+                            <div class="hint-stats">
+                                <div class="hint-stat hint-cpu">
+                                    <i class="fas fa-microchip"></i>
+                                    <span>CPU:</span>
+                                    <span id="statCpuValue">--%</span>
+                                </div>
+                                <div class="hint-stat hint-mem">
+                                    <i class="fas fa-memory"></i>
+                                    <span>内存:</span>
+                                    <span id="statMemValue">--%</span>
+                                </div>
+                                <div class="hint-stat hint-disk">
+                                    <i class="fas fa-hdd"></i>
+                                    <span>I/O:</span>
+                                    <span id="statDiskValue">-- KB/s</span>
+                                </div>
+                            </div>
+                            <div class="hint-expand">
+                                <span>展开图表</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
                         </div>
                         <div class="sys-stats-panel">
                             <div class="sys-stats-header">
-                                <h4><i class="fas fa-microchip"></i> 系统监控</h4>
-                                <div class="sys-stats-info">
-                                    <div class="stat-item">
-                                        <span>CPU:</span>
-                                        <span class="stat-value stat-cpu" id="statCpuValue">--%</span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span>内存:</span>
-                                        <span class="stat-value stat-mem" id="statMemValue">--%</span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span>磁盘:</span>
-                                        <span class="stat-value stat-disk" id="statDiskValue">-- KB/s</span>
-                                    </div>
-                                </div>
                                 <div class="sys-stats-controls">
                                     <button class="btn btn-sm btn-secondary" id="sysStatsClearBtn" title="清除数据"><i class="fas fa-trash"></i></button>
-                                    <button class="btn btn-sm btn-secondary" id="sysStatsCloseBtn" title="关闭"><i class="fas fa-times"></i></button>
+                                    <button class="btn btn-sm btn-secondary" id="sysStatsCloseBtn" title="收起"><i class="fas fa-chevron-up"></i></button>
                                 </div>
                             </div>
                             <div class="sys-stats-chart-wrapper">
@@ -1425,7 +1415,8 @@
         const Terminal_ = {
             term: null, fit: null, ws: null, host: null,
             // System stats monitoring
-            statsActive: false,
+            statsActive: false,      // 是否正在采集数据
+            chartExpanded: false,    // 图表是否展开
             statsVisualizer: null,
             lastCpuStat: null,
             init() {
@@ -1483,6 +1474,8 @@
                             this.updateStatus(true);
                             Toast.success(`已连接到 ${host}`);
                             this.doFit();
+                            // 自动开始采集系统数据
+                            this.startStats();
                             break;
                         case 'data': this.term.write(msg.data); break;
                         case 'stats': this.handleStats(msg.data); break;
@@ -1524,7 +1517,22 @@
                     title.textContent = '终端 - 未连接';
                 }
             },
-            // Toggle system stats monitoring
+            // Start stats collection (called on SSH connect)
+            startStats() {
+                if (this.statsActive) return;
+
+                // Initialize visualizer if needed
+                if (!this.statsVisualizer) {
+                    this.statsVisualizer = new SysStatsVisualizer('sysStatsCanvas');
+                }
+                this.statsActive = true;
+
+                // Start stats collection on server
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ type: 'startStats' }));
+                }
+            },
+            // Toggle chart expansion (show/hide waveform)
             toggleStats() {
                 if (!State.sshConnected) {
                     Toast.error('请先连接 SSH');
@@ -1532,29 +1540,26 @@
                 }
                 const container = document.getElementById('sysStatsContainer');
 
-                if (this.statsActive) {
-                    this.stopStats();
-                } else {
-                    // Initialize visualizer if needed
-                    if (!this.statsVisualizer) {
-                        this.statsVisualizer = new SysStatsVisualizer('sysStatsCanvas');
-                    }
-                    this.statsActive = true;
+                this.chartExpanded = !this.chartExpanded;
+                if (this.chartExpanded) {
                     container.classList.add('active');
-
-                    // Start stats collection
-                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                        this.ws.send(JSON.stringify({ type: 'startStats' }));
-                    }
+                } else {
+                    container.classList.remove('active');
                 }
             },
-            // Stop system stats monitoring
+            // Stop stats collection (called on SSH disconnect)
             stopStats() {
                 const container = document.getElementById('sysStatsContainer');
 
                 this.statsActive = false;
+                this.chartExpanded = false;
                 this.lastCpuStat = null;
                 container.classList.remove('active');
+
+                // Reset display values
+                document.getElementById('statCpuValue').textContent = '--%';
+                document.getElementById('statMemValue').textContent = '--%';
+                document.getElementById('statDiskValue').textContent = '-- KB/s';
 
                 // Stop stats collection on server
                 if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -1570,7 +1575,7 @@
             },
             // Handle stats data from server
             handleStats(data) {
-                if (!this.statsActive || !this.statsVisualizer) return;
+                if (!this.statsVisualizer) return;
 
                 const currentTime = Date.now();
 
@@ -1607,8 +1612,13 @@
                     }
                 }
 
-                // Push data to chart (skip first CPU reading as we need delta)
+                // Update display values (always, for the hint bar)
                 if (this.lastCpuStat) {
+                    document.getElementById('statCpuValue').textContent = cpuPercent.toFixed(1) + '%';
+                    document.getElementById('statMemValue').textContent = memPercent.toFixed(1) + '%';
+                    document.getElementById('statDiskValue').textContent = (diskRead + diskWrite).toFixed(1) + ' KB/s';
+
+                    // Push data to chart
                     this.statsVisualizer.pushData(cpuPercent, memPercent, diskRead, diskWrite);
                 }
             }
@@ -2706,11 +2716,6 @@
                     this.diskWriteData.shift();
                     this.labels.shift();
                 }
-
-                // Update display values
-                document.getElementById('statCpuValue').textContent = cpu.toFixed(1) + '%';
-                document.getElementById('statMemValue').textContent = mem.toFixed(1) + '%';
-                document.getElementById('statDiskValue').textContent = (diskRead + diskWrite).toFixed(1) + ' KB/s';
 
                 this.chart.update('none');
             }
