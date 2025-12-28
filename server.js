@@ -444,6 +444,50 @@ wss.on('connection', (ws, req) => {
 
     let sshClient = null;
     let stream = null;
+    let statsInterval = null;
+
+    // Function to collect system stats via SSH exec
+    const collectStats = () => {
+        if (!sshClient || ws.readyState !== WebSocket.OPEN) {
+            if (statsInterval) {
+                clearInterval(statsInterval);
+                statsInterval = null;
+            }
+            return;
+        }
+
+        // Execute commands to get /proc stats
+        const cmd = 'cat /proc/stat; echo "---SEPARATOR---"; cat /proc/meminfo; echo "---SEPARATOR---"; cat /proc/diskstats';
+
+        sshClient.exec(cmd, (err, execStream) => {
+            if (err) {
+                console.error('[Stats] 执行命令错误:', err.message);
+                return;
+            }
+
+            let output = '';
+            execStream.on('data', (chunk) => {
+                output += chunk.toString();
+            });
+            execStream.on('close', () => {
+                const parts = output.split('---SEPARATOR---');
+                if (parts.length >= 3) {
+                    try {
+                        ws.send(JSON.stringify({
+                            type: 'stats',
+                            data: {
+                                stat: parts[0].trim(),
+                                meminfo: parts[1].trim(),
+                                diskstats: parts[2].trim()
+                            }
+                        }));
+                    } catch (e) {
+                        console.error('[Stats] 发送数据错误:', e.message);
+                    }
+                }
+            });
+        });
+    };
 
     ws.on('message', (message) => {
         try {
@@ -528,8 +572,29 @@ wss.on('connection', (ws, req) => {
                     break;
 
                 case 'disconnect':
+                    if (statsInterval) {
+                        clearInterval(statsInterval);
+                        statsInterval = null;
+                    }
                     if (stream) stream.end();
                     if (sshClient) sshClient.end();
+                    break;
+
+                case 'startStats':
+                    if (sshClient && !statsInterval) {
+                        console.log('[Stats] 开始系统监控');
+                        // Collect immediately, then every 1 second
+                        collectStats();
+                        statsInterval = setInterval(collectStats, 1000);
+                    }
+                    break;
+
+                case 'stopStats':
+                    if (statsInterval) {
+                        console.log('[Stats] 停止系统监控');
+                        clearInterval(statsInterval);
+                        statsInterval = null;
+                    }
                     break;
             }
         } catch (err) {
@@ -539,6 +604,10 @@ wss.on('connection', (ws, req) => {
     });
 
     ws.on('close', () => {
+        if (statsInterval) {
+            clearInterval(statsInterval);
+            statsInterval = null;
+        }
         if (stream) stream.end();
         if (sshClient) sshClient.end();
     });

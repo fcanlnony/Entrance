@@ -9,6 +9,12 @@
 - xterm.js 终端模拟器
 - 支持终端窗口大小自适应
 - 连接状态实时显示
+- **系统监控** - 实时性能监控功能
+  - CPU 使用率（基于 /proc/stat）
+  - 内存使用率（基于 /proc/meminfo）
+  - 磁盘读写速度（基于 /proc/diskstats）
+  - Chart.js 折线图实时显示
+  - 1秒采样间隔，最多显示60个数据点
 
 ### 本地 Shell 终端
 - 在浏览器中访问服务器本地终端
@@ -173,6 +179,24 @@ WebSocket 连接到 `ws://host:port/ssh`，消息格式：
 
 // 断开连接
 { "type": "disconnect" }
+
+// 开始系统监控（每秒采集 /proc/stat, /proc/meminfo, /proc/diskstats）
+{ "type": "startStats" }
+
+// 停止系统监控
+{ "type": "stopStats" }
+```
+
+服务器返回的系统监控数据格式：
+```javascript
+{
+  "type": "stats",
+  "data": {
+    "stat": "cpu  12345 678 ...",      // /proc/stat 内容
+    "meminfo": "MemTotal: ...",         // /proc/meminfo 内容
+    "diskstats": "8 0 sda ..."          // /proc/diskstats 内容
+  }
+}
 ```
 
 ### VNC (WebSocket)

@@ -246,6 +246,71 @@
         .terminal-status.disconnected { color: #6a6a6a; }
         #terminal { flex: 1; }
 
+        /* System Stats Monitor */
+        .sys-stats-container {
+            margin-top: 16px;
+            background: var(--color-bg-1);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+            transition: all .3s ease;
+        }
+        .sys-stats-container.active {
+            display: block;
+        }
+        .sys-stats-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--color-bg-2);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .sys-stats-header h4 {
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sys-stats-header h4 i {
+            color: var(--color-accent);
+        }
+        .sys-stats-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .sys-stats-info {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--color-text-2);
+        }
+        .sys-stats-info .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sys-stats-info .stat-value {
+            font-weight: 600;
+            color: var(--color-text);
+        }
+        .sys-stats-info .stat-cpu { color: #0078D7; }
+        .sys-stats-info .stat-mem { color: #107c10; }
+        .sys-stats-info .stat-disk { color: #ff8c00; }
+        .sys-stats-chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            padding: 8px 12px;
+        }
+        .sys-stats-chart-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
         /* SFTP */
         .sftp-status {
             display: flex; align-items: center; gap: 12px;
@@ -707,9 +772,39 @@
                             <div class="terminal-dot yellow"></div>
                             <div class="terminal-dot green"></div>
                             <span class="terminal-title" id="termTitle">终端 - 未连接</span>
+                            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+                                <button class="btn btn-sm btn-secondary" id="sshStatsBtn" title="系统监控"><i class="fas fa-chart-area"></i></button>
+                            </div>
                             <div class="terminal-status disconnected" id="termStatus"><i class="fas fa-circle"></i><span>未连接</span></div>
                         </div>
                         <div id="terminal"></div>
+                    </div>
+                    <!-- System Stats Monitor -->
+                    <div class="sys-stats-container" id="sysStatsContainer">
+                        <div class="sys-stats-header">
+                            <h4><i class="fas fa-microchip"></i> 系统监控</h4>
+                            <div class="sys-stats-info">
+                                <div class="stat-item">
+                                    <span>CPU:</span>
+                                    <span class="stat-value stat-cpu" id="statCpuValue">--%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>内存:</span>
+                                    <span class="stat-value stat-mem" id="statMemValue">--%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>磁盘:</span>
+                                    <span class="stat-value stat-disk" id="statDiskValue">-- KB/s</span>
+                                </div>
+                            </div>
+                            <div class="sys-stats-controls">
+                                <button class="btn btn-sm btn-secondary" id="sysStatsClearBtn" title="清除数据"><i class="fas fa-trash"></i></button>
+                                <button class="btn btn-sm btn-secondary" id="sysStatsCloseBtn" title="关闭"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                        <div class="sys-stats-chart-wrapper">
+                            <canvas id="sysStatsCanvas"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1302,6 +1397,10 @@
         // 终端
         const Terminal_ = {
             term: null, fit: null, ws: null, host: null,
+            // System stats monitoring
+            statsActive: false,
+            statsVisualizer: null,
+            lastCpuStat: null,
             init() {
                 this.term = new Terminal({
                     theme: {
@@ -1359,6 +1458,7 @@
                             this.doFit();
                             break;
                         case 'data': this.term.write(msg.data); break;
+                        case 'stats': this.handleStats(msg.data); break;
                         case 'error':
                             this.term.writeln(`\x1b[31m错误: ${msg.message}\x1b[0m`);
                             Toast.error(msg.message);
@@ -1366,6 +1466,7 @@
                         case 'disconnected':
                             State.sshConnected = false;
                             this.host = null;
+                            this.stopStats();
                             this.updateStatus(false);
                             this.term.writeln('\n\x1b[33m连接已断开\x1b[0m');
                             Toast.info('SSH 连接已断开');
@@ -1394,6 +1495,100 @@
                     status.className = 'terminal-status disconnected';
                     status.innerHTML = '<i class="fas fa-circle"></i><span>未连接</span>';
                     title.textContent = '终端 - 未连接';
+                }
+            },
+            // Toggle system stats monitoring
+            toggleStats() {
+                if (!State.sshConnected) {
+                    Toast.error('请先连接 SSH');
+                    return;
+                }
+                const container = document.getElementById('sysStatsContainer');
+                const btn = document.getElementById('sshStatsBtn');
+
+                if (this.statsActive) {
+                    this.stopStats();
+                } else {
+                    // Initialize visualizer if needed
+                    if (!this.statsVisualizer) {
+                        this.statsVisualizer = new SysStatsVisualizer('sysStatsCanvas');
+                    }
+                    this.statsActive = true;
+                    container.classList.add('active');
+                    btn.classList.add('btn-success');
+                    btn.classList.remove('btn-secondary');
+
+                    // Start stats collection
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'startStats' }));
+                    }
+                }
+            },
+            // Stop system stats monitoring
+            stopStats() {
+                const container = document.getElementById('sysStatsContainer');
+                const btn = document.getElementById('sshStatsBtn');
+
+                this.statsActive = false;
+                this.lastCpuStat = null;
+                container.classList.remove('active');
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-secondary');
+
+                // Stop stats collection on server
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ type: 'stopStats' }));
+                }
+            },
+            // Clear stats data
+            clearStats() {
+                if (this.statsVisualizer) {
+                    this.statsVisualizer.clear();
+                }
+                this.lastCpuStat = null;
+            },
+            // Handle stats data from server
+            handleStats(data) {
+                if (!this.statsActive || !this.statsVisualizer) return;
+
+                const currentTime = Date.now();
+
+                // Parse CPU stats
+                let cpuPercent = 0;
+                if (data.stat) {
+                    const cpuStat = this.statsVisualizer.parseCpuStat(data.stat.split('\n'));
+                    if (cpuStat && this.lastCpuStat) {
+                        const totalDelta = cpuStat.total - this.lastCpuStat.total;
+                        const busyDelta = cpuStat.busy - this.lastCpuStat.busy;
+                        if (totalDelta > 0) {
+                            cpuPercent = (busyDelta / totalDelta) * 100;
+                        }
+                    }
+                    this.lastCpuStat = cpuStat;
+                }
+
+                // Parse memory stats
+                let memPercent = 0;
+                if (data.meminfo) {
+                    const mem = this.statsVisualizer.parseMemInfo(data.meminfo.split('\n'));
+                    if (mem !== null) {
+                        memPercent = parseFloat(mem);
+                    }
+                }
+
+                // Parse disk stats
+                let diskRead = 0, diskWrite = 0;
+                if (data.diskstats) {
+                    const disk = this.statsVisualizer.parseDiskStats(data.diskstats.split('\n'), currentTime);
+                    if (disk) {
+                        diskRead = disk.read;
+                        diskWrite = disk.write;
+                    }
+                }
+
+                // Push data to chart (skip first CPU reading as we need delta)
+                if (this.lastCpuStat) {
+                    this.statsVisualizer.pushData(cpuPercent, memPercent, diskRead, diskWrite);
                 }
             }
         };
@@ -2255,6 +2450,265 @@
                 if (this.frameId) {
                     cancelAnimationFrame(this.frameId);
                 }
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+            }
+        }
+
+        // System Stats Visualizer - Line chart for CPU, Memory, Disk I/O
+        class SysStatsVisualizer {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.chart = null;
+                this.maxDataPoints = 60; // 60 data points (about 1 minute at 1s interval)
+                this.cpuData = [];
+                this.memData = [];
+                this.diskReadData = [];
+                this.diskWriteData = [];
+                this.labels = [];
+                this.lastDiskStats = null;
+                this.lastDiskTime = null;
+                this._initChart();
+            }
+
+            _initChart() {
+                const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+                this.chart = new Chart(this.ctx, {
+                    type: 'line',
+                    data: {
+                        labels: this.labels,
+                        datasets: [
+                            {
+                                label: 'CPU %',
+                                data: this.cpuData,
+                                borderColor: '#0078D7',
+                                backgroundColor: 'rgba(0, 120, 215, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 0
+                            },
+                            {
+                                label: '内存 %',
+                                data: this.memData,
+                                borderColor: '#107c10',
+                                backgroundColor: 'rgba(16, 124, 16, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 0
+                            },
+                            {
+                                label: '磁盘读 KB/s',
+                                data: this.diskReadData,
+                                borderColor: '#ff8c00',
+                                backgroundColor: 'rgba(255, 140, 0, 0.1)',
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.3,
+                                pointRadius: 0,
+                                yAxisID: 'y1'
+                            },
+                            {
+                                label: '磁盘写 KB/s',
+                                data: this.diskWriteData,
+                                borderColor: '#e81123',
+                                backgroundColor: 'rgba(232, 17, 35, 0.1)',
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.3,
+                                pointRadius: 0,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 0 },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: isDark ? '#a0a0a0' : '#666',
+                                    font: { size: 11 },
+                                    boxWidth: 12,
+                                    padding: 8
+                                }
+                            },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: isDark ? 'rgba(32,32,32,0.9)' : 'rgba(255,255,255,0.9)',
+                                titleColor: isDark ? '#fff' : '#1a1a1a',
+                                bodyColor: isDark ? '#a0a0a0' : '#666',
+                                borderColor: isDark ? '#3a3a3a' : '#d0d0d0',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                display: true,
+                                position: 'left',
+                                min: 0,
+                                max: 100,
+                                grid: {
+                                    color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: isDark ? '#a0a0a0' : '#666',
+                                    font: { size: 10 },
+                                    callback: (value) => value + '%'
+                                }
+                            },
+                            y1: {
+                                display: true,
+                                position: 'right',
+                                min: 0,
+                                grid: {
+                                    drawOnChartArea: false
+                                },
+                                ticks: {
+                                    color: isDark ? '#a0a0a0' : '#666',
+                                    font: { size: 10 },
+                                    callback: (value) => value.toFixed(0) + ' KB/s'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Parse /proc/loadavg output: "0.00 0.01 0.05 1/234 12345"
+            parseLoadAvg(line) {
+                const parts = line.trim().split(/\s+/);
+                if (parts.length >= 3) {
+                    // 1-minute load average, normalize to percentage (rough estimate based on CPU count)
+                    return parseFloat(parts[0]);
+                }
+                return null;
+            }
+
+            // Parse /proc/meminfo output
+            parseMemInfo(lines) {
+                const info = {};
+                for (const line of lines) {
+                    const match = line.match(/^(\w+):\s+(\d+)/);
+                    if (match) {
+                        info[match[1]] = parseInt(match[2]);
+                    }
+                }
+                if (info.MemTotal && info.MemAvailable !== undefined) {
+                    const used = info.MemTotal - info.MemAvailable;
+                    return (used / info.MemTotal * 100).toFixed(1);
+                }
+                return null;
+            }
+
+            // Parse /proc/diskstats output
+            parseDiskStats(lines, currentTime) {
+                let totalReadSectors = 0;
+                let totalWriteSectors = 0;
+
+                for (const line of lines) {
+                    const parts = line.trim().split(/\s+/);
+                    if (parts.length >= 14) {
+                        const deviceName = parts[2];
+                        // Only count major block devices (sda, vda, nvme0n1, etc.), not partitions
+                        if (/^(sd[a-z]|vd[a-z]|nvme\d+n\d+|xvd[a-z])$/.test(deviceName)) {
+                            totalReadSectors += parseInt(parts[5]) || 0;  // sectors read
+                            totalWriteSectors += parseInt(parts[9]) || 0; // sectors written
+                        }
+                    }
+                }
+
+                if (this.lastDiskStats && this.lastDiskTime) {
+                    const timeDelta = (currentTime - this.lastDiskTime) / 1000; // seconds
+                    const readDelta = totalReadSectors - this.lastDiskStats.read;
+                    const writeDelta = totalWriteSectors - this.lastDiskStats.write;
+                    // Each sector is 512 bytes
+                    const readKBps = (readDelta * 512 / 1024 / timeDelta).toFixed(1);
+                    const writeKBps = (writeDelta * 512 / 1024 / timeDelta).toFixed(1);
+
+                    this.lastDiskStats = { read: totalReadSectors, write: totalWriteSectors };
+                    this.lastDiskTime = currentTime;
+
+                    return { read: parseFloat(readKBps), write: parseFloat(writeKBps) };
+                }
+
+                this.lastDiskStats = { read: totalReadSectors, write: totalWriteSectors };
+                this.lastDiskTime = currentTime;
+                return null;
+            }
+
+            // Parse /proc/stat for CPU usage
+            parseCpuStat(lines) {
+                for (const line of lines) {
+                    if (line.startsWith('cpu ')) {
+                        const parts = line.split(/\s+/).slice(1).map(Number);
+                        // user, nice, system, idle, iowait, irq, softirq, steal
+                        const [user, nice, system, idle, iowait = 0, irq = 0, softirq = 0, steal = 0] = parts;
+                        const total = user + nice + system + idle + iowait + irq + softirq + steal;
+                        const busy = user + nice + system + irq + softirq + steal;
+                        return { total, busy };
+                    }
+                }
+                return null;
+            }
+
+            pushData(cpu, mem, diskRead, diskWrite) {
+                const now = new Date();
+                const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                this.cpuData.push(cpu);
+                this.memData.push(mem);
+                this.diskReadData.push(diskRead);
+                this.diskWriteData.push(diskWrite);
+                this.labels.push(timeLabel);
+
+                // Keep only last N data points
+                if (this.cpuData.length > this.maxDataPoints) {
+                    this.cpuData.shift();
+                    this.memData.shift();
+                    this.diskReadData.shift();
+                    this.diskWriteData.shift();
+                    this.labels.shift();
+                }
+
+                // Update display values
+                document.getElementById('statCpuValue').textContent = cpu.toFixed(1) + '%';
+                document.getElementById('statMemValue').textContent = mem.toFixed(1) + '%';
+                document.getElementById('statDiskValue').textContent = (diskRead + diskWrite).toFixed(1) + ' KB/s';
+
+                this.chart.update('none');
+            }
+
+            clear() {
+                this.cpuData.length = 0;
+                this.memData.length = 0;
+                this.diskReadData.length = 0;
+                this.diskWriteData.length = 0;
+                this.labels.length = 0;
+                this.lastDiskStats = null;
+                this.lastDiskTime = null;
+                document.getElementById('statCpuValue').textContent = '--%';
+                document.getElementById('statMemValue').textContent = '--%';
+                document.getElementById('statDiskValue').textContent = '-- KB/s';
+                this.chart.update('none');
+            }
+
+            destroy() {
                 if (this.chart) {
                     this.chart.destroy();
                 }
@@ -3156,6 +3610,10 @@
                     if (host && user) Hosts.add({ host, port, user, pass });
                     else Toast.error('请输入主机地址和用户名');
                 });
+                // SSH Stats Monitor
+                document.getElementById('sshStatsBtn').addEventListener('click', () => Terminal_.toggleStats());
+                document.getElementById('sysStatsClearBtn').addEventListener('click', () => Terminal_.clearStats());
+                document.getElementById('sysStatsCloseBtn').addEventListener('click', () => Terminal_.stopStats());
 
                 // SFTP
                 document.getElementById('sftpConnectBtn').addEventListener('click', () => {
