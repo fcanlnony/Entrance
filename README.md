@@ -10,10 +10,9 @@
 - 支持终端窗口大小自适应
 - 连接状态实时显示
 - **系统监控** - 实时性能监控功能
-  - CPU 使用率（基于 /proc/stat）
-  - 内存使用率（基于 /proc/meminfo）
-  - 磁盘读写速度（基于 /proc/diskstats）
-  - Chart.js 折线图实时显示
+  - 连接后自动开始采集，状态栏显示 CPU / 内存 / 磁盘 I/O
+  - 点击状态栏展开 Chart.js 折线图查看历史趋势
+  - 基于 /proc/stat、/proc/meminfo、/proc/diskstats
   - 1秒采样间隔，最多显示60个数据点
 
 ### 本地 Shell 终端
