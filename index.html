@@ -248,15 +248,38 @@
 
         /* System Stats Monitor */
         .sys-stats-container {
-            margin-top: 16px;
-            background: var(--color-bg-1);
+            margin-top: 12px;
+            background: var(--color-bg-2);
             border: 1px solid var(--color-border);
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
-            display: none;
             transition: all .3s ease;
         }
-        .sys-stats-container.active {
+        .sys-stats-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: var(--color-text-3);
+            cursor: pointer;
+            transition: color .2s, background .2s;
+        }
+        .sys-stats-hint:hover {
+            color: var(--color-accent);
+            background: var(--color-bg-3);
+        }
+        .sys-stats-hint i {
+            font-size: 11px;
+        }
+        .sys-stats-container.active .sys-stats-hint {
+            display: none;
+        }
+        .sys-stats-panel {
+            display: none;
+        }
+        .sys-stats-container.active .sys-stats-panel {
             display: block;
         }
         .sys-stats-header {
@@ -305,6 +328,7 @@
             width: 100%;
             height: 180px;
             padding: 8px 12px;
+            background: var(--color-bg-1);
         }
         .sys-stats-chart-wrapper canvas {
             width: 100% !important;
@@ -772,38 +796,41 @@
                             <div class="terminal-dot yellow"></div>
                             <div class="terminal-dot green"></div>
                             <span class="terminal-title" id="termTitle">终端 - 未连接</span>
-                            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-                                <button class="btn btn-sm btn-secondary" id="sshStatsBtn" title="系统监控"><i class="fas fa-chart-area"></i></button>
-                            </div>
                             <div class="terminal-status disconnected" id="termStatus"><i class="fas fa-circle"></i><span>未连接</span></div>
                         </div>
                         <div id="terminal"></div>
                     </div>
                     <!-- System Stats Monitor -->
                     <div class="sys-stats-container" id="sysStatsContainer">
-                        <div class="sys-stats-header">
-                            <h4><i class="fas fa-microchip"></i> 系统监控</h4>
-                            <div class="sys-stats-info">
-                                <div class="stat-item">
-                                    <span>CPU:</span>
-                                    <span class="stat-value stat-cpu" id="statCpuValue">--%</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span>内存:</span>
-                                    <span class="stat-value stat-mem" id="statMemValue">--%</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span>磁盘:</span>
-                                    <span class="stat-value stat-disk" id="statDiskValue">-- KB/s</span>
-                                </div>
-                            </div>
-                            <div class="sys-stats-controls">
-                                <button class="btn btn-sm btn-secondary" id="sysStatsClearBtn" title="清除数据"><i class="fas fa-trash"></i></button>
-                                <button class="btn btn-sm btn-secondary" id="sysStatsCloseBtn" title="关闭"><i class="fas fa-times"></i></button>
-                            </div>
+                        <div class="sys-stats-hint" id="sysStatsHint">
+                            <i class="fas fa-chart-area"></i>
+                            <span>点击开启系统监控 (CPU / 内存 / 磁盘)</span>
                         </div>
-                        <div class="sys-stats-chart-wrapper">
-                            <canvas id="sysStatsCanvas"></canvas>
+                        <div class="sys-stats-panel">
+                            <div class="sys-stats-header">
+                                <h4><i class="fas fa-microchip"></i> 系统监控</h4>
+                                <div class="sys-stats-info">
+                                    <div class="stat-item">
+                                        <span>CPU:</span>
+                                        <span class="stat-value stat-cpu" id="statCpuValue">--%</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span>内存:</span>
+                                        <span class="stat-value stat-mem" id="statMemValue">--%</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span>磁盘:</span>
+                                        <span class="stat-value stat-disk" id="statDiskValue">-- KB/s</span>
+                                    </div>
+                                </div>
+                                <div class="sys-stats-controls">
+                                    <button class="btn btn-sm btn-secondary" id="sysStatsClearBtn" title="清除数据"><i class="fas fa-trash"></i></button>
+                                    <button class="btn btn-sm btn-secondary" id="sysStatsCloseBtn" title="关闭"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                            <div class="sys-stats-chart-wrapper">
+                                <canvas id="sysStatsCanvas"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1504,7 +1531,6 @@
                     return;
                 }
                 const container = document.getElementById('sysStatsContainer');
-                const btn = document.getElementById('sshStatsBtn');
 
                 if (this.statsActive) {
                     this.stopStats();
@@ -1515,8 +1541,6 @@
                     }
                     this.statsActive = true;
                     container.classList.add('active');
-                    btn.classList.add('btn-success');
-                    btn.classList.remove('btn-secondary');
 
                     // Start stats collection
                     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -1527,13 +1551,10 @@
             // Stop system stats monitoring
             stopStats() {
                 const container = document.getElementById('sysStatsContainer');
-                const btn = document.getElementById('sshStatsBtn');
 
                 this.statsActive = false;
                 this.lastCpuStat = null;
                 container.classList.remove('active');
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-secondary');
 
                 // Stop stats collection on server
                 if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -3611,7 +3632,7 @@
                     else Toast.error('请输入主机地址和用户名');
                 });
                 // SSH Stats Monitor
-                document.getElementById('sshStatsBtn').addEventListener('click', () => Terminal_.toggleStats());
+                document.getElementById('sysStatsHint').addEventListener('click', () => Terminal_.toggleStats());
                 document.getElementById('sysStatsClearBtn').addEventListener('click', () => Terminal_.clearStats());
                 document.getElementById('sysStatsCloseBtn').addEventListener('click', () => Terminal_.stopStats());
 
