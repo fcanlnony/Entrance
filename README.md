@@ -14,6 +14,19 @@
   - 点击状态栏展开 Chart.js 折线图查看历史趋势
   - 基于 /proc/stat、/proc/meminfo、/proc/diskstats
   - 1秒采样间隔，最多显示60个数据点
+- **进程管理 (TOP)** - 实时进程监控面板
+  - 连接后自动采集进程信息，状态栏显示进程数 / 运行数 / 负载
+  - 点击状态栏展开查看完整进程列表
+  - 显示 PID、用户、CPU%、内存%、VSZ、RSS、状态、时间、命令
+  - 支持按 CPU / 内存 / PID / 时间排序
+  - 支持设置显示数量（15/30/50/100）
+  - **杀进程功能** - 支持发送多种信号
+    - SIGTERM (15) - 优雅终止
+    - SIGKILL (9) - 强制终止
+    - SIGINT (2) - 中断信号
+    - SIGHUP (1) - 挂起/重载配置
+    - SIGSTOP (19) - 暂停进程
+    - SIGCONT (18) - 继续进程
 
 ### 本地 Shell 终端
 - 在浏览器中访问服务器本地终端
@@ -184,6 +197,18 @@ WebSocket 连接到 `ws://host:port/ssh`，消息格式：
 
 // 停止系统监控
 { "type": "stopStats" }
+
+// 开始进程监控（每2秒采集 uptime 和 ps aux）
+{ "type": "startTop" }
+
+// 停止进程监控
+{ "type": "stopTop" }
+
+// 手动刷新进程列表
+{ "type": "refreshTop" }
+
+// 发送信号给进程（杀进程）
+{ "type": "kill", "pid": 1234, "signal": 15 }
 ```
 
 服务器返回的系统监控数据格式：
@@ -194,6 +219,28 @@ WebSocket 连接到 `ws://host:port/ssh`，消息格式：
     "stat": "cpu  12345 678 ...",      // /proc/stat 内容
     "meminfo": "MemTotal: ...",         // /proc/meminfo 内容
     "diskstats": "8 0 sda ..."          // /proc/diskstats 内容
+  }
+}
+```
+
+服务器返回的进程监控数据格式：
+```javascript
+{
+  "type": "top",
+  "data": {
+    "uptime": "10:15:03 up 5 days...",  // uptime 命令输出
+    "ps": "USER PID %CPU %MEM ..."       // ps aux 命令输出
+  }
+}
+```
+
+服务器返回的杀进程结果：
+```javascript
+{
+  "type": "killResult",
+  "data": {
+    "success": true,
+    "message": "已发送 SIGTERM 到 PID 1234"
   }
 }
 ```

@@ -321,6 +321,263 @@
             height: 100% !important;
         }
 
+        /* TOP Panel */
+        .top-panel-container {
+            margin-top: 12px;
+            background: var(--color-bg-2);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: all .3s ease;
+        }
+        .top-panel-hint {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .top-panel-hint:hover {
+            background: var(--color-bg-3);
+        }
+        .top-panel-hint .hint-info {
+            display: flex;
+            gap: 16px;
+        }
+        .top-panel-hint .hint-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .top-panel-hint .hint-procs { color: #0078D7; }
+        .top-panel-hint .hint-running { color: #107c10; }
+        .top-panel-hint .hint-load { color: #ff8c00; }
+        .top-panel-hint .hint-expand {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--color-text-3);
+            font-size: 11px;
+        }
+        .top-panel-hint:hover .hint-expand {
+            color: var(--color-accent);
+        }
+        .top-panel-content {
+            display: none;
+            border-top: 1px solid var(--color-border);
+        }
+        .top-panel-container.active .top-panel-content {
+            display: block;
+        }
+        .top-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--color-bg-2);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .top-panel-header h4 {
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .top-panel-header h4 i {
+            color: var(--color-accent);
+        }
+        .top-panel-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .top-panel-controls label {
+            font-size: 11px;
+            color: var(--color-text-2);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .top-panel-controls select {
+            padding: 4px 8px;
+            font-size: 11px;
+            background: var(--color-bg-3);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            color: var(--color-text);
+        }
+        .top-panel-summary {
+            display: flex;
+            gap: 24px;
+            padding: 10px 12px;
+            background: var(--color-bg-1);
+            border-bottom: 1px solid var(--color-border);
+            font-size: 12px;
+        }
+        .top-summary-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .top-summary-label {
+            color: var(--color-text-3);
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .top-summary-value {
+            color: var(--color-text);
+            font-family: Consolas, monospace;
+        }
+        .top-panel-table-wrapper {
+            max-height: 300px;
+            overflow-y: auto;
+            background: var(--color-bg-1);
+        }
+        .top-panel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            font-family: Consolas, monospace;
+        }
+        .top-panel-table th {
+            position: sticky;
+            top: 0;
+            background: var(--color-bg-2);
+            padding: 6px 8px;
+            text-align: left;
+            font-weight: 500;
+            color: var(--color-text-2);
+            border-bottom: 1px solid var(--color-border);
+            cursor: pointer;
+            user-select: none;
+        }
+        .top-panel-table th:hover {
+            background: var(--color-bg-3);
+        }
+        .top-panel-table th.sorted-asc::after {
+            content: ' ▲';
+            font-size: 9px;
+        }
+        .top-panel-table th.sorted-desc::after {
+            content: ' ▼';
+            font-size: 9px;
+        }
+        .top-panel-table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid var(--color-border);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .top-panel-table tr:hover {
+            background: var(--color-bg-2);
+        }
+        .top-panel-table .col-pid { width: 60px; text-align: right; }
+        .top-panel-table .col-user { width: 80px; }
+        .top-panel-table .col-cpu { width: 60px; text-align: right; color: #0078D7; }
+        .top-panel-table .col-mem { width: 60px; text-align: right; color: #107c10; }
+        .top-panel-table .col-vsz { width: 80px; text-align: right; }
+        .top-panel-table .col-rss { width: 80px; text-align: right; }
+        .top-panel-table .col-stat { width: 50px; text-align: center; }
+        .top-panel-table .col-time { width: 80px; text-align: right; }
+        .top-panel-table .col-cmd { min-width: 200px; }
+        .top-cpu-bar, .top-mem-bar {
+            display: inline-block;
+            height: 10px;
+            border-radius: 2px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .top-cpu-bar { background: rgba(0, 120, 215, 0.6); }
+        .top-mem-bar { background: rgba(16, 124, 16, 0.6); }
+        .top-panel-table .col-action { width: 50px; text-align: center; }
+        .top-kill-btn {
+            padding: 2px 6px;
+            font-size: 10px;
+            background: var(--color-bg-3);
+            border: 1px solid var(--color-border);
+            border-radius: 3px;
+            color: var(--color-text-2);
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .top-kill-btn:hover {
+            background: #e81123;
+            border-color: #e81123;
+            color: #fff;
+        }
+
+        /* Kill Modal */
+        .kill-process-info {
+            background: var(--color-bg-1);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+        }
+        .kill-info-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .kill-info-row:last-child { margin-bottom: 0; }
+        .kill-info-row span { color: var(--color-text-3); min-width: 50px; }
+        .kill-info-row code {
+            background: var(--color-bg-2);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .signal-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 240px;
+            overflow-y: auto;
+        }
+        .signal-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--color-bg-1);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .signal-option:hover {
+            background: var(--color-bg-2);
+            border-color: var(--color-accent);
+        }
+        .signal-option input[type="radio"] {
+            margin-top: 3px;
+            accent-color: var(--color-accent);
+        }
+        .signal-option input[type="radio"]:checked + .signal-label strong {
+            color: var(--color-accent);
+        }
+        .signal-label {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .signal-label strong {
+            font-size: 13px;
+            font-family: Consolas, monospace;
+        }
+        .signal-label small {
+            font-size: 11px;
+            color: var(--color-text-3);
+        }
+
         /* SFTP */
         .sftp-status {
             display: flex; align-items: center; gap: 12px;
@@ -823,6 +1080,104 @@
                             </div>
                         </div>
                     </div>
+                    <!-- TOP Panel -->
+                    <div class="top-panel-container" id="topPanelContainer">
+                        <div class="top-panel-hint" id="topPanelHint">
+                            <div class="hint-info">
+                                <div class="hint-item hint-procs">
+                                    <i class="fas fa-tasks"></i>
+                                    <span>进程:</span>
+                                    <span id="topProcsValue">--</span>
+                                </div>
+                                <div class="hint-item hint-running">
+                                    <i class="fas fa-play-circle"></i>
+                                    <span>运行:</span>
+                                    <span id="topRunningValue">--</span>
+                                </div>
+                                <div class="hint-item hint-load">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                    <span>负载:</span>
+                                    <span id="topLoadValue">--</span>
+                                </div>
+                            </div>
+                            <div class="hint-expand">
+                                <span>展开进程</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="top-panel-content">
+                            <div class="top-panel-header">
+                                <h4><i class="fas fa-list-alt"></i> 进程列表 (TOP)</h4>
+                                <div class="top-panel-controls">
+                                    <label>排序:
+                                        <select id="topSortBy">
+                                            <option value="cpu">CPU%</option>
+                                            <option value="mem">内存%</option>
+                                            <option value="pid">PID</option>
+                                            <option value="time">时间</option>
+                                        </select>
+                                    </label>
+                                    <label>显示:
+                                        <select id="topShowCount">
+                                            <option value="15">15</option>
+                                            <option value="30" selected>30</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                    </label>
+                                    <button class="btn btn-sm btn-secondary" id="topRefreshBtn" title="刷新"><i class="fas fa-sync-alt"></i></button>
+                                    <button class="btn btn-sm btn-secondary" id="topCloseBtn" title="收起"><i class="fas fa-chevron-up"></i></button>
+                                </div>
+                            </div>
+                            <div class="top-panel-summary" id="topSummary">
+                                <div class="top-summary-item">
+                                    <span class="top-summary-label">运行时间</span>
+                                    <span class="top-summary-value" id="topUptime">--</span>
+                                </div>
+                                <div class="top-summary-item">
+                                    <span class="top-summary-label">用户数</span>
+                                    <span class="top-summary-value" id="topUsers">--</span>
+                                </div>
+                                <div class="top-summary-item">
+                                    <span class="top-summary-label">负载均值</span>
+                                    <span class="top-summary-value" id="topLoadAvg">--</span>
+                                </div>
+                                <div class="top-summary-item">
+                                    <span class="top-summary-label">任务</span>
+                                    <span class="top-summary-value" id="topTasks">--</span>
+                                </div>
+                                <div class="top-summary-item">
+                                    <span class="top-summary-label">CPU使用</span>
+                                    <span class="top-summary-value" id="topCpuUsage">--</span>
+                                </div>
+                                <div class="top-summary-item">
+                                    <span class="top-summary-label">内存</span>
+                                    <span class="top-summary-value" id="topMemUsage">--</span>
+                                </div>
+                            </div>
+                            <div class="top-panel-table-wrapper">
+                                <table class="top-panel-table" id="topTable">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-pid" data-sort="pid">PID</th>
+                                            <th class="col-user" data-sort="user">USER</th>
+                                            <th class="col-cpu" data-sort="cpu">%CPU</th>
+                                            <th class="col-mem" data-sort="mem">%MEM</th>
+                                            <th class="col-vsz" data-sort="vsz">VSZ</th>
+                                            <th class="col-rss" data-sort="rss">RSS</th>
+                                            <th class="col-stat" data-sort="stat">STAT</th>
+                                            <th class="col-time" data-sort="time">TIME</th>
+                                            <th class="col-cmd" data-sort="cmd">COMMAND</th>
+                                            <th class="col-action">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topTableBody">
+                                        <tr><td colspan="10" style="text-align:center;color:var(--color-text-3);padding:20px">连接SSH后自动获取进程信息</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1203,6 +1558,73 @@
         </div>
     </div>
 
+    <!-- Modal: 杀进程 -->
+    <div class="modal-overlay" id="killModal">
+        <div class="modal">
+            <h3><i class="fas fa-skull-crossbones"></i> 终止进程</h3>
+            <input type="hidden" id="killPid">
+            <div class="form-group">
+                <label>进程信息</label>
+                <div class="kill-process-info">
+                    <div class="kill-info-row"><span>PID:</span> <strong id="killPidDisplay">--</strong></div>
+                    <div class="kill-info-row"><span>用户:</span> <strong id="killUserDisplay">--</strong></div>
+                    <div class="kill-info-row"><span>命令:</span> <code id="killCmdDisplay">--</code></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>选择信号</label>
+                <div class="signal-options">
+                    <label class="signal-option">
+                        <input type="radio" name="killSignal" value="15" checked>
+                        <span class="signal-label">
+                            <strong>SIGTERM (15)</strong>
+                            <small>优雅终止，允许进程清理</small>
+                        </span>
+                    </label>
+                    <label class="signal-option">
+                        <input type="radio" name="killSignal" value="9">
+                        <span class="signal-label">
+                            <strong>SIGKILL (9)</strong>
+                            <small>强制终止，立即杀死进程</small>
+                        </span>
+                    </label>
+                    <label class="signal-option">
+                        <input type="radio" name="killSignal" value="2">
+                        <span class="signal-label">
+                            <strong>SIGINT (2)</strong>
+                            <small>中断信号，类似 Ctrl+C</small>
+                        </span>
+                    </label>
+                    <label class="signal-option">
+                        <input type="radio" name="killSignal" value="1">
+                        <span class="signal-label">
+                            <strong>SIGHUP (1)</strong>
+                            <small>挂起信号，常用于重载配置</small>
+                        </span>
+                    </label>
+                    <label class="signal-option">
+                        <input type="radio" name="killSignal" value="19">
+                        <span class="signal-label">
+                            <strong>SIGSTOP (19)</strong>
+                            <small>暂停进程</small>
+                        </span>
+                    </label>
+                    <label class="signal-option">
+                        <input type="radio" name="killSignal" value="18">
+                        <span class="signal-label">
+                            <strong>SIGCONT (18)</strong>
+                            <small>继续已暂停的进程</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="killCancel">取消</button>
+                <button class="btn btn-danger" id="killConfirm"><i class="fas fa-skull"></i> 发送信号</button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast-container" id="toasts"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
@@ -1419,6 +1841,12 @@
             chartExpanded: false,    // 图表是否展开
             statsVisualizer: null,
             lastCpuStat: null,
+            // TOP panel
+            topActive: false,        // TOP是否正在采集
+            topExpanded: false,      // TOP面板是否展开
+            topProcesses: [],        // 进程列表
+            topSortField: 'cpu',     // 排序字段
+            topSortDesc: true,       // 降序
             init() {
                 this.term = new Terminal({
                     theme: {
@@ -1476,9 +1904,13 @@
                             this.doFit();
                             // 自动开始采集系统数据
                             this.startStats();
+                            // 自动开始采集TOP数据
+                            this.startTop();
                             break;
                         case 'data': this.term.write(msg.data); break;
                         case 'stats': this.handleStats(msg.data); break;
+                        case 'top': this.handleTop(msg.data); break;
+                        case 'killResult': this.handleKillResult(msg.data); break;
                         case 'error':
                             this.term.writeln(`\x1b[31m错误: ${msg.message}\x1b[0m`);
                             Toast.error(msg.message);
@@ -1487,6 +1919,7 @@
                             State.sshConnected = false;
                             this.host = null;
                             this.stopStats();
+                            this.stopTop();
                             this.updateStatus(false);
                             this.term.writeln('\n\x1b[33m连接已断开\x1b[0m');
                             Toast.info('SSH 连接已断开');
@@ -1621,8 +2054,237 @@
                     // Push data to chart
                     this.statsVisualizer.pushData(cpuPercent, memPercent, diskRead, diskWrite);
                 }
+            },
+            // Start TOP data collection
+            startTop() {
+                if (this.topActive) return;
+                this.topActive = true;
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ type: 'startTop' }));
+                }
+            },
+            // Stop TOP data collection
+            stopTop() {
+                const container = document.getElementById('topPanelContainer');
+                this.topActive = false;
+                this.topExpanded = false;
+                this.topProcesses = [];
+                container.classList.remove('active');
+                // Reset hint values
+                document.getElementById('topProcsValue').textContent = '--';
+                document.getElementById('topRunningValue').textContent = '--';
+                document.getElementById('topLoadValue').textContent = '--';
+                // Reset summary
+                document.getElementById('topUptime').textContent = '--';
+                document.getElementById('topUsers').textContent = '--';
+                document.getElementById('topLoadAvg').textContent = '--';
+                document.getElementById('topTasks').textContent = '--';
+                document.getElementById('topCpuUsage').textContent = '--';
+                document.getElementById('topMemUsage').textContent = '--';
+                // Clear table
+                document.getElementById('topTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--color-text-3);padding:20px">连接SSH后自动获取进程信息</td></tr>';
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ type: 'stopTop' }));
+                }
+            },
+            // Toggle TOP panel expansion
+            toggleTop() {
+                if (!State.sshConnected) {
+                    Toast.error('请先连接 SSH');
+                    return;
+                }
+                const container = document.getElementById('topPanelContainer');
+                this.topExpanded = !this.topExpanded;
+                container.classList.toggle('active', this.topExpanded);
+            },
+            // Refresh TOP data manually
+            refreshTop() {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN && State.sshConnected) {
+                    this.ws.send(JSON.stringify({ type: 'refreshTop' }));
+                }
+            },
+            // Handle TOP data from server
+            handleTop(data) {
+                // Parse uptime info
+                if (data.uptime) {
+                    this.parseUptime(data.uptime);
+                }
+                // Parse process list (ps aux output)
+                if (data.ps) {
+                    this.parseProcessList(data.ps);
+                    this.renderTopTable();
+                }
+            },
+            // Parse uptime output
+            parseUptime(uptimeStr) {
+                // Example: " 10:15:03 up 5 days, 12:30,  2 users,  load average: 0.15, 0.10, 0.05"
+                const lines = uptimeStr.trim().split('\n');
+                const line = lines[0];
+
+                // Extract uptime
+                const uptimeMatch = line.match(/up\s+(.+?),\s+\d+\s+user/);
+                if (uptimeMatch) {
+                    document.getElementById('topUptime').textContent = uptimeMatch[1].trim();
+                }
+
+                // Extract users
+                const usersMatch = line.match(/(\d+)\s+user/);
+                if (usersMatch) {
+                    document.getElementById('topUsers').textContent = usersMatch[1];
+                }
+
+                // Extract load average
+                const loadMatch = line.match(/load average:\s*([\d.]+),\s*([\d.]+),\s*([\d.]+)/);
+                if (loadMatch) {
+                    document.getElementById('topLoadAvg').textContent = `${loadMatch[1]}, ${loadMatch[2]}, ${loadMatch[3]}`;
+                    document.getElementById('topLoadValue').textContent = loadMatch[1];
+                }
+            },
+            // Parse ps aux output
+            parseProcessList(psStr) {
+                const lines = psStr.trim().split('\n');
+                if (lines.length < 2) return;
+
+                // Skip header line
+                const processes = [];
+                let totalProcs = 0;
+                let runningProcs = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    // ps aux format: USER PID %CPU %MEM VSZ RSS TTY STAT START TIME COMMAND
+                    const parts = line.split(/\s+/);
+                    if (parts.length < 11) continue;
+
+                    const proc = {
+                        user: parts[0],
+                        pid: parseInt(parts[1]),
+                        cpu: parseFloat(parts[2]),
+                        mem: parseFloat(parts[3]),
+                        vsz: parseInt(parts[4]),
+                        rss: parseInt(parts[5]),
+                        tty: parts[6],
+                        stat: parts[7],
+                        start: parts[8],
+                        time: parts[9],
+                        cmd: parts.slice(10).join(' ')
+                    };
+
+                    processes.push(proc);
+                    totalProcs++;
+                    if (proc.stat.startsWith('R')) runningProcs++;
+                }
+
+                this.topProcesses = processes;
+
+                // Update hint bar
+                document.getElementById('topProcsValue').textContent = totalProcs;
+                document.getElementById('topRunningValue').textContent = runningProcs;
+
+                // Update summary
+                document.getElementById('topTasks').textContent = `${totalProcs} total, ${runningProcs} running`;
+
+                // Calculate total CPU/MEM
+                const totalCpu = processes.reduce((sum, p) => sum + p.cpu, 0);
+                const totalMem = processes.reduce((sum, p) => sum + p.mem, 0);
+                document.getElementById('topCpuUsage').textContent = totalCpu.toFixed(1) + '%';
+                document.getElementById('topMemUsage').textContent = totalMem.toFixed(1) + '%';
+            },
+            // Render TOP table
+            renderTopTable() {
+                const tbody = document.getElementById('topTableBody');
+                const sortBy = document.getElementById('topSortBy').value;
+                const showCount = parseInt(document.getElementById('topShowCount').value);
+
+                // Sort processes
+                let sorted = [...this.topProcesses];
+                sorted.sort((a, b) => {
+                    let va, vb;
+                    switch (sortBy) {
+                        case 'cpu': va = a.cpu; vb = b.cpu; break;
+                        case 'mem': va = a.mem; vb = b.mem; break;
+                        case 'pid': va = a.pid; vb = b.pid; break;
+                        case 'time': va = a.time; vb = b.time; break;
+                        default: va = a.cpu; vb = b.cpu;
+                    }
+                    return this.topSortDesc ? vb - va : va - vb;
+                });
+
+                // Limit to showCount
+                sorted = sorted.slice(0, showCount);
+
+                // Render rows
+                if (sorted.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--color-text-3);padding:20px">无进程数据</td></tr>';
+                    return;
+                }
+
+                const escapeHtml = (str) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+                tbody.innerHTML = sorted.map(p => {
+                    const cpuBarWidth = Math.min(p.cpu, 100);
+                    const memBarWidth = Math.min(p.mem, 100);
+                    const escapedCmd = escapeHtml(p.cmd);
+                    return `<tr>
+                        <td class="col-pid">${p.pid}</td>
+                        <td class="col-user">${escapeHtml(p.user)}</td>
+                        <td class="col-cpu"><span class="top-cpu-bar" style="width:${cpuBarWidth}px"></span>${p.cpu.toFixed(1)}</td>
+                        <td class="col-mem"><span class="top-mem-bar" style="width:${memBarWidth}px"></span>${p.mem.toFixed(1)}</td>
+                        <td class="col-vsz">${this.formatSize(p.vsz * 1024)}</td>
+                        <td class="col-rss">${this.formatSize(p.rss * 1024)}</td>
+                        <td class="col-stat">${p.stat}</td>
+                        <td class="col-time">${p.time}</td>
+                        <td class="col-cmd" title="${escapedCmd}">${escapedCmd}</td>
+                        <td class="col-action"><button class="top-kill-btn" onclick="Terminal_.showKillModal(${p.pid}, '${escapeHtml(p.user)}', '${escapedCmd.replace(/'/g, "\\'")}')"><i class="fas fa-times"></i></button></td>
+                    </tr>`;
+                }).join('');
+            },
+            // Show kill process modal
+            showKillModal(pid, user, cmd) {
+                document.getElementById('killPid').value = pid;
+                document.getElementById('killPidDisplay').textContent = pid;
+                document.getElementById('killUserDisplay').textContent = user;
+                document.getElementById('killCmdDisplay').textContent = cmd;
+                document.getElementById('killCmdDisplay').title = cmd;
+                // Reset to default signal
+                document.querySelector('input[name="killSignal"][value="15"]').checked = true;
+                document.getElementById('killModal').classList.add('active');
+            },
+            // Kill process with selected signal
+            killProcess() {
+                const pid = document.getElementById('killPid').value;
+                const signal = document.querySelector('input[name="killSignal"]:checked').value;
+                const signalNames = { '1': 'SIGHUP', '2': 'SIGINT', '9': 'SIGKILL', '15': 'SIGTERM', '18': 'SIGCONT', '19': 'SIGSTOP' };
+
+                if (this.ws && this.ws.readyState === WebSocket.OPEN && State.sshConnected) {
+                    this.ws.send(JSON.stringify({ type: 'kill', pid: parseInt(pid), signal: parseInt(signal) }));
+                    Toast.info(`正在发送 ${signalNames[signal]} 到 PID ${pid}...`);
+                    document.getElementById('killModal').classList.remove('active');
+                } else {
+                    Toast.error('未连接到SSH');
+                }
+            },
+            // Handle kill result from server
+            handleKillResult(data) {
+                if (data.success) {
+                    Toast.success(data.message || `进程信号已发送`);
+                    // Refresh process list
+                    this.refreshTop();
+                } else {
+                    Toast.error(data.message || '操作失败');
+                }
+            },
+            // Format bytes to human readable
+            formatSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' K';
+                if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' M';
+                return (bytes / 1024 / 1024 / 1024).toFixed(1) + ' G';
             }
         };
+        window.Terminal_ = Terminal_;
 
         // SFTP
         const SFTP = {
@@ -3639,7 +4301,19 @@
                 // SSH Stats Monitor
                 document.getElementById('sysStatsHint').addEventListener('click', () => Terminal_.toggleStats());
                 document.getElementById('sysStatsClearBtn').addEventListener('click', () => Terminal_.clearStats());
-                document.getElementById('sysStatsCloseBtn').addEventListener('click', () => Terminal_.stopStats());
+                document.getElementById('sysStatsCloseBtn').addEventListener('click', () => Terminal_.toggleStats());
+
+                // TOP Panel
+                document.getElementById('topPanelHint').addEventListener('click', () => Terminal_.toggleTop());
+                document.getElementById('topCloseBtn').addEventListener('click', () => Terminal_.toggleTop());
+                document.getElementById('topRefreshBtn').addEventListener('click', () => Terminal_.refreshTop());
+                document.getElementById('topSortBy').addEventListener('change', () => Terminal_.renderTopTable());
+                document.getElementById('topShowCount').addEventListener('change', () => Terminal_.renderTopTable());
+
+                // Kill Modal
+                document.getElementById('killCancel').addEventListener('click', () => document.getElementById('killModal').classList.remove('active'));
+                document.getElementById('killConfirm').addEventListener('click', () => Terminal_.killProcess());
+                document.getElementById('killModal').addEventListener('click', e => { if (e.target.id === 'killModal') e.target.classList.remove('active'); });
 
                 // SFTP
                 document.getElementById('sftpConnectBtn').addEventListener('click', () => {

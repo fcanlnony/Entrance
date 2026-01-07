@@ -445,6 +445,7 @@ wss.on('connection', (ws, req) => {
     let sshClient = null;
     let stream = null;
     let statsInterval = null;
+    let topInterval = null;
 
     // Function to collect system stats via SSH exec
     const collectStats = () => {
@@ -483,6 +484,48 @@ wss.on('connection', (ws, req) => {
                         }));
                     } catch (e) {
                         console.error('[Stats] 发送数据错误:', e.message);
+                    }
+                }
+            });
+        });
+    };
+
+    // Function to collect TOP (process list) data via SSH exec
+    const collectTop = () => {
+        if (!sshClient || ws.readyState !== WebSocket.OPEN) {
+            if (topInterval) {
+                clearInterval(topInterval);
+                topInterval = null;
+            }
+            return;
+        }
+
+        // Execute uptime and ps aux commands
+        const cmd = 'uptime; echo "---SEPARATOR---"; ps aux --sort=-%cpu';
+
+        sshClient.exec(cmd, (err, execStream) => {
+            if (err) {
+                console.error('[TOP] 执行命令错误:', err.message);
+                return;
+            }
+
+            let output = '';
+            execStream.on('data', (chunk) => {
+                output += chunk.toString();
+            });
+            execStream.on('close', () => {
+                const parts = output.split('---SEPARATOR---');
+                if (parts.length >= 2) {
+                    try {
+                        ws.send(JSON.stringify({
+                            type: 'top',
+                            data: {
+                                uptime: parts[0].trim(),
+                                ps: parts[1].trim()
+                            }
+                        }));
+                    } catch (e) {
+                        console.error('[TOP] 发送数据错误:', e.message);
                     }
                 }
             });
@@ -576,6 +619,10 @@ wss.on('connection', (ws, req) => {
                         clearInterval(statsInterval);
                         statsInterval = null;
                     }
+                    if (topInterval) {
+                        clearInterval(topInterval);
+                        topInterval = null;
+                    }
                     if (stream) stream.end();
                     if (sshClient) sshClient.end();
                     break;
@@ -596,6 +643,66 @@ wss.on('connection', (ws, req) => {
                         statsInterval = null;
                     }
                     break;
+
+                case 'startTop':
+                    if (sshClient && !topInterval) {
+                        console.log('[TOP] 开始进程监控');
+                        // Collect immediately, then every 2 seconds
+                        collectTop();
+                        topInterval = setInterval(collectTop, 2000);
+                    }
+                    break;
+
+                case 'stopTop':
+                    if (topInterval) {
+                        console.log('[TOP] 停止进程监控');
+                        clearInterval(topInterval);
+                        topInterval = null;
+                    }
+                    break;
+
+                case 'refreshTop':
+                    if (sshClient) {
+                        collectTop();
+                    }
+                    break;
+
+                case 'kill':
+                    if (sshClient && data.pid && data.signal !== undefined) {
+                        const pid = parseInt(data.pid);
+                        const signal = parseInt(data.signal);
+                        const signalNames = { 1: 'SIGHUP', 2: 'SIGINT', 9: 'SIGKILL', 15: 'SIGTERM', 18: 'SIGCONT', 19: 'SIGSTOP' };
+                        console.log(`[KILL] 发送 ${signalNames[signal] || signal} 到 PID ${pid}`);
+
+                        // Validate PID and signal
+                        if (pid <= 0 || isNaN(pid)) {
+                            ws.send(JSON.stringify({ type: 'killResult', data: { success: false, message: '无效的 PID' } }));
+                            break;
+                        }
+
+                        const cmd = `kill -${signal} ${pid} 2>&1 && echo "SUCCESS" || echo "FAILED"`;
+                        sshClient.exec(cmd, (err, execStream) => {
+                            if (err) {
+                                console.error('[KILL] 执行命令错误:', err.message);
+                                ws.send(JSON.stringify({ type: 'killResult', data: { success: false, message: err.message } }));
+                                return;
+                            }
+
+                            let output = '';
+                            execStream.on('data', (chunk) => {
+                                output += chunk.toString();
+                            });
+                            execStream.on('close', () => {
+                                const success = output.includes('SUCCESS');
+                                const message = success
+                                    ? `已发送 ${signalNames[signal] || 'signal ' + signal} 到 PID ${pid}`
+                                    : `发送信号失败: ${output.trim()}`;
+                                console.log(`[KILL] 结果: ${success ? '成功' : '失败'}`);
+                                ws.send(JSON.stringify({ type: 'killResult', data: { success, message } }));
+                            });
+                        });
+                    }
+                    break;
             }
         } catch (err) {
             console.error('[WS] 消息处理错误:', err);
@@ -607,6 +714,10 @@ wss.on('connection', (ws, req) => {
         if (statsInterval) {
             clearInterval(statsInterval);
             statsInterval = null;
+        }
+        if (topInterval) {
+            clearInterval(topInterval);
+            topInterval = null;
         }
         if (stream) stream.end();
         if (sshClient) sshClient.end();
