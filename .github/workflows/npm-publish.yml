@@ -1,0 +1,40 @@
+name: Build Entrance Binary
+
+on:
+  push:
+    branches: [ "binary" ] # 监听的分支
+  workflow_dispatch: # 支持手动触发，可选择分支
+
+jobs:
+  pkg-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          # 如果是手动触发，则拉取选定的分支；否则拉取触发的分支
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16' # 项目要求 Node >= 16.0.0
+
+      - name: Install Dependencies
+        run: |
+          npm install
+          # 显式安装 pkg 以防 scripts 中未定义
+          npm install -g pkg 
+
+      - name: Build Binary
+        run: |
+          # 暴力打包：包含 server.js 及其所有依赖和静态资源
+          # --targets 指定目标平台，这里以 Linux 为例
+          pkg . --targets node16-linux-x64 --output dist/entrance
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: entrance-binary
+          path: dist/entrance
