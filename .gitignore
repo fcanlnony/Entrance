@@ -2,5 +2,7 @@ node_modules/
 uploads/
 userdata/
 users.json
+known_hosts.json
+private-networks.json
 *.log
 .DS_Store

@@ -32,7 +32,7 @@
 - 在浏览器中访问服务器本地终端
 - 基于 script + child_process 实现，无需编译原生模块
 - **仅支持 Linux 系统**
-- 支持自定义 Shell（bash/zsh/fish 等）
+- 仅允许 PATH 内的 Shell（bash/zsh/fish 等）
 - 256 色彩支持
 - 终端大小自适应
 
@@ -46,6 +46,7 @@
 - 浏览器原生串口通信（Web Serial API）
 - 支持自定义波特率配置
 - xterm.js 终端显示
+- 仅允许 /dev 平台访问（Windows 默认禁用）
 - **实时波形可视化** - 类示波器功能
   - 自动检测 `Variable:Value` 格式数据
   - 动态创建多变量曲线
@@ -96,18 +97,33 @@ npm install
 npm start
 ```
 
-访问 http://localhost:3000，默认直接进入工具面板。
+访问 http://localhost:3000，使用账号登录后进入工具面板。
+
+### 最小运行示例
+
+```bash
+export AUTH_SECRET=$(openssl rand -base64 32)
+export SSH_PASSWORD_KEY=$(openssl rand -base64 32)
+npm start
+```
+
+默认账号为 `admin/admin`（首次启动自动生成）。
 
 ## 项目结构
 
 ```
 .
-├── index.html      # 前端页面（单文件）
+├── public/         # 前端静态资源
+│   ├── index.html
+│   └── vnc-client.js
 ├── server.js       # 后端服务器
 ├── local-shell.js  # 本地 Shell 模块
 ├── vnc.js          # VNC 代理模块
+├── nginx/          # 反向代理示例配置
 ├── package.json    # 依赖配置
 ├── users.json      # 用户数据（自动生成）
+├── known_hosts.json  # SSH 主机指纹（自动生成）
+├── private-networks.json  # 私有网络白名单（自动生成，已加密）
 └── userdata/       # 用户数据目录（自动生成）
     ├── admin.json  # admin 的主机列表
     └── user1.json  # user1 的主机列表
@@ -134,6 +150,12 @@ npm start
 
 ## API 接口
 
+### 认证
+- `POST /api/auth/login` - 登录并返回 token
+- `POST /api/auth/verify` - 校验 token
+
+所有 API 需在请求头携带 `Authorization: Bearer <token>`。
+
 ### 用户数据
 - `GET /api/userdata/:userId/hosts` - 获取主机列表
 - `POST /api/userdata/:userId/hosts` - 添加主机
@@ -150,9 +172,13 @@ npm start
 - `GET /api/sftp/download/:sessionId` - 下载文件
 - `POST /api/sftp/download-zip/:sessionId` - 打包下载
 
+### 安全配置
+- `GET /api/security/private-networks` - 获取私有网段白名单（管理员）
+- `PUT /api/security/private-networks` - 更新私有网段白名单（管理员）
+
 ### SSH (WebSocket)
 
-WebSocket 连接到 `ws://host:port/ssh`，消息格式：
+WebSocket 连接到 `ws://host:port/ssh?token=...`，消息格式：
 
 ```javascript
 // 连接

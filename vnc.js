@@ -5,6 +5,7 @@
  */
 
 const net = require('net');
+const crypto = require('crypto');
 const WebSocket = require('ws');
 const url = require('url');
 
@@ -20,10 +21,12 @@ class VNCProxy {
      * @param {http.Server} server - HTTP 服务器实例
      * @param {string} path - WebSocket 路径
      */
-    init(server, path = '/vnc') {
+    init(server, path = '/vnc', options = {}) {
         // 使用 noServer 模式，手动处理 upgrade
         this.wss = new WebSocket.Server({ noServer: true });
         this.path = path;
+        this.verifyToken = options.verifyToken || null;
+        this.validateTargetHost = options.validateTargetHost || null;
 
         // 监听 HTTP server 的 upgrade 事件
         server.on('upgrade', (request, socket, head) => {
@@ -41,7 +44,16 @@ class VNCProxy {
             // 从 URL 参数获取连接信息
             const params = new url.URL(req.url, 'http://localhost').searchParams;
             const host = params.get('host');
-            const port = parseInt(params.get('port')) || 5900;
+            const port = parseInt(params.get('port'), 10) || 5900;
+            const token = params.get('token') || this.getBearerToken(req);
+
+            if (this.verifyToken) {
+                const auth = token ? this.verifyToken(token) : null;
+                if (!auth) {
+                    ws.close(1008, 'Unauthorized');
+                    return;
+                }
+            }
 
             if (!host) {
                 console.error('[VNC] 缺少 host 参数');
@@ -49,73 +61,91 @@ class VNCProxy {
                 return;
             }
 
-            console.log(`[VNC] 新连接: ${host}:${port}`);
+            const normalizedHost = host.trim();
 
-            const sessionId = this.generateSessionId();
-            let tcpSocket = null;
-
-            // 创建到 VNC 服务器的 TCP 连接
-            tcpSocket = net.createConnection({ host, port }, () => {
-                console.log(`[VNC] TCP 连接成功: ${host}:${port}`);
-
-                this.sessions.set(sessionId, {
-                    ws,
-                    socket: tcpSocket,
-                    host,
-                    port,
-                    createdAt: new Date()
-                });
-            });
-
-            // VNC 服务器 -> WebSocket (透传)
-            tcpSocket.on('data', (data) => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(data);
-                }
-            });
-
-            tcpSocket.on('error', (err) => {
-                console.error(`[VNC] TCP 错误 (${host}:${port}): ${err.message}`);
-                ws.close(1011, err.message);
-            });
-
-            tcpSocket.on('close', () => {
-                console.log(`[VNC] TCP 连接关闭: ${host}:${port}`);
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.close(1000, 'VNC connection closed');
-                }
-                this.cleanup(sessionId);
-            });
-
-            tcpSocket.on('timeout', () => {
-                console.log(`[VNC] TCP 连接超时: ${host}:${port}`);
-                tcpSocket.destroy();
-            });
-
-            tcpSocket.setTimeout(60000);
-
-            // WebSocket -> VNC 服务器 (透传)
-            ws.on('message', (message) => {
-                if (tcpSocket && !tcpSocket.destroyed) {
-                    // 确保发送的是 Buffer
-                    if (Buffer.isBuffer(message)) {
-                        tcpSocket.write(message);
-                    } else if (message instanceof ArrayBuffer) {
-                        tcpSocket.write(Buffer.from(message));
-                    } else {
-                        tcpSocket.write(Buffer.from(message));
+            const startConnection = async () => {
+                if (this.validateTargetHost) {
+                    const result = await this.validateTargetHost(normalizedHost);
+                    if (!result.ok) {
+                        console.error(`[VNC] 目标被拒绝: ${result.error}`);
+                        ws.close(1008, result.error);
+                        return;
                     }
                 }
-            });
 
-            ws.on('close', () => {
-                console.log(`[VNC] WebSocket 关闭: ${host}:${port}`);
-                this.cleanup(sessionId);
-            });
+                console.log(`[VNC] 新连接: ${normalizedHost}:${port}`);
 
-            ws.on('error', (err) => {
-                console.error(`[VNC] WebSocket 错误: ${err.message}`);
-                this.cleanup(sessionId);
+                const sessionId = this.generateSessionId();
+                let tcpSocket = null;
+
+                // 创建到 VNC 服务器的 TCP 连接
+                tcpSocket = net.createConnection({ host: normalizedHost, port }, () => {
+                    console.log(`[VNC] TCP 连接成功: ${normalizedHost}:${port}`);
+
+                    this.sessions.set(sessionId, {
+                        ws,
+                        socket: tcpSocket,
+                        host: normalizedHost,
+                        port,
+                        createdAt: new Date()
+                    });
+                });
+
+                // VNC 服务器 -> WebSocket (透传)
+                tcpSocket.on('data', (data) => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(data);
+                    }
+                });
+
+                tcpSocket.on('error', (err) => {
+                    console.error(`[VNC] TCP 错误 (${normalizedHost}:${port}): ${err.message}`);
+                    ws.close(1011, err.message);
+                });
+
+                tcpSocket.on('close', () => {
+                    console.log(`[VNC] TCP 连接关闭: ${normalizedHost}:${port}`);
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.close(1000, 'VNC connection closed');
+                    }
+                    this.cleanup(sessionId);
+                });
+
+                tcpSocket.on('timeout', () => {
+                    console.log(`[VNC] TCP 连接超时: ${normalizedHost}:${port}`);
+                    tcpSocket.destroy();
+                });
+
+                tcpSocket.setTimeout(60000);
+
+                // WebSocket -> VNC 服务器 (透传)
+                ws.on('message', (message) => {
+                    if (tcpSocket && !tcpSocket.destroyed) {
+                        // 确保发送的是 Buffer
+                        if (Buffer.isBuffer(message)) {
+                            tcpSocket.write(message);
+                        } else if (message instanceof ArrayBuffer) {
+                            tcpSocket.write(Buffer.from(message));
+                        } else {
+                            tcpSocket.write(Buffer.from(message));
+                        }
+                    }
+                });
+
+                ws.on('close', () => {
+                    console.log(`[VNC] WebSocket 关闭: ${normalizedHost}:${port}`);
+                    this.cleanup(sessionId);
+                });
+
+                ws.on('error', (err) => {
+                    console.error(`[VNC] WebSocket 错误: ${err.message}`);
+                    this.cleanup(sessionId);
+                });
+            };
+
+            startConnection().catch((err) => {
+                console.error('[VNC] 连接初始化失败:', err.message);
+                ws.close(1011, err.message);
             });
         });
 
@@ -126,7 +156,18 @@ class VNCProxy {
      * 生成会话 ID
      */
     generateSessionId() {
-        return `vnc_${Date.now()}_${++this.sessionCounter}`;
+        const rand = typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : crypto.randomBytes(16).toString('hex');
+        return `vnc_${rand}`;
+    }
+
+    getBearerToken(req) {
+        const header = req.headers.authorization || '';
+        if (header.startsWith('Bearer ')) {
+            return header.slice(7).trim();
+        }
+        return null;
     }
 
     /**
