@@ -69,12 +69,6 @@
 - 删除文件/文件夹
 - Ctrl+点击 多选文件
 
-### 用户管理
-- 多用户支持（管理员/普通用户）
-- 用户添加/删除/密码修改
-- 访客登录（关闭网页自动清除数据）
-- 用户数据隔离（每个用户独立的主机列表）
-
 ### 界面特性
 - Microsoft Fluent Design 设计风格
 - 亮色/暗色主题切换
@@ -102,15 +96,7 @@ npm install
 npm start
 ```
 
-访问 http://localhost:3000
-
-## 默认账号
-
-| 用户名 | 密码 | 角色 |
-|-------|------|------|
-| admin | admin | 管理员 |
-
-> ⚠️ **安全提示**：请在首次登录后立即修改默认密码！
+访问 http://localhost:3000，默认直接进入工具面板。
 
 ## 项目结构
 
@@ -147,17 +133,6 @@ npm start
 > **注意**：本地 Shell 功能仅支持 Linux 系统，使用 `script` 命令实现 PTY 功能，无需额外编译依赖。
 
 ## API 接口
-
-### 认证
-- `POST /api/auth/login` - 用户登录
-- `POST /api/auth/guest` - 访客登录
-- `POST /api/auth/guest/logout/:guestId` - 访客登出
-
-### 用户管理
-- `GET /api/users` - 获取用户列表
-- `POST /api/users` - 添加用户
-- `DELETE /api/users/:username` - 删除用户
-- `PUT /api/users/:username/password` - 修改密码
 
 ### 用户数据
 - `GET /api/userdata/:userId/hosts` - 获取主机列表
@@ -328,13 +303,8 @@ memory:[used:8192, free:4096, cached:2048]
 
 ## 安全说明
 
-- 密码以明文存储在 `users.json`，生产环境建议：
-  - 使用 bcrypt 加密密码
-  - 配置 HTTPS（使用 nginx 反向代理）
-  - 配置防火墙限制访问 IP
-  - 定期更新依赖包
-- SSH/SFTP 凭据仅保存在用户浏览器本地或服务端用户数据中
-- 访客数据在关闭网页后自动清除
+- 当前版本默认不启用登录保护，请部署在受信任网络内，并在反向代理层增加认证与 HTTPS。
+- SSH/SFTP 凭据仅保存在用户浏览器本地或服务端用户数据中。
 - **本地 Shell 安全提示**（仅 Linux）：本地 Shell 功能允许直接访问服务器终端，请确保：
   - 仅在受信任的网络环境中使用
   - 限制访问权限给授权用户

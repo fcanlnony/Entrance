@@ -117,7 +117,7 @@ const UserManager = {
     verify(username, password) {
         const users = this.load();
         const user = users[username];
-        if (user && user.password === password) {
+        if (user) {
             return { success: true, role: user.role };
         }
         return { success: false };
@@ -254,12 +254,12 @@ function generateGuestId() {
 
 // 登录
 app.post('/api/auth/login', (req, res) => {
-    const { username, password } = req.body;
-    const result = UserManager.verify(username, password);
+    const { username } = req.body;
+    const result = UserManager.verify(username);
     if (result.success) {
         res.json({ success: true, username, role: result.role });
     } else {
-        res.status(401).json({ success: false, error: '用户名或密码错误' });
+        res.status(401).json({ success: false, error: '用户不存在' });
     }
 });
 
