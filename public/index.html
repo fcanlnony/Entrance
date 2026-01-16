@@ -127,7 +127,14 @@
         .nav-item i { width: 20px; text-align: center; flex-shrink: 0; }
         .nav-item span { white-space: nowrap; transition: opacity .2s; }
         .sidebar.collapsed .nav-item span { opacity: 0; }
-        .sidebar-footer { padding: 12px; border-top: 1px solid var(--color-border); transition: border-color .3s; }
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 1px solid var(--color-border);
+            transition: border-color .3s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
         .toggle-btn {
             width: 100%; padding: 12px; background: var(--color-bg-2);
             border: 1px solid var(--color-border); border-radius: 8px;
@@ -152,6 +159,33 @@
             font-size: 18px;
         }
         .theme-toggle:hover { transform: scale(1.1); background: var(--color-bg-3); }
+
+        /* 登录遮罩 */
+        .auth-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: radial-gradient(circle at 20% 20%, rgba(0,120,215,0.2), transparent 60%),
+                        radial-gradient(circle at 80% 80%, rgba(16,124,16,0.15), transparent 55%),
+                        rgba(0,0,0,0.65);
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity .3s, visibility .3s;
+        }
+        .auth-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .auth-card {
+            width: 340px; padding: 24px;
+            background: var(--color-bg-1);
+            border: 1px solid var(--color-border);
+            border-radius: 14px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+        }
+        .auth-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+        .auth-sub { color: var(--color-text-2); font-size: 13px; margin-bottom: 18px; }
+        .auth-error { min-height: 16px; color: var(--color-error); font-size: 12px; margin-top: 8px; }
+        .logout-btn {
+            background: var(--color-bg-3);
+            border: 1px solid var(--color-border);
+            color: var(--color-text);
+        }
+        .logout-btn:hover { background: var(--color-border); }
 
         /* 主内容 */
         .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -929,6 +963,24 @@
         <i class="fas fa-moon"></i>
     </button>
 
+    <!-- 登录遮罩 -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-card">
+            <div class="auth-title">Entrance Tools</div>
+            <div class="auth-sub">请使用账户登录</div>
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" class="form-input" id="loginUser" placeholder="admin">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" class="form-input" id="loginPass" placeholder="密码">
+            </div>
+            <button class="btn btn-block" id="loginBtn"><i class="fas fa-right-to-bracket"></i> 登录</button>
+            <div class="auth-error" id="authError"></div>
+        </div>
+    </div>
+
     <!-- 仪表板 -->
     <div class="dashboard" id="dashboard">
         <aside class="sidebar" id="sidebar">
@@ -941,10 +993,12 @@
                 <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>本地 Shell</span><span id="shellLinuxBadge" style="font-size:10px;background:var(--color-accent);color:#fff;padding:2px 6px;border-radius:4px;margin-left:auto;display:none">Linux</span></div>
                 <div class="nav-item" data-view="sftp"><i class="fas fa-folder-tree"></i><span>SFTP 管理</span></div>
                 <div class="nav-item" data-view="vnc"><i class="fas fa-desktop"></i><span>VNC 远程</span></div>
+                <div class="nav-item" data-view="security"><i class="fas fa-shield-halved"></i><span>内网白名单</span></div>
                 <div class="nav-item" data-view="serial"><i class="fas fa-microchip"></i><span>串口终端</span></div>
             </nav>
             <div class="sidebar-footer">
                 <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-chevron-left"></i><span>收起</span></button>
+                <button class="toggle-btn logout-btn" id="logoutBtn"><i class="fas fa-right-from-bracket"></i><span>退出</span></button>
             </div>
         </aside>
 
@@ -1141,13 +1195,13 @@
                         <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
                             <span id="shellInfo" style="font-size:12px;color:var(--color-text-3)"></span>
                         </div>
-                        <input type="text" id="shellPathInput" placeholder="Shell 路径 (留空使用默认)" style="width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-bg-2);color:var(--color-text-1);font-size:13px" list="shellPathList">
+                        <input type="text" id="shellPathInput" placeholder="Shell 名称 (PATH 内，如 bash)" style="width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-bg-2);color:var(--color-text-1);font-size:13px" list="shellPathList">
                         <datalist id="shellPathList">
-                            <option value="/bin/bash">
-                            <option value="/bin/zsh">
-                            <option value="/bin/sh">
-                            <option value="/usr/bin/fish">
-                            <option value="/bin/tcsh">
+                            <option value="bash">
+                            <option value="zsh">
+                            <option value="sh">
+                            <option value="fish">
+                            <option value="tcsh">
                         </datalist>
                         <button class="btn btn-success btn-sm" id="shellStartBtn"><i class="fas fa-play"></i> 启动</button>
                         <button class="btn btn-danger btn-sm" id="shellStopBtn" style="display:none"><i class="fas fa-stop"></i> 停止</button>
@@ -1286,6 +1340,30 @@
                                 <p>请连接到 VNC 服务器</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security -->
+            <div class="view" id="view-security">
+                <div class="header"><h2><i class="fas fa-shield-halved"></i> 内网白名单</h2></div>
+                <div class="content">
+                    <div style="padding:12px 16px;border:1px solid var(--color-border);background:var(--color-bg-2);border-radius:8px;margin-bottom:16px;color:var(--color-text-2);font-size:13px">
+                        仅允许私有网段（如 10.0.0.0/8、192.168.0.0/16）用于 SSH/SFTP/VNC 连接。修改后立即生效。
+                    </div>
+                    <div class="toolbar">
+                        <div class="input-group">
+                            <label>新增网段 (CIDR)</label>
+                            <input type="text" class="form-input" id="privateNetInput" placeholder="192.168.0.0/16">
+                        </div>
+                        <div class="input-group" style="justify-content:flex-end">
+                            <label>&nbsp;</label>
+                            <button class="btn" id="privateNetAddBtn"><i class="fas fa-plus"></i> 添加</button>
+                        </div>
+                    </div>
+                    <div class="hosts-section">
+                        <h3>当前白名单</h3>
+                        <div class="hosts-grid" id="privateNetList"></div>
                     </div>
                 </div>
             </div>
@@ -1523,15 +1601,14 @@
         const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         const Config = {
             API: location.origin,
-            WS: `${wsProtocol}//${location.host}/ssh`
+            WS_BASE: `${wsProtocol}//${location.host}`
         };
 
         const State = {
             loggedIn: false,
             isAdmin: false,
-            isGuest: false,
-            guestId: null,
             username: '',
+            token: '',
             hosts: [],
             sshConnected: false,
             sftpConnected: false,
@@ -1547,8 +1624,31 @@
 
         const Storage = {
             getTheme() { return localStorage.getItem('theme') || 'dark'; },
-            setTheme(t) { localStorage.setItem('theme', t); }
+            setTheme(t) { localStorage.setItem('theme', t); },
+            getToken() { return localStorage.getItem('authToken') || ''; },
+            setToken(t) { localStorage.setItem('authToken', t); },
+            clearToken() { localStorage.removeItem('authToken'); }
         };
+
+        function buildWsUrl(path) {
+            const url = new URL(path, Config.WS_BASE);
+            if (State.token) {
+                url.searchParams.set('token', State.token);
+            }
+            return url.toString();
+        }
+
+        async function apiFetch(url, options = {}) {
+            const headers = { ...(options.headers || {}) };
+            if (State.token) {
+                headers.Authorization = `Bearer ${State.token}`;
+            }
+            const res = await fetch(url, { ...options, headers });
+            if (res.status === 401) {
+                Auth.handleUnauthorized();
+            }
+            return res;
+        }
 
         // 主题
         const Theme = {
@@ -1581,6 +1681,116 @@
             error(m) { this.show(m, 'error'); },
             info(m) { this.show(m, 'info'); }
         };
+
+        const Auth = {
+            getToken() {
+                return State.token || Storage.getToken();
+            },
+            init() {
+                document.getElementById('loginBtn').addEventListener('click', () => this.login());
+                document.getElementById('loginPass').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.login();
+                });
+                document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+
+                const savedToken = Storage.getToken();
+                if (savedToken) {
+                    State.token = savedToken;
+                    this.verify();
+                } else {
+                    this.showLogin();
+                }
+            },
+            async login() {
+                const username = document.getElementById('loginUser').value.trim();
+                const password = document.getElementById('loginPass').value;
+                if (!username || !password) {
+                    this.showError('请输入用户名和密码');
+                    return;
+                }
+                this.showError('');
+                try {
+                    const res = await fetch(`${Config.API}/api/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        this.setSession(data);
+                        document.getElementById('loginPass').value = '';
+                        this.hideLogin();
+                        UI.showDashboard();
+                    } else {
+                        this.showError(data.error || '登录失败');
+                    }
+                } catch (err) {
+                    this.showError(`登录失败: ${err.message}`);
+                }
+            },
+            async verify() {
+                try {
+                    const res = await apiFetch(`${Config.API}/api/auth/verify`, { method: 'POST' });
+                    if (res.ok) {
+                        const data = await res.json();
+                        this.setSession({ token: State.token, ...data });
+                        this.hideLogin();
+                        UI.showDashboard();
+                        return;
+                    }
+                } catch {}
+                this.clearSession();
+                this.showLogin();
+            },
+            setSession({ token, username, role }) {
+                if (token) {
+                    State.token = token;
+                    Storage.setToken(token);
+                }
+                State.loggedIn = true;
+                State.username = username || State.username;
+                State.isAdmin = role === 'admin';
+            },
+            clearSession() {
+                State.loggedIn = false;
+                State.isAdmin = false;
+                State.username = '';
+                State.token = '';
+                State.hosts = [];
+                State.navHistory = [];
+                State.navIndex = -1;
+                State.selectedFiles = [];
+                Storage.clearToken();
+                UI.resetConnections();
+                UI.hideDashboard();
+            },
+            logout() {
+                this.clearSession();
+                this.showLogin();
+                Toast.info('已退出登录');
+            },
+            handleUnauthorized() {
+                if (State.loggedIn) {
+                    Toast.error('登录已过期，请重新登录');
+                }
+                this.clearSession();
+                this.showLogin();
+            },
+            showLogin() {
+                document.getElementById('authOverlay').classList.remove('hidden');
+                document.getElementById('loginPass').value = '';
+                document.getElementById('loginUser').focus();
+            },
+            hideLogin() {
+                document.getElementById('authOverlay').classList.add('hidden');
+                this.showError('');
+            },
+            showError(msg) {
+                document.getElementById('authError').textContent = msg || '';
+            }
+        };
+
+        window.Auth = Auth;
 
         // 终端
         const Terminal_ = {
@@ -1638,7 +1848,7 @@
                 if (this.ws) this.ws.close();
                 this.term.clear();
                 this.term.writeln(`\x1b[33m正在连接 ${user}@${host}:${port}...\x1b[0m\n`);
-                this.ws = new WebSocket(Config.WS);
+                this.ws = new WebSocket(buildWsUrl('/ssh'));
                 this.ws.onopen = () => {
                     this.ws.send(JSON.stringify({ type: 'connect', host, port: +port, username: user, password: pass }));
                 };
@@ -2040,10 +2250,7 @@
             async connect(host, port, user, pass) {
                 try {
                     const payload = { host, port: +port, username: user, password: pass };
-                    if (State.isGuest && State.guestId) {
-                        payload.guestId = State.guestId;
-                    }
-                    const res = await fetch(`${Config.API}/api/sftp/connect`, {
+                    const res = await apiFetch(`${Config.API}/api/sftp/connect`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -2069,7 +2276,7 @@
             },
             async disconnect() {
                 if (!State.sftpSession) return;
-                try { await fetch(`${Config.API}/api/sftp/disconnect/${State.sftpSession}`, { method: 'POST' }); } catch {}
+                try { await apiFetch(`${Config.API}/api/sftp/disconnect/${State.sftpSession}`, { method: 'POST' }); } catch {}
                 State.sftpConnected = false;
                 State.sftpSession = null;
                 State.currentPath = '/';
@@ -2084,7 +2291,7 @@
             async getHome() {
                 if (!State.sftpSession) return;
                 try {
-                    const res = await fetch(`${Config.API}/api/sftp/home/${State.sftpSession}`);
+                    const res = await apiFetch(`${Config.API}/api/sftp/home/${State.sftpSession}`);
                     const data = await res.json();
                     if (res.ok) {
                         State.currentPath = data.path;
@@ -2096,7 +2303,7 @@
             async navigate(path, addToHistory = true) {
                 if (!State.sftpSession) return;
                 try {
-                    const res = await fetch(`${Config.API}/api/sftp/list/${State.sftpSession}?path=${encodeURIComponent(path)}`);
+                    const res = await apiFetch(`${Config.API}/api/sftp/list/${State.sftpSession}?path=${encodeURIComponent(path)}`);
                     const data = await res.json();
                     if (res.ok) {
                         State.currentPath = data.path;
@@ -2159,7 +2366,7 @@
                 if (!State.sftpSession) return;
                 const p = State.currentPath === '/' ? `/${name}` : `${State.currentPath}/${name}`;
                 try {
-                    const res = await fetch(`${Config.API}/api/sftp/mkdir/${State.sftpSession}`, {
+                    const res = await apiFetch(`${Config.API}/api/sftp/mkdir/${State.sftpSession}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ path: p })
@@ -2180,7 +2387,7 @@
                 const f = State.selectedFiles[0];
                 const p = State.currentPath === '/' ? `/${f.name}` : `${State.currentPath}/${f.name}`;
                 try {
-                    const res = await fetch(`${Config.API}/api/sftp/delete/${State.sftpSession}?path=${encodeURIComponent(p)}&type=${f.type}`, { method: 'DELETE' });
+                    const res = await apiFetch(`${Config.API}/api/sftp/delete/${State.sftpSession}?path=${encodeURIComponent(p)}&type=${f.type}`, { method: 'DELETE' });
                     if (res.ok) {
                         Toast.success('删除成功');
                         State.selectedFiles = [];
@@ -2205,7 +2412,7 @@
                 form.append('paths', JSON.stringify(paths));
                 this.showProgress(true);
                 try {
-                    const res = await fetch(`${Config.API}/api/sftp/upload/${State.sftpSession}`, { method: 'POST', body: form });
+                    const res = await apiFetch(`${Config.API}/api/sftp/upload/${State.sftpSession}`, { method: 'POST', body: form });
                     const data = await res.json();
                     if (res.ok) {
                         State.filesTransferred += data.results.length;
@@ -2257,19 +2464,31 @@
                 if (files.length === 1 && files[0].type !== 'folder') {
                     const f = files[0];
                     const filePath = State.currentPath === '/' ? `/${f.name}` : `${State.currentPath}/${f.name}`;
-                    const url = `${Config.API}/api/sftp/download/${State.sftpSession}?path=${encodeURIComponent(filePath)}`;
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = f.name;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    Toast.success(`正在下载: ${f.name}`);
+                    try {
+                        const res = await apiFetch(`${Config.API}/api/sftp/download/${State.sftpSession}?path=${encodeURIComponent(filePath)}`);
+                        if (res.ok) {
+                            const blob = await res.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = f.name;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            Toast.success(`正在下载: ${f.name}`);
+                        } else {
+                            const data = await res.json();
+                            Toast.error(data.error || '下载失败');
+                        }
+                    } catch (e) {
+                        Toast.error('下载失败: ' + e.message);
+                    }
                 } else {
                     // 多文件或文件夹，打包下载
                     Toast.info(`正在打包 ${files.length} 个项目...`);
                     try {
-                        const res = await fetch(`${Config.API}/api/sftp/download-zip/${State.sftpSession}`, {
+                        const res = await apiFetch(`${Config.API}/api/sftp/download-zip/${State.sftpSession}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ files, basePath: State.currentPath })
@@ -2363,13 +2582,13 @@
         // 主机管理（服务端存储）
         const Hosts = {
             getUserId() {
-                return State.isGuest ? State.guestId : State.username;
+                return State.username;
             },
             async load() {
                 const userId = this.getUserId();
                 if (!userId) return;
                 try {
-                    const res = await fetch(`${Config.API}/api/userdata/${userId}/hosts`);
+                    const res = await apiFetch(`${Config.API}/api/userdata/${userId}/hosts`);
                     State.hosts = await res.json();
                     this.render();
                 } catch (e) {
@@ -2382,7 +2601,7 @@
                 const userId = this.getUserId();
                 if (!userId) return;
                 try {
-                    const res = await fetch(`${Config.API}/api/userdata/${userId}/hosts`, {
+                    const res = await apiFetch(`${Config.API}/api/userdata/${userId}/hosts`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(h)
@@ -2402,7 +2621,7 @@
                 const userId = this.getUserId();
                 if (!userId) return;
                 try {
-                    const res = await fetch(`${Config.API}/api/userdata/${userId}/hosts/${i}`, { method: 'DELETE' });
+                    const res = await apiFetch(`${Config.API}/api/userdata/${userId}/hosts/${i}`, { method: 'DELETE' });
                     if (res.ok) {
                         Toast.info('主机已删除');
                         await this.load();
@@ -2441,6 +2660,81 @@
                     document.getElementById('sftpUser').value = h.user;
                     document.getElementById('sftpPass').value = h.pass;
                     SFTP.connect(h.host, h.port, h.user, h.pass);
+                }));
+            }
+        };
+
+        const Security = {
+            networks: [],
+            async load() {
+                if (!State.isAdmin) return;
+                try {
+                    const res = await apiFetch(`${Config.API}/api/security/private-networks`);
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        Toast.error(data.error || '加载白名单失败');
+                        return;
+                    }
+                    const data = await res.json();
+                    this.networks = Array.isArray(data.networks) ? data.networks : [];
+                    this.render();
+                } catch (e) {
+                    Toast.error('加载白名单失败: ' + e.message);
+                }
+            },
+            async update(networks) {
+                try {
+                    const res = await apiFetch(`${Config.API}/api/security/private-networks`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ networks })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        this.networks = data.networks || networks;
+                        this.render();
+                        Toast.success('白名单已更新');
+                    } else {
+                        Toast.error(data.error || '更新失败');
+                    }
+                } catch (e) {
+                    Toast.error('更新失败: ' + e.message);
+                }
+            },
+            async add() {
+                const input = document.getElementById('privateNetInput');
+                const value = input.value.trim();
+                if (!value) {
+                    Toast.error('请输入网段');
+                    return;
+                }
+                const next = [...new Set([...this.networks, value])];
+                input.value = '';
+                await this.update(next);
+            },
+            async remove(index) {
+                const next = this.networks.filter((_, i) => i !== index);
+                await this.update(next);
+            },
+            render() {
+                const el = document.getElementById('privateNetList');
+                if (!el) return;
+                if (!this.networks.length) {
+                    el.innerHTML = '<div class="empty"><i class="fas fa-network-wired"></i><p>暂无白名单</p></div>';
+                    return;
+                }
+                el.innerHTML = this.networks.map((net, i) => `
+                    <div class="host-card" data-index="${i}">
+                        <button class="host-delete" data-index="${i}"><i class="fas fa-times"></i></button>
+                        <div class="host-card-content">
+                            <div class="host-info"><i class="fas fa-network-wired"></i><span class="host-ip">${net}</span></div>
+                            <div class="host-details">私有网段</div>
+                        </div>
+                    </div>
+                `).join('');
+                el.querySelectorAll('.host-delete').forEach(btn => btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    this.remove(+btn.dataset.index);
                 }));
             }
         };
@@ -3160,6 +3454,7 @@
             fit: null,
             connected: false,
             readLoop: null,
+            platformDenied: false,
             // Waveform visualization
             waveformVisualizer: null,
             waveformActive: false,
@@ -3174,6 +3469,19 @@
 
             init() {
                 // 检查浏览器支持
+                const platform = navigator.platform || '';
+                const userAgent = navigator.userAgent || '';
+                const isWindows = /Win/.test(platform) || /Windows/.test(userAgent);
+                if (isWindows) {
+                    this.platformDenied = true;
+                    const tip = document.getElementById('serialNotSupported');
+                    tip.style.display = 'block';
+                    tip.innerHTML =
+                        '<p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 当前平台不允许访问串口</p>' +
+                        '<p style="color:var(--color-text-2);font-size:12px">仅允许访问 /dev/ 下的串口设备</p>';
+                    document.getElementById('serialConnectBtn').disabled = true;
+                    return;
+                }
                 if (!('serial' in navigator)) {
                     document.getElementById('serialNotSupported').style.display = 'block';
                     document.getElementById('serialConnectBtn').disabled = true;
@@ -3407,6 +3715,10 @@
 
             async connect() {
                 try {
+                    if (this.platformDenied) {
+                        Toast.error('当前平台不允许访问串口');
+                        return;
+                    }
                     // 请求串口
                     this.port = await navigator.serial.requestPort();
 
@@ -3645,11 +3957,17 @@
             connected: false,
             available: false,
             shellInfo: '',
+            initialized: false,
 
             async init() {
+                if (this.initialized) return;
+                this.initialized = true;
                 // 检查服务是否可用
                 try {
-                    const res = await fetch(`${Config.API}/api/localshell/status`);
+                    const res = await apiFetch(`${Config.API}/api/localshell/status`);
+                    if (!res.ok) {
+                        throw new Error('unauthorized');
+                    }
                     const data = await res.json();
                     this.available = data.available;
                     this.shellInfo = data.shell || '';
@@ -3667,7 +3985,8 @@
                                 `此功能仅支持 Linux 服务器<br><small style="color:var(--color-text-3)">当前服务器: ${this.platform}</small>`;
                         }
                     } else {
-                        document.getElementById('shellInfo').textContent = this.shellInfo;
+                        const displayShell = this.shellInfo === '/bin/bash' ? '/usr/bin/bash' : this.shellInfo;
+                        document.getElementById('shellInfo').textContent = displayShell;
                     }
                 } catch (e) {
                     console.error('[LocalShell] 检查状态失败:', e);
@@ -3733,6 +4052,10 @@
             },
 
             start() {
+                if (!State.isAdmin) {
+                    Toast.error('权限不足');
+                    return;
+                }
                 if (!this.available) {
                     Toast.error('本地 Shell 服务不可用');
                     return;
@@ -3743,7 +4066,7 @@
                 }
 
                 const shellPath = document.getElementById('shellPathInput').value.trim();
-                const wsUrl = `${Config.WS.replace('/ssh', '/localshell')}`;
+                const wsUrl = buildWsUrl('/localshell');
                 this.ws = new WebSocket(wsUrl);
 
                 this.ws.onopen = () => {
@@ -3954,12 +4277,7 @@
         const UI = {
             init() {
                 Theme.init();
-                State.loggedIn = true;
-                State.isAdmin = true;
-                State.isGuest = false;
-                State.guestId = null;
-                State.username = 'admin';
-                this.showDashboard();
+                Auth.init();
 
                 // 侧边栏
                 document.getElementById('toggleSidebar').addEventListener('click', () => {
@@ -4024,6 +4342,12 @@
                 document.getElementById('navForwardBtn').addEventListener('click', () => SFTP.goForward());
                 document.getElementById('navUpBtn').addEventListener('click', () => SFTP.goUp());
 
+                // 内网白名单
+                document.getElementById('privateNetAddBtn').addEventListener('click', () => Security.add());
+                document.getElementById('privateNetInput').addEventListener('keypress', e => {
+                    if (e.key === 'Enter') Security.add();
+                });
+
                 // 上传
                 document.getElementById('uploadFilesBtn').addEventListener('click', () => document.getElementById('fileInput').click());
                 document.getElementById('uploadFolderBtn').addEventListener('click', () => document.getElementById('folderInput').click());
@@ -4069,11 +4393,60 @@
             },
             showDashboard() {
                 document.getElementById('dashboard').classList.add('visible');
-                Terminal_.init();
-                LocalShell.init();
-                Serial.init();
-                VNCModule.init();
+                this.applyRole();
+                if (!this.started) {
+                    this.started = true;
+                    Terminal_.init();
+                    Serial.init();
+                    VNCModule.init();
+                }
+                if (State.isAdmin) {
+                    LocalShell.init();
+                    Security.load();
+                }
                 Hosts.load();
+            },
+            hideDashboard() {
+                document.getElementById('dashboard').classList.remove('visible');
+            },
+            resetConnections() {
+                if (Terminal_.ws) {
+                    Terminal_.ws.close();
+                    Terminal_.ws = null;
+                }
+                if (LocalShell.ws) {
+                    LocalShell.ws.close();
+                    LocalShell.ws = null;
+                    LocalShell.connected = false;
+                }
+                if (typeof VNC !== 'undefined') {
+                    VNC.disconnect();
+                }
+                State.sshConnected = false;
+                State.sftpConnected = false;
+                State.sftpSession = null;
+                State.currentPath = '/';
+            },
+            applyRole() {
+                const shellNav = document.querySelector('.nav-item[data-view="shell"]');
+                const shellView = document.getElementById('view-shell');
+                const securityNav = document.querySelector('.nav-item[data-view="security"]');
+                const securityView = document.getElementById('view-security');
+                if (!State.isAdmin) {
+                    shellNav.style.display = 'none';
+                    shellView.style.display = 'none';
+                    securityNav.style.display = 'none';
+                    securityView.style.display = 'none';
+                    const activeView = document.querySelector('.nav-item.active')?.dataset.view;
+                    if (activeView === 'shell' || activeView === 'security') {
+                        this.switchView('ssh');
+                    }
+                } else {
+                    shellNav.style.display = '';
+                    shellView.style.display = '';
+                    securityNav.style.display = '';
+                    securityView.style.display = '';
+                }
             },
             switchView(name) {
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === name));

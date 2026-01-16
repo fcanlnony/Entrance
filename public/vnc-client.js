@@ -65,7 +65,11 @@
 
             // 构建 WebSocket URL（通过后端代理）
             const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${wsProtocol}//${location.host}/vnc?host=${encodeURIComponent(host)}&port=${port}`;
+            const token = global.Auth && typeof global.Auth.getToken === 'function'
+                ? global.Auth.getToken()
+                : (global.localStorage ? (localStorage.getItem('authToken') || '') : '');
+            const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
+            const wsUrl = `${wsProtocol}//${location.host}/vnc?host=${encodeURIComponent(host)}&port=${port}${tokenParam}`;
 
             console.log(`[VNC Client] 正在连接: ${host}:${port}`);
             console.log(`[VNC Client] WebSocket URL: ${wsUrl}`);

@@ -9,13 +9,52 @@ const { spawn } = require('child_process');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 // 检查是否为 Linux
 const isLinux = process.platform === 'linux';
 
 // 获取默认 shell
 function getDefaultShell() {
-    return process.env.SHELL || '/bin/bash';
+    return process.env.SHELL || '/usr/bin/bash';
+}
+
+function getPathShellNames() {
+    return (process.env.PATH || '')
+        .split(path.delimiter)
+        .filter(Boolean)
+        .map(dir => dir.trim())
+        .filter(Boolean);
+}
+
+function resolveShellFromPath(shellName) {
+    if (!shellName || shellName.includes('/') || shellName.includes('\\')) {
+        return null;
+    }
+    const dirs = getPathShellNames();
+    for (const dir of dirs) {
+        const candidate = path.join(dir, shellName);
+        if (!fs.existsSync(candidate)) continue;
+        try {
+            fs.accessSync(candidate, fs.constants.X_OK);
+            return fs.realpathSync(candidate);
+        } catch {}
+    }
+    return null;
+}
+
+function getAllowedShell(defaultShell) {
+    const defaultName = path.basename(defaultShell || '');
+    let resolved = resolveShellFromPath(defaultName);
+    if (resolved) {
+        return resolved;
+    }
+    const fallbacks = ['bash', 'sh', 'zsh'];
+    for (const name of fallbacks) {
+        resolved = resolveShellFromPath(name);
+        if (resolved) return resolved;
+    }
+    return null;
 }
 
 // 存储活动的 shell 会话
@@ -50,7 +89,9 @@ function init(server, wsPath = '/localshell') {
         console.log(`[LocalShell] 新连接来自: ${req.socket.remoteAddress}`);
 
         let shellProcess = null;
-        const sessionId = `shell_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const sessionId = `shell_${typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : crypto.randomBytes(16).toString('hex')}`;
 
         ws.on('message', (message) => {
             try {
@@ -63,25 +104,18 @@ function init(server, wsPath = '/localshell') {
                             shellProcess.kill();
                         }
 
-                        // 使用客户端指定的 shell 或默认 shell
-                        let shell = data.shell || getDefaultShell();
-
-                        // 安全检查：验证 shell 路径
+                        // 仅允许 PATH 内的 shell
+                        let shell = null;
                         if (data.shell) {
-                            // 只允许绝对路径
-                            if (!data.shell.startsWith('/')) {
-                                ws.send(JSON.stringify({ type: 'error', message: 'Shell 路径必须是绝对路径' }));
+                            shell = resolveShellFromPath(data.shell.trim());
+                            if (!shell) {
+                                ws.send(JSON.stringify({ type: 'error', message: 'Shell 不在 PATH 中或不可执行' }));
                                 return;
                             }
-                            // 检查文件是否存在且可执行
-                            if (!fs.existsSync(data.shell)) {
-                                ws.send(JSON.stringify({ type: 'error', message: `Shell 不存在: ${data.shell}` }));
-                                return;
-                            }
-                            try {
-                                fs.accessSync(data.shell, fs.constants.X_OK);
-                            } catch {
-                                ws.send(JSON.stringify({ type: 'error', message: `Shell 不可执行: ${data.shell}` }));
+                        } else {
+                            shell = getAllowedShell(getDefaultShell());
+                            if (!shell) {
+                                ws.send(JSON.stringify({ type: 'error', message: '未找到可用的 PATH Shell' }));
                                 return;
                             }
                         }
