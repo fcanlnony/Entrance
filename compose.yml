@@ -1,0 +1,19 @@
+services:
+  entrance-tools:
+    build:
+      context: .
+    image: entrance-tools:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - AUTH_SECRET
+      - SSH_PASSWORD_KEY
+      - AUTH_TOKEN_TTL
+      - LOGIN_WINDOW_MS
+      - LOGIN_MAX_ATTEMPTS
+      - STRICT_HOST_KEY_CHECKING
+      - ALLOWED_TARGETS
+      - ALLOW_PRIVATE_NETWORKS
+      - ENTRANCE_DATA_DIR=/data
+    volumes:
+      - ./data:/data

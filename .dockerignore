@@ -1,0 +1,12 @@
+.env
+.git
+.gitignore
+.DS_Store
+node_modules
+userdata
+uploads
+users.json
+known_hosts.json
+data
+npm-debug.log*
+yarn-error.log*

@@ -26,11 +26,12 @@ app.set('trust proxy', 1);
 
 // 配置
 const PORT = process.env.PORT || 3000;
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
-const USERS_FILE = path.join(__dirname, 'users.json');
-const USER_DATA_DIR = path.join(__dirname, 'userdata');
-const KNOWN_HOSTS_FILE = path.join(__dirname, 'known_hosts.json');
-const PRIVATE_NETWORKS_FILE = path.join(__dirname, 'private-networks.json');
+const DATA_DIR = path.resolve(process.env.ENTRANCE_DATA_DIR || __dirname);
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const USER_DATA_DIR = path.join(DATA_DIR, 'userdata');
+const KNOWN_HOSTS_FILE = path.join(DATA_DIR, 'known_hosts.json');
+const PRIVATE_NETWORKS_FILE = path.join(DATA_DIR, 'private-networks.json');
 
 const AUTH_SECRET_ENV = 'AUTH_SECRET';
 const AUTH_TOKEN_TTL = parseInt(process.env.AUTH_TOKEN_TTL || '43200', 10);
