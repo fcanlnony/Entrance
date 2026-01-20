@@ -109,6 +109,28 @@ npm start
 
 默认账号为 `admin/admin`（首次启动自动生成）。
 
+### Podman 启动示例（Host 网络 + 串口）
+
+```bash
+# 构建镜像
+podman build -t entrance-tools .
+
+# 运行（Host 网络 + 串口设备 + 持久化数据）
+export AUTH_SECRET=$(openssl rand -base64 32)
+export SSH_PASSWORD_KEY=$(openssl rand -base64 32)
+podman run -d --name entrance-tools \
+  --network host \
+  --device /dev/ttyS0 \
+  --device /dev/ttyS1 \
+  -e AUTH_SECRET \
+  -e SSH_PASSWORD_KEY \
+  -e ENTRANCE_DATA_DIR=/data \
+  -v entrance-tools-data:/data \
+  entrance-tools:latest
+```
+
+> 将 `--device /dev/ttyS*` 替换为你机器上实际存在的串口设备（例如 `/dev/ttyUSB0`、`/dev/ttyACM0`）。Host 网络模式下无需 `-p` 映射端口。
+
 ## 项目结构
 
 ```

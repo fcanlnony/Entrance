@@ -4,5 +4,6 @@ userdata/
 users.json
 known_hosts.json
 private-networks.json
+data/
 *.log
 .DS_Store
