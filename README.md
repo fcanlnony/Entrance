@@ -194,6 +194,29 @@ podman run -d --name entrance-tools \
 - `GET /api/sftp/download/:sessionId` - 下载文件
 - `POST /api/sftp/download-zip/:sessionId` - 打包下载
 
+SFTP 连接参数示例：
+
+```javascript
+// 密码登录
+{
+  "host": "192.168.1.10",
+  "port": 22,
+  "username": "root",
+  "authType": "password",
+  "password": "xxx"
+}
+
+// 私钥登录
+{
+  "host": "192.168.1.10",
+  "port": 22,
+  "username": "root",
+  "authType": "key",
+  "privateKey": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----",
+  "passphrase": "optional"
+}
+```
+
 ### 安全配置
 - `GET /api/security/private-networks` - 获取私有网段白名单（管理员）
 - `PUT /api/security/private-networks` - 更新私有网段白名单（管理员）
@@ -205,6 +228,17 @@ WebSocket 连接到 `ws://host:port/ssh?token=...`，消息格式：
 ```javascript
 // 连接
 { "type": "connect", "host": "192.168.1.1", "port": 22, "username": "root", "password": "xxx" }
+
+// 使用私钥连接
+{
+  "type": "connect",
+  "host": "192.168.1.1",
+  "port": 22,
+  "username": "root",
+  "authType": "key",
+  "privateKey": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----",
+  "passphrase": "optional"
+}
 
 // 发送数据
 { "type": "data", "data": "ls -la\n" }
@@ -352,7 +386,8 @@ memory:[used:8192, free:4096, cached:2048]
 ## 安全说明
 
 - 当前版本默认不启用登录保护，请部署在受信任网络内，并在反向代理层增加认证与 HTTPS。
-- SSH/SFTP 凭据仅保存在用户浏览器本地或服务端用户数据中。
+- SSH/SFTP 凭据（密码、私钥、私钥口令）仅保存在用户浏览器本地或服务端用户数据中，服务端落盘会使用 `SSH_PASSWORD_KEY` 进行 AES-256-GCM 加密。
+- `SSH_PASSWORD_KEY` 变更后，历史已加密凭据将无法解密；需要恢复原密钥或在界面中重新录入对应主机凭据。
 - **本地 Shell 安全提示**（仅 Linux）：本地 Shell 功能允许直接访问服务器终端，请确保：
   - 仅在受信任的网络环境中使用
   - 限制访问权限给授权用户
