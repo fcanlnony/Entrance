@@ -205,6 +205,27 @@
         .input-group { display: flex; flex-direction: column; gap: 4px; }
         .input-group label { font-size: 12px; color: var(--color-text-2); }
         .input-group .form-input { min-width: 120px; padding: 10px 12px; }
+        .auth-key-panel {
+            width: 100%;
+            display: none;
+            gap: 12px;
+            padding: 12px;
+            background: var(--color-bg-1);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .auth-key-panel.active { display: flex; }
+        .auth-key-panel .input-group { flex: 1; min-width: 220px; }
+        .auth-key-panel .input-group.key-input-group { min-width: 360px; flex: 2; }
+        .key-input {
+            min-height: 96px;
+            resize: vertical;
+            white-space: pre;
+            font-family: Consolas, Monaco, monospace;
+            line-height: 1.35;
+        }
         .hosts-section { margin-bottom: 20px; }
         .hosts-section h3 { font-size: 13px; color: var(--color-text-2); margin-bottom: 12px; }
         .hosts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
@@ -227,6 +248,16 @@
         .host-info i { font-size: 18px; color: var(--color-accent); }
         .host-ip { font-family: Consolas, monospace; font-size: 14px; font-weight: 500; }
         .host-details { font-size: 12px; color: var(--color-text-3); margin-bottom: 10px; }
+        .host-auth-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--color-accent-light);
+            color: var(--color-accent);
+            font-size: 11px;
+            margin-bottom: 10px;
+        }
         .host-actions { display: flex; gap: 8px; }
         .host-actions .btn { flex: 1; padding: 6px 10px; font-size: 12px; }
         .host-delete {
@@ -1021,8 +1052,25 @@
                             <input type="text" class="form-input" id="sshUser" placeholder="root">
                         </div>
                         <div class="input-group">
+                            <label>认证方式</label>
+                            <select class="form-input" id="sshAuthType">
+                                <option value="password" selected>密码</option>
+                                <option value="key">私钥</option>
+                            </select>
+                        </div>
+                        <div class="input-group" id="sshPasswordGroup">
                             <label>密码</label>
-                            <input type="password" class="form-input" id="sshPass" placeholder="密码">
+                            <input type="password" class="form-input" id="sshPass" placeholder="密码" maxlength="2048">
+                        </div>
+                        <div class="auth-key-panel" id="sshKeyPanel">
+                            <div class="input-group key-input-group">
+                                <label>私钥</label>
+                                <textarea class="form-input key-input" id="sshPrivateKey" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" maxlength="65536" spellcheck="false"></textarea>
+                            </div>
+                            <div class="input-group">
+                                <label>私钥口令（可选）</label>
+                                <input type="password" class="form-input" id="sshPassphrase" placeholder="私钥口令" maxlength="4096">
+                            </div>
                         </div>
                         <div class="input-group" style="justify-content:flex-end">
                             <label>&nbsp;</label>
@@ -1239,8 +1287,25 @@
                             <input type="text" class="form-input" id="sftpUser" placeholder="root">
                         </div>
                         <div class="input-group">
+                            <label>认证方式</label>
+                            <select class="form-input" id="sftpAuthType">
+                                <option value="password" selected>密码</option>
+                                <option value="key">私钥</option>
+                            </select>
+                        </div>
+                        <div class="input-group" id="sftpPasswordGroup">
                             <label>密码</label>
-                            <input type="password" class="form-input" id="sftpPass" placeholder="密码">
+                            <input type="password" class="form-input" id="sftpPass" placeholder="密码" maxlength="2048">
+                        </div>
+                        <div class="auth-key-panel" id="sftpKeyPanel">
+                            <div class="input-group key-input-group">
+                                <label>私钥</label>
+                                <textarea class="form-input key-input" id="sftpPrivateKey" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" maxlength="65536" spellcheck="false"></textarea>
+                            </div>
+                            <div class="input-group">
+                                <label>私钥口令（可选）</label>
+                                <input type="password" class="form-input" id="sftpPassphrase" placeholder="私钥口令" maxlength="4096">
+                            </div>
                         </div>
                         <div class="input-group" style="justify-content:flex-end">
                             <label>&nbsp;</label>
@@ -1650,6 +1715,135 @@
             return res;
         }
 
+        const AUTH_TYPE_PASSWORD = 'password';
+        const AUTH_TYPE_KEY = 'key';
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function normalizeAuthType(authType, privateKey = '') {
+            const lowered = String(authType || '').trim().toLowerCase();
+            if (lowered === AUTH_TYPE_KEY || lowered === 'privatekey' || lowered === 'private_key') {
+                return AUTH_TYPE_KEY;
+            }
+            if (lowered === AUTH_TYPE_PASSWORD || lowered === 'pass') {
+                return AUTH_TYPE_PASSWORD;
+            }
+            return privateKey ? AUTH_TYPE_KEY : AUTH_TYPE_PASSWORD;
+        }
+
+        function isValidPrivateKey(privateKey) {
+            return /^-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]+-----END [A-Z0-9 ]*PRIVATE KEY-----$/.test(privateKey);
+        }
+
+        function updateAuthFields(prefix, authType) {
+            const normalized = normalizeAuthType(authType);
+            const passwordGroup = document.getElementById(`${prefix}PasswordGroup`);
+            const keyPanel = document.getElementById(`${prefix}KeyPanel`);
+            if (passwordGroup) {
+                passwordGroup.style.display = normalized === AUTH_TYPE_KEY ? 'none' : '';
+            }
+            if (keyPanel) {
+                keyPanel.classList.toggle('active', normalized === AUTH_TYPE_KEY);
+            }
+        }
+
+        function readCredentialForm(prefix, options = {}) {
+            const requireCredential = options.requireCredential !== false;
+            const authTypeRaw = document.getElementById(`${prefix}AuthType`)?.value || AUTH_TYPE_PASSWORD;
+            const password = document.getElementById(`${prefix}Pass`)?.value || '';
+            const privateKey = (document.getElementById(`${prefix}PrivateKey`)?.value || '')
+                .replace(/\r\n/g, '\n')
+                .trim();
+            const passphrase = document.getElementById(`${prefix}Passphrase`)?.value || '';
+            const authType = normalizeAuthType(authTypeRaw, privateKey);
+            if (!requireCredential && authType === AUTH_TYPE_PASSWORD && !password) {
+                return {};
+            }
+
+            if (authType === AUTH_TYPE_KEY) {
+                if (!privateKey) {
+                    throw new Error('密钥登录需要提供私钥');
+                }
+                if (!isValidPrivateKey(privateKey)) {
+                    throw new Error('私钥格式无效，仅支持 PEM/OpenSSH 私钥');
+                }
+                const payload = { authType: AUTH_TYPE_KEY, privateKey };
+                if (passphrase) {
+                    payload.passphrase = passphrase;
+                }
+                return payload;
+            }
+
+            if (!password && requireCredential) {
+                throw new Error('密码登录需要提供密码');
+            }
+
+            const payload = { authType: AUTH_TYPE_PASSWORD };
+            if (password) {
+                payload.password = password;
+            }
+            return payload;
+        }
+
+        function getHostCredentialPayload(host, options = {}) {
+            const requireCredential = options.requireCredential !== false;
+            const privateKey = String(host.privateKey || '').replace(/\r\n/g, '\n').trim();
+            const password = host.pass || host.password || '';
+            const passphrase = host.passphrase || '';
+            const authType = normalizeAuthType(host.authType, privateKey);
+            const hasCredential = Boolean(password || privateKey);
+
+            if (!requireCredential && !hasCredential) {
+                return {};
+            }
+
+            if (authType === AUTH_TYPE_KEY) {
+                if (!privateKey) {
+                    throw new Error('主机未保存私钥，请先补充');
+                }
+                return passphrase
+                    ? { authType: AUTH_TYPE_KEY, privateKey, passphrase }
+                    : { authType: AUTH_TYPE_KEY, privateKey };
+            }
+
+            if (!password && requireCredential) {
+                throw new Error('主机未保存密码，请先补充');
+            }
+
+            return password
+                ? { authType: AUTH_TYPE_PASSWORD, password }
+                : { authType: AUTH_TYPE_PASSWORD };
+        }
+
+        function fillCredentialForm(prefix, host) {
+            const privateKey = host.privateKey || '';
+            const authType = normalizeAuthType(host.authType, privateKey);
+            const authTypeEl = document.getElementById(`${prefix}AuthType`);
+            if (authTypeEl) {
+                authTypeEl.value = authType;
+            }
+            const passEl = document.getElementById(`${prefix}Pass`);
+            if (passEl) {
+                passEl.value = host.pass || host.password || '';
+            }
+            const privateKeyEl = document.getElementById(`${prefix}PrivateKey`);
+            if (privateKeyEl) {
+                privateKeyEl.value = privateKey;
+            }
+            const passphraseEl = document.getElementById(`${prefix}Passphrase`);
+            if (passphraseEl) {
+                passphraseEl.value = host.passphrase || '';
+            }
+            updateAuthFields(prefix, authType);
+        }
+
         // 主题
         const Theme = {
             init() {
@@ -1673,7 +1867,7 @@
             show(msg, type = 'info') {
                 const el = document.createElement('div');
                 el.className = `toast ${type}`;
-                el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i><span>${msg}</span>`;
+                el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i><span>${escapeHtml(msg)}</span>`;
                 document.getElementById('toasts').appendChild(el);
                 setTimeout(() => { el.style.animation = 'slideIn .3s reverse'; setTimeout(() => el.remove(), 300); }, 3500);
             },
@@ -1844,13 +2038,19 @@
                 this.term.writeln('\x1b[90m  输入连接信息后点击 SSH 按钮连接服务器\x1b[0m');
                 this.term.writeln('');
             },
-            connect(host, port, user, pass) {
+            connect(host, port, user, authPayload = {}) {
                 if (this.ws) this.ws.close();
                 this.term.clear();
                 this.term.writeln(`\x1b[33m正在连接 ${user}@${host}:${port}...\x1b[0m\n`);
                 this.ws = new WebSocket(buildWsUrl('/ssh'));
                 this.ws.onopen = () => {
-                    this.ws.send(JSON.stringify({ type: 'connect', host, port: +port, username: user, password: pass }));
+                    this.ws.send(JSON.stringify({
+                        type: 'connect',
+                        host,
+                        port: +port,
+                        username: user,
+                        ...authPayload
+                    }));
                 };
                 this.ws.onmessage = (e) => {
                     const msg = JSON.parse(e.data);
@@ -2247,9 +2447,9 @@
 
         // SFTP
         const SFTP = {
-            async connect(host, port, user, pass) {
+            async connect(host, port, user, authPayload = {}) {
                 try {
-                    const payload = { host, port: +port, username: user, password: pass };
+                    const payload = { host, port: +port, username: user, ...authPayload };
                     const res = await apiFetch(`${Config.API}/api/sftp/connect`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2589,7 +2789,14 @@
                 if (!userId) return;
                 try {
                     const res = await apiFetch(`${Config.API}/api/userdata/${userId}/hosts`);
-                    State.hosts = await res.json();
+                    const data = await res.json().catch(() => []);
+                    if (!res.ok) {
+                        State.hosts = [];
+                        this.render();
+                        Toast.error(data.error || '加载主机列表失败');
+                        return;
+                    }
+                    State.hosts = Array.isArray(data) ? data : [];
                     this.render();
                 } catch (e) {
                     console.error('加载主机列表失败:', e);
@@ -2632,34 +2839,61 @@
             },
             render() {
                 const el = document.getElementById('hostsGrid');
-                if (State.hosts.length === 0) {
+                if (!Array.isArray(State.hosts) || State.hosts.length === 0) {
                     el.innerHTML = '<div class="empty"><i class="fas fa-server"></i><p>暂无保存的主机</p></div>';
                     return;
                 }
-                el.innerHTML = State.hosts.map((h, i) => `
+                el.innerHTML = State.hosts.map((h, i) => {
+                    const authType = normalizeAuthType(h.authType, h.privateKey || '');
+                    const authLabel = authType === AUTH_TYPE_KEY ? '密钥登录' : '密码登录';
+                    const hostText = escapeHtml(h.host || '');
+                    const userText = escapeHtml(h.user || '');
+                    const portText = escapeHtml(h.port || 22);
+                    return `
                     <div class="host-card ${Terminal_.host === h.host ? 'connected' : ''}" data-index="${i}">
                         <button class="host-delete" data-index="${i}"><i class="fas fa-times"></i></button>
                         <div class="host-card-content">
-                            <div class="host-info"><i class="fas fa-server"></i><span class="host-ip">${h.host}</span></div>
-                            <div class="host-details">${h.user}@${h.host}:${h.port}</div>
+                            <div class="host-info"><i class="fas fa-server"></i><span class="host-ip">${hostText}</span></div>
+                            <div class="host-details">${userText}@${hostText}:${portText}</div>
+                            <span class="host-auth-tag">${authLabel}</span>
                             <div class="host-actions">
                                 <button class="btn btn-sm ssh-btn" data-index="${i}"><i class="fas fa-terminal"></i> SSH</button>
                                 <button class="btn btn-sm btn-secondary sftp-btn" data-index="${i}"><i class="fas fa-folder"></i> SFTP</button>
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
                 el.querySelectorAll('.host-delete').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); this.remove(+btn.dataset.index); }));
-                el.querySelectorAll('.ssh-btn').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); const h = State.hosts[+btn.dataset.index]; Terminal_.connect(h.host, h.port, h.user, h.pass); }));
+                el.querySelectorAll('.ssh-btn').forEach(btn => btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const h = State.hosts[+btn.dataset.index];
+                    try {
+                        const authPayload = getHostCredentialPayload(h);
+                        Terminal_.connect(h.host, h.port, h.user, authPayload);
+                    } catch (err) {
+                        Toast.error(err.message);
+                        UI.switchView('ssh');
+                        document.getElementById('sshHost').value = h.host || '';
+                        document.getElementById('sshPort').value = h.port || 22;
+                        document.getElementById('sshUser').value = h.user || '';
+                        fillCredentialForm('ssh', h);
+                    }
+                }));
                 el.querySelectorAll('.sftp-btn').forEach(btn => btn.addEventListener('click', e => {
                     e.stopPropagation();
                     const h = State.hosts[+btn.dataset.index];
                     UI.switchView('sftp');
-                    document.getElementById('sftpHost').value = h.host;
-                    document.getElementById('sftpPort').value = h.port;
-                    document.getElementById('sftpUser').value = h.user;
-                    document.getElementById('sftpPass').value = h.pass;
-                    SFTP.connect(h.host, h.port, h.user, h.pass);
+                    document.getElementById('sftpHost').value = h.host || '';
+                    document.getElementById('sftpPort').value = h.port || 22;
+                    document.getElementById('sftpUser').value = h.user || '';
+                    fillCredentialForm('sftp', h);
+                    try {
+                        const authPayload = getHostCredentialPayload(h);
+                        SFTP.connect(h.host, h.port, h.user, authPayload);
+                    } catch (err) {
+                        Toast.error(err.message);
+                    }
                 }));
             }
         };
@@ -4295,14 +4529,26 @@
                     });
                 });
 
+                document.getElementById('sshAuthType').addEventListener('change', (e) => updateAuthFields('ssh', e.target.value));
+                document.getElementById('sftpAuthType').addEventListener('change', (e) => updateAuthFields('sftp', e.target.value));
+                updateAuthFields('ssh', document.getElementById('sshAuthType').value);
+                updateAuthFields('sftp', document.getElementById('sftpAuthType').value);
+
                 // SSH
                 document.getElementById('saveHostBtn').addEventListener('click', () => {
                     const host = document.getElementById('sshHost').value.trim();
                     const port = document.getElementById('sshPort').value || 22;
                     const user = document.getElementById('sshUser').value.trim();
-                    const pass = document.getElementById('sshPass').value;
-                    if (host && user) Hosts.add({ host, port, user, pass });
-                    else Toast.error('请输入主机地址和用户名');
+                    if (!host || !user) {
+                        Toast.error('请输入主机地址和用户名');
+                        return;
+                    }
+                    try {
+                        const authPayload = readCredentialForm('ssh', { requireCredential: false });
+                        Hosts.add({ host, port, user, ...authPayload });
+                    } catch (err) {
+                        Toast.error(err.message);
+                    }
                 });
                 // SSH Stats Monitor
                 document.getElementById('sysStatsHint').addEventListener('click', () => Terminal_.toggleStats());
@@ -4326,9 +4572,16 @@
                     const host = document.getElementById('sftpHost').value.trim();
                     const port = document.getElementById('sftpPort').value || 22;
                     const user = document.getElementById('sftpUser').value.trim();
-                    const pass = document.getElementById('sftpPass').value;
-                    if (host && user) SFTP.connect(host, port, user, pass);
-                    else Toast.error('请输入主机地址和用户名');
+                    if (!host || !user) {
+                        Toast.error('请输入主机地址和用户名');
+                        return;
+                    }
+                    try {
+                        const authPayload = readCredentialForm('sftp');
+                        SFTP.connect(host, port, user, authPayload);
+                    } catch (err) {
+                        Toast.error(err.message);
+                    }
                 });
                 document.getElementById('sftpDisconnectBtn').addEventListener('click', () => SFTP.disconnect());
                 document.getElementById('sftpRefreshBtn').addEventListener('click', () => SFTP.list(State.currentPath));

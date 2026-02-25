@@ -46,6 +46,21 @@ const ALLOW_PRIVATE_NETWORKS = process.env.ALLOW_PRIVATE_NETWORKS === 'true';
 
 const SSH_PASSWORD_ENV = 'SSH_PASSWORD_KEY';
 const SSH_PASSWORD_PREFIX = 'enc:v1:';
+const SSH_AUTH_TYPE_PASSWORD = 'password';
+const SSH_AUTH_TYPE_KEY = 'key';
+const SSH_HOST_MAX_LENGTH = getPositiveIntEnv('SSH_HOST_MAX_LENGTH', 255);
+const SSH_USERNAME_MAX_LENGTH = getPositiveIntEnv('SSH_USERNAME_MAX_LENGTH', 128);
+const SSH_PASSWORD_MAX_LENGTH = getPositiveIntEnv('SSH_PASSWORD_MAX_LENGTH', 2048);
+const SSH_PASSPHRASE_MAX_LENGTH = getPositiveIntEnv('SSH_PASSPHRASE_MAX_LENGTH', 4096);
+const SSH_PRIVATE_KEY_MAX_LENGTH = getPositiveIntEnv('SSH_PRIVATE_KEY_MAX_LENGTH', 65536);
+
+function getPositiveIntEnv(name, fallback) {
+    const parsed = parseInt(process.env[name] || '', 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        return fallback;
+    }
+    return parsed;
+}
 
 function getAuthSecret() {
     const rawKey = process.env[AUTH_SECRET_ENV];
@@ -109,6 +124,113 @@ function decryptSshPassword(payload) {
     decipher.setAuthTag(tag);
     const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
     return decrypted.toString('utf8');
+}
+
+function normalizeStringValue(value, fieldName, maxLength, { trim = false } = {}) {
+    if (value === undefined || value === null) {
+        return '';
+    }
+    if (typeof value !== 'string') {
+        throw new Error(`${fieldName}格式无效`);
+    }
+    const normalized = trim ? value.trim() : value;
+    if (normalized.length > maxLength) {
+        throw new Error(`${fieldName}长度超过限制`);
+    }
+    return normalized;
+}
+
+function normalizeRequiredString(value, fieldName, maxLength) {
+    const normalized = normalizeStringValue(value, fieldName, maxLength, { trim: true });
+    if (!normalized) {
+        throw new Error(`${fieldName}不能为空`);
+    }
+    return normalized;
+}
+
+function normalizePrivateKey(privateKey) {
+    const normalized = normalizeStringValue(privateKey, '私钥', SSH_PRIVATE_KEY_MAX_LENGTH, { trim: true })
+        .replace(/\r\n/g, '\n');
+    if (!normalized) {
+        return '';
+    }
+    if (!/^-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]+-----END [A-Z0-9 ]*PRIVATE KEY-----$/.test(normalized)) {
+        throw new Error('私钥格式无效，仅支持 PEM/OpenSSH 私钥');
+    }
+    return normalized;
+}
+
+function normalizeAuthType(authType, hasPrivateKey = false) {
+    if (typeof authType === 'string') {
+        const lowered = authType.trim().toLowerCase();
+        if (lowered === SSH_AUTH_TYPE_PASSWORD || lowered === 'pass') {
+            return SSH_AUTH_TYPE_PASSWORD;
+        }
+        if (lowered === SSH_AUTH_TYPE_KEY || lowered === 'privatekey' || lowered === 'private_key') {
+            return SSH_AUTH_TYPE_KEY;
+        }
+    }
+    return hasPrivateKey ? SSH_AUTH_TYPE_KEY : SSH_AUTH_TYPE_PASSWORD;
+}
+
+function normalizePort(port, fallback = 22) {
+    const parsedPort = parseInt(port, 10);
+    if (!Number.isFinite(parsedPort)) {
+        return fallback;
+    }
+    if (parsedPort < 1 || parsedPort > 65535) {
+        throw new Error('端口范围必须是 1-65535');
+    }
+    return parsedPort;
+}
+
+function resolveSshCredentials(raw = {}, options = {}) {
+    const requireCredential = options.requireCredential !== false;
+    const password = normalizeStringValue(raw.password ?? raw.pass ?? '', '密码', SSH_PASSWORD_MAX_LENGTH);
+    const privateKey = normalizePrivateKey(raw.privateKey ?? '');
+    const passphrase = normalizeStringValue(raw.passphrase ?? '', '私钥口令', SSH_PASSPHRASE_MAX_LENGTH);
+    const authType = normalizeAuthType(raw.authType, Boolean(privateKey));
+
+    if (requireCredential && !password && !privateKey) {
+        throw new Error('请提供密码或私钥');
+    }
+
+    if (authType === SSH_AUTH_TYPE_KEY) {
+        if (!privateKey) {
+            throw new Error('密钥登录需要提供私钥');
+        }
+        return {
+            authType,
+            password: '',
+            privateKey,
+            passphrase
+        };
+    }
+
+    if (requireCredential && !password) {
+        throw new Error('密码登录需要提供密码');
+    }
+
+    return {
+        authType: SSH_AUTH_TYPE_PASSWORD,
+        password,
+        privateKey: '',
+        passphrase: ''
+    };
+}
+
+function applyCredentialsToSshConfig(config, credentials) {
+    if (!credentials || !config) return;
+    if (credentials.authType === SSH_AUTH_TYPE_KEY) {
+        config.privateKey = credentials.privateKey;
+        if (credentials.passphrase) {
+            config.passphrase = credentials.passphrase;
+        }
+        return;
+    }
+    if (credentials.password) {
+        config.password = credentials.password;
+    }
 }
 
 async function hashPassword(password) {
@@ -583,15 +705,29 @@ const UserDataManager = {
         let updated = false;
         const decryptedHosts = hosts.map(host => {
             const entry = { ...host };
-            if (entry.pass) {
-                if (isEncryptedSecret(entry.pass)) {
-                    entry.pass = decryptSshPassword(entry.pass);
-                } else {
-                    const plaintext = entry.pass;
-                    host.pass = encryptSshPassword(plaintext);
-                    updated = true;
-                    entry.pass = plaintext;
+            for (const field of ['pass', 'privateKey', 'passphrase']) {
+                if (!entry[field]) {
+                    continue;
                 }
+                if (isEncryptedSecret(entry[field])) {
+                    try {
+                        entry[field] = decryptSshPassword(entry[field]);
+                    } catch (err) {
+                        console.error(`[Hosts] 解密字段失败 [${userId}] ${field}:`, err.message);
+                        entry[field] = '';
+                    }
+                    continue;
+                }
+                const plaintext = entry[field];
+                host[field] = encryptSshPassword(plaintext);
+                entry[field] = plaintext;
+                updated = true;
+            }
+            const normalizedAuthType = normalizeAuthType(entry.authType, Boolean(entry.privateKey));
+            if (entry.authType !== normalizedAuthType) {
+                entry.authType = normalizedAuthType;
+                host.authType = normalizedAuthType;
+                updated = true;
             }
             return entry;
         });
@@ -604,12 +740,23 @@ const UserDataManager = {
     addHost(userId, host) {
         const data = this.load(userId);
         // 检查是否已存在
-        const exists = data.hosts.some(h => h.host === host.host && h.user === host.user);
+        const exists = data.hosts.some(h => h.host === host.host && h.user === host.user && `${h.port || 22}` === `${host.port || 22}`);
         if (exists) {
             return { success: false, error: '主机已存在' };
         }
         const encryptedPass = host.pass ? encryptSshPassword(host.pass) : '';
-        data.hosts.push({ ...host, pass: encryptedPass, addedAt: new Date().toISOString() });
+        const encryptedPrivateKey = host.privateKey ? encryptSshPassword(host.privateKey) : '';
+        const encryptedPassphrase = host.passphrase ? encryptSshPassword(host.passphrase) : '';
+        data.hosts.push({
+            host: host.host,
+            port: host.port || 22,
+            user: host.user,
+            authType: normalizeAuthType(host.authType, Boolean(host.privateKey)),
+            pass: encryptedPass,
+            privateKey: encryptedPrivateKey,
+            passphrase: encryptedPassphrase,
+            addedAt: new Date().toISOString()
+        });
         this.save(userId, data);
         return { success: true };
     },
@@ -760,12 +907,30 @@ app.get('/api/userdata/:userId/hosts', requireSelfOrAdmin('userId'), (req, res) 
 // 添加主机
 app.post('/api/userdata/:userId/hosts', requireSelfOrAdmin('userId'), (req, res) => {
     const { userId } = req.params;
-    const { host, port, user, pass } = req.body;
-    if (!host || !user) {
-        return res.status(400).json({ error: '主机地址和用户名不能为空' });
-    }
+    let host = '';
+    let user = '';
+    let port = 22;
+    let credentials = null;
+
     try {
-        const result = UserDataManager.addHost(userId, { host, port: port || 22, user, pass });
+        host = normalizeRequiredString(req.body.host, '主机地址', SSH_HOST_MAX_LENGTH);
+        user = normalizeRequiredString(req.body.user, '用户名', SSH_USERNAME_MAX_LENGTH);
+        port = normalizePort(req.body.port, 22);
+        credentials = resolveSshCredentials(req.body, { requireCredential: false });
+    } catch (err) {
+        return res.status(400).json({ error: err.message });
+    }
+
+    try {
+        const result = UserDataManager.addHost(userId, {
+            host,
+            port,
+            user,
+            authType: credentials.authType,
+            pass: credentials.password,
+            privateKey: credentials.privateKey,
+            passphrase: credentials.passphrase
+        });
         if (result.success) {
             res.json({ message: '主机已保存' });
         } else {
@@ -1013,11 +1178,21 @@ wss.on('connection', (ws, req) => {
                         sshClient.end();
                     }
 
-                    if (!data.host || !data.username) {
-                        ws.send(JSON.stringify({ type: 'error', message: '主机地址或用户名不能为空' }));
+                    let host = '';
+                    let username = '';
+                    let port = 22;
+                    let credentials = null;
+
+                    try {
+                        host = normalizeRequiredString(data.host, '主机地址', SSH_HOST_MAX_LENGTH);
+                        username = normalizeRequiredString(data.username, '用户名', SSH_USERNAME_MAX_LENGTH);
+                        port = normalizePort(data.port, 22);
+                        credentials = resolveSshCredentials(data);
+                    } catch (err) {
+                        ws.send(JSON.stringify({ type: 'error', message: err.message }));
                         break;
                     }
-                    const host = data.host.trim();
+
                     const hostCheck = await validateTargetHost(host);
                     if (!hostCheck.ok) {
                         ws.send(JSON.stringify({ type: 'error', message: hostCheck.error }));
@@ -1065,26 +1240,19 @@ wss.on('connection', (ws, req) => {
                         ws.send(JSON.stringify({ type: 'disconnected' }));
                     });
 
-                    const parsedPort = parseInt(data.port, 10);
-                    const port = Number.isFinite(parsedPort) ? parsedPort : 22;
                     const config = {
                         host: host,
                         port: port,
-                        username: data.username,
+                        username,
                         readyTimeout: 30000,
                         keepaliveInterval: 10000,
                         hostHash: 'sha256',
                         hostVerifier: createHostVerifier(host, port)
                     };
 
-                    if (data.password) {
-                        config.password = data.password;
-                    }
-                    if (data.privateKey) {
-                        config.privateKey = data.privateKey;
-                    }
+                    applyCredentialsToSshConfig(config, credentials);
 
-                    console.log(`[SSH] 正在连接: ${data.username}@${host}:${config.port}`);
+                    console.log(`[SSH] 正在连接: ${username}@${host}:${config.port} (${credentials.authType})`);
                     sshClient.connect(config);
                     break;
 
@@ -1233,53 +1401,70 @@ function getSftpSessionForRequest(sessionId, auth) {
 }
 
 app.post('/api/sftp/connect', async (req, res) => {
-    const { host, port = 22, username, password, privateKey } = req.body;
     const sessionId = generateSessionId();
+    let normalizedHost = '';
+    let normalizedUsername = '';
+    let normalizedPort = 22;
+    let credentials = null;
 
-    if (!host || !username) {
-        return res.status(400).json({ error: '主机地址和用户名不能为空' });
+    try {
+        normalizedHost = normalizeRequiredString(req.body.host, '主机地址', SSH_HOST_MAX_LENGTH);
+        normalizedUsername = normalizeRequiredString(req.body.username, '用户名', SSH_USERNAME_MAX_LENGTH);
+        normalizedPort = normalizePort(req.body.port, 22);
+        credentials = resolveSshCredentials(req.body);
+    } catch (err) {
+        return res.status(400).json({ error: err.message });
     }
 
-    const normalizedHost = host.trim();
     const hostCheck = await validateTargetHost(normalizedHost);
     if (!hostCheck.ok) {
         return res.status(400).json({ error: hostCheck.error });
     }
 
-    console.log(`[SFTP] 正在连接: ${username}@${normalizedHost}:${port}`);
+    console.log(`[SFTP] 正在连接: ${normalizedUsername}@${normalizedHost}:${normalizedPort} (${credentials.authType})`);
 
     const sshClient = new Client();
+    let responded = false;
+
+    function fail(status, message) {
+        if (responded || res.headersSent) return;
+        responded = true;
+        res.status(status).json({ error: message });
+    }
+
+    function success(payload) {
+        if (responded || res.headersSent) return;
+        responded = true;
+        res.json(payload);
+    }
 
     sshClient.on('ready', () => {
         sshClient.sftp((err, sftp) => {
             if (err) {
                 sshClient.end();
-                return res.status(500).json({ error: err.message });
+                return fail(500, err.message);
             }
 
             sftpSessions.set(sessionId, { client: sshClient, sftp, host: normalizedHost, owner: req.auth.sub });
 
-            res.json({ sessionId, message: '连接成功' });
+            success({ sessionId, message: '连接成功' });
         });
     });
 
     sshClient.on('error', (err) => {
-        res.status(500).json({ error: err.message });
+        fail(500, err.message);
     });
 
-    const parsedPort = parseInt(port, 10);
-    const normalizedPort = Number.isFinite(parsedPort) ? parsedPort : 22;
     const config = {
         host: normalizedHost,
         port: normalizedPort,
-        username,
+        username: normalizedUsername,
         readyTimeout: 30000,
         hostHash: 'sha256',
         hostVerifier: createHostVerifier(normalizedHost, normalizedPort)
     };
 
-    if (password) config.password = password;
-    if (privateKey) config.privateKey = privateKey;
+    applyCredentialsToSshConfig(config, credentials);
 
     sshClient.connect(config);
 });
