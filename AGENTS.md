@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Entrance Tools is a Node/Express monolith. `server.js` owns HTTP/WebSocket routing plus SSH, SFTP, local shell, and VNC wiring, while `local-shell.js` and `vnc.js` isolate feature-specific logic and `vnc-client.js` handles browser plumbing. The SPA UI sits in `index.html` with inline assets; no bundler is involved. Runtime state lives in `users.json` and `userdata/*.json`, created on first boot—never commit real user data. Temporary payloads land under `uploads/` and dependencies live in `node_modules/`.
+Entrance Tools is a Node/Express monolith. `server.js` owns HTTP/WebSocket routing plus SSH, SFTP, local shell, and VNC wiring, while `local-shell.js` and `vnc.js` isolate feature-specific logic and `vnc-client.js` handles browser plumbing. The SPA UI sits in `index.html` with inline assets; no bundler is involved. Runtime state lives in `users.json` and `userdata/*.json`, created on first boot -- never commit real user data. Temporary payloads land under `uploads/` and dependencies live in `node_modules/`.
 
 ## Build, Test, and Development Commands
 `npm install` sets up Express, ws, ssh2, multer, and archiver.  
@@ -18,4 +18,4 @@ Automated tests are not yet wired in, so validate changes manually: run `npm sta
 Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, etc.); keep patches focused and avoid bundling unrelated fixes. PRs should explain the problem, the approach, and the validation evidence (screenshots, terminal recordings, or log snippets). Highlight any migrations touching `users.json`, `userdata/`, or upload behavior so deployers can back up state.
 
 ## Security & Configuration Tips
-Passwords in `users.json` are plaintext—change the defaults immediately, prefer environment variables for secrets, and scrub sample data before pushing. Sanitize any hostnames or file paths taken from the UI, and develop using a non-privileged system account. Remove throwaway files from `uploads/` and `userdata/` before requesting review.
+Passwords in `users.json` are plaintext -- change the defaults immediately, prefer environment variables for secrets, and scrub sample data before pushing. Sanitize any hostnames or file paths taken from the UI, and develop using a non-privileged system account. Remove throwaway files from `uploads/` and `userdata/` before requesting review.
