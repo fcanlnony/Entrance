@@ -3990,9 +3990,35 @@
 
                     Toast.success('串口已连接');
                 } catch (e) {
-                    if (e.name !== 'NotFoundError') {
-                        Toast.error('连接失败: ' + e.message);
-                        this.term.writeln(`\x1b[31m连接失败: ${e.message}\x1b[0m`);
+                    if (e.name === 'NotFoundError') {
+                        Toast.info('未选择串口设备');
+                        this.term.writeln('\x1b[33m未选择串口设备\x1b[0m');
+                        return;
+                    }
+
+                    const message = String((e && e.message) || e || '未知错误');
+                    const lowerMessage = message.toLowerCase();
+                    let hint = '';
+
+                    if (e.name === 'SecurityError') {
+                        hint = '串口权限被拒绝，请在权限弹窗中允许串口访问。';
+                    } else if (
+                        lowerMessage.includes('permission') ||
+                        lowerMessage.includes('denied') ||
+                        lowerMessage.includes('access')
+                    ) {
+                        hint = '当前用户可能没有串口设备权限，请将用户加入 dialout/uucp 组并重新登录。';
+                    } else if (
+                        lowerMessage.includes('failed to open serial port') ||
+                        lowerMessage.includes('could not open port')
+                    ) {
+                        hint = '串口被占用或无权限访问，请检查设备占用和用户组权限。';
+                    }
+
+                    Toast.error(hint ? `连接失败: ${hint}` : `连接失败: ${message}`);
+                    this.term.writeln(`\x1b[31m连接失败: ${e.name || 'Error'}: ${message}\x1b[0m`);
+                    if (hint) {
+                        this.term.writeln(`\x1b[33m建议: ${hint}\x1b[0m`);
                     }
                 }
             },
