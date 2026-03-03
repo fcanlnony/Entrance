@@ -3702,21 +3702,12 @@
 
             init() {
                 // 检查浏览器支持
-                const platform = navigator.platform || '';
-                const userAgent = navigator.userAgent || '';
-                const isWindows = /Win/.test(platform) || /Windows/.test(userAgent);
-                if (isWindows) {
-                    this.platformDenied = true;
-                    const tip = document.getElementById('serialNotSupported');
-                    tip.style.display = 'block';
-                    tip.innerHTML =
-                        '<p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 当前平台不允许访问串口</p>' +
-                        '<p style="color:var(--color-text-2);font-size:12px">仅允许访问 /dev/ 下的串口设备</p>';
-                    document.getElementById('serialConnectBtn').disabled = true;
-                    return;
-                }
                 if (!('serial' in navigator)) {
+                    this.platformDenied = true;
                     document.getElementById('serialNotSupported').style.display = 'block';
+                    document.getElementById('serialNotSupported').innerHTML =
+                        '<p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 当前环境不支持 Web Serial</p>' +
+                        '<p style="color:var(--color-text-2);font-size:12px">请使用支持 Web Serial 的桌面应用或 Chromium 内核浏览器</p>';
                     document.getElementById('serialConnectBtn').disabled = true;
                     return;
                 }

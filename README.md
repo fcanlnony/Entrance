@@ -46,7 +46,7 @@
 - 浏览器原生串口通信（Web Serial API）
 - 支持自定义波特率配置
 - xterm.js 终端显示
-- 仅允许 /dev 平台访问（Windows 默认禁用）
+- 支持 Linux `/dev/tty*`、macOS `/dev/cu.*`、Windows `COM*` 串口
 - **实时波形可视化** - 类示波器功能
   - 自动检测 `Variable:Value` 格式数据
   - 动态创建多变量曲线
