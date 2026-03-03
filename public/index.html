@@ -3688,6 +3688,7 @@
             connected: false,
             readLoop: null,
             platformDenied: false,
+            pendingCR: false,
             // Waveform visualization
             waveformVisualizer: null,
             waveformActive: false,
@@ -3959,10 +3960,12 @@
                         dataBits,
                         stopBits,
                         parity,
-                        flowControl
+                        flowControl,
+                        bufferSize: 16384
                     });
 
                     this.connected = true;
+                    this.pendingCR = false;
                     this.updateStatus(true);
                     this.term.clear();
                     this.term.writeln(`\x1b[32m串口已连接 (${baudRate} bps)\x1b[0m\n`);
@@ -3971,10 +3974,12 @@
                     const textDecoder = new TextDecoderStream();
                     const readableStreamClosed = this.port.readable.pipeTo(textDecoder.writable);
                     this.reader = textDecoder.readable.getReader();
+                    readableStreamClosed.catch(() => {});
 
                     const textEncoder = new TextEncoderStream();
                     const writableStreamClosed = textEncoder.readable.pipeTo(this.port.writable);
                     this.writer = textEncoder.writable.getWriter();
+                    writableStreamClosed.catch(() => {});
 
                     // 开始读取
                     this.readLoop = this.startReading();
@@ -4014,6 +4019,26 @@
                 }
             },
 
+            appendIncoming(chunk) {
+                let data = String(chunk || '');
+                if (!data) return;
+
+                if (this.pendingCR) {
+                    if (data.startsWith('\n')) {
+                        data = data.slice(1);
+                    }
+                    this.pendingCR = false;
+                }
+
+                data = data.replace(/\r\n/g, '\n');
+                if (data.endsWith('\r')) {
+                    this.pendingCR = true;
+                    data = data.slice(0, -1);
+                }
+                data = data.replace(/\r/g, '\n');
+                this.lineBuffer += data;
+            },
+
             async startReading() {
                 const showHex = () => document.getElementById('serialShowHex').checked;
                 const autoScroll = () => document.getElementById('serialAutoScroll').checked;
@@ -4024,7 +4049,7 @@
                         if (done) break;
                         if (value) {
                             // Buffer incoming data for line-based parsing
-                            this.lineBuffer += value;
+                            this.appendIncoming(value);
 
                             // Process complete lines
                             let newlineIdx;
@@ -4089,6 +4114,7 @@
                 } catch (e) {
                     if (this.connected) {
                         this.term.writeln(`\n\x1b[31m读取错误: ${e.message}\x1b[0m`);
+                        this.disconnect();
                     }
                 }
             },
