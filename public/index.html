@@ -3700,6 +3700,10 @@
             demoMode: false,
             demoInterval: null,
             demoTime: 0,
+            chunkQueue: [],
+            queuedSize: 0,
+            queueScheduled: false,
+            lastDropNotice: 0,
 
             init() {
                 // 检查浏览器支持
@@ -3961,11 +3965,14 @@
                         stopBits,
                         parity,
                         flowControl,
-                        bufferSize: 16384
+                        bufferSize: 262144
                     });
 
                     this.connected = true;
                     this.pendingCR = false;
+                    this.chunkQueue = [];
+                    this.queuedSize = 0;
+                    this.queueScheduled = false;
                     this.updateStatus(true);
                     this.term.clear();
                     this.term.writeln(`\x1b[32m串口已连接 (${baudRate} bps)\x1b[0m\n`);
@@ -4019,9 +4026,9 @@
                 }
             },
 
-            appendIncoming(chunk) {
+            normalizeIncoming(chunk) {
                 let data = String(chunk || '');
-                if (!data) return;
+                if (!data) return '';
 
                 if (this.pendingCR) {
                     if (data.startsWith('\n')) {
@@ -4036,79 +4043,125 @@
                     data = data.slice(0, -1);
                 }
                 data = data.replace(/\r/g, '\n');
+                return data;
+            },
+
+            appendIncoming(chunk) {
+                const data = this.normalizeIncoming(chunk);
+                if (!data) return;
                 this.lineBuffer += data;
             },
 
-            async startReading() {
+            scheduleQueue() {
+                if (this.queueScheduled) return;
+                this.queueScheduled = true;
+                setTimeout(() => {
+                    this.queueScheduled = false;
+                    this.flushQueue();
+                }, 0);
+            },
+
+            flushQueue() {
+                if (!this.connected) return;
+                if (this.chunkQueue.length === 0) return;
+
+                const chunks = this.chunkQueue.splice(0);
+                this.queuedSize = 0;
+                const data = chunks.join('');
+                if (data) {
+                    this.handleIncoming(data);
+                }
+            },
+
+            handleIncoming(data) {
                 const showHex = () => document.getElementById('serialShowHex').checked;
                 const autoScroll = () => document.getElementById('serialAutoScroll').checked;
+                const needsLineParsing = showHex() || this.waveformActive || this.statChartActive;
 
+                if (!needsLineParsing) {
+                    const normalized = this.normalizeIncoming(data);
+                    if (normalized) {
+                        this.term.write(normalized);
+                        if (autoScroll()) {
+                            this.term.scrollToBottom();
+                        }
+                    }
+                    return;
+                }
+
+                this.appendIncoming(data);
+
+                let newlineIdx;
+                while ((newlineIdx = this.lineBuffer.indexOf('\n')) !== -1) {
+                    const line = this.lineBuffer.substring(0, newlineIdx).replace(/\r$/, '');
+                    this.lineBuffer = this.lineBuffer.substring(newlineIdx + 1);
+
+                    const isStatData = this.isStatChartFormat(line);
+                    if (isStatData && this.statChartActive && this.statChartVisualizer) {
+                        const statData = this.statChartVisualizer.parseStatLine(line);
+                        if (statData) {
+                            statData.forEach(item => {
+                                this.statChartVisualizer.pushData(item.varName, item.pairs);
+                            });
+                        }
+                    }
+
+                    if (!isStatData) {
+                        const waveformDataArray = this.parseWaveformLine(line);
+                        if (waveformDataArray && this.waveformActive && this.waveformVisualizer) {
+                            waveformDataArray.forEach(dataPoint => {
+                                this.waveformVisualizer.pushData(dataPoint.key, dataPoint.value);
+                            });
+                        }
+                    }
+
+                    if (showHex()) {
+                        const hex = Array.from(new TextEncoder().encode(line + '\n'))
+                            .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+                            .join(' ');
+                        this.term.write(`\x1b[33m${hex}\x1b[0m `);
+                    } else {
+                        this.term.writeln(line);
+                    }
+                }
+
+                if (this.lineBuffer.length > 256) {
+                    if (showHex()) {
+                        const hex = Array.from(new TextEncoder().encode(this.lineBuffer))
+                            .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+                            .join(' ');
+                        this.term.write(`\x1b[33m${hex}\x1b[0m `);
+                    } else {
+                        this.term.write(this.lineBuffer);
+                    }
+                    this.lineBuffer = '';
+                }
+
+                if (autoScroll()) {
+                    this.term.scrollToBottom();
+                }
+            },
+
+            async startReading() {
                 try {
                     while (this.connected) {
                         const { value, done } = await this.reader.read();
                         if (done) break;
                         if (value) {
-                            // Buffer incoming data for line-based parsing
-                            this.appendIncoming(value);
-
-                            // Process complete lines
-                            let newlineIdx;
-                            while ((newlineIdx = this.lineBuffer.indexOf('\n')) !== -1) {
-                                const line = this.lineBuffer.substring(0, newlineIdx).replace(/\r$/, '');
-                                this.lineBuffer = this.lineBuffer.substring(newlineIdx + 1);
-
-                                // Check if line matches stat chart format (var:[a:2, b:3])
-                                const isStatData = this.isStatChartFormat(line);
-
-                                // Parse stat chart data if format matches
-                                if (isStatData && this.statChartActive && this.statChartVisualizer) {
-                                    const statData = this.statChartVisualizer.parseStatLine(line);
-                                    if (statData) {
-                                        statData.forEach(item => {
-                                            this.statChartVisualizer.pushData(item.varName, item.pairs);
-                                        });
-                                    }
+                            this.chunkQueue.push(value);
+                            this.queuedSize += value.length;
+                            if (this.queuedSize > 1024 * 1024) {
+                                const now = Date.now();
+                                if (now - this.lastDropNotice > 2000) {
+                                    this.term.writeln('\n\x1b[33m数据过快，已丢弃部分内容\x1b[0m');
+                                    this.lastDropNotice = now;
                                 }
-
-                                // Only parse as waveform if NOT stat chart format
-                                if (!isStatData) {
-                                    const waveformDataArray = this.parseWaveformLine(line);
-                                    if (waveformDataArray && this.waveformActive && this.waveformVisualizer) {
-                                        waveformDataArray.forEach(data => {
-                                            this.waveformVisualizer.pushData(data.key, data.value);
-                                        });
-                                    }
-                                }
-
-                                // Always print to terminal
-                                if (showHex()) {
-                                    const hex = Array.from(new TextEncoder().encode(line + '\n'))
-                                        .map(b => b.toString(16).padStart(2, '0').toUpperCase())
-                                        .join(' ');
-                                    this.term.write(`\x1b[33m${hex}\x1b[0m `);
-                                } else {
-                                    this.term.writeln(line);
-                                }
-                            }
-
-                            // Handle partial data (no newline yet) - only if buffer gets too large
-                            // or contains non-waveform data that should be displayed immediately
-                            if (this.lineBuffer.length > 256) {
-                                // Flush buffer to terminal if it gets too large
-                                if (showHex()) {
-                                    const hex = Array.from(new TextEncoder().encode(this.lineBuffer))
-                                        .map(b => b.toString(16).padStart(2, '0').toUpperCase())
-                                        .join(' ');
-                                    this.term.write(`\x1b[33m${hex}\x1b[0m `);
-                                } else {
-                                    this.term.write(this.lineBuffer);
-                                }
+                                this.chunkQueue = [];
+                                this.queuedSize = 0;
                                 this.lineBuffer = '';
+                                this.pendingCR = false;
                             }
-
-                            if (autoScroll()) {
-                                this.term.scrollToBottom();
-                            }
+                            this.scheduleQueue();
                         }
                     }
                 } catch (e) {
