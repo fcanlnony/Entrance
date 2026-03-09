@@ -1077,6 +1077,7 @@ wss.on('connection', (ws, req) => {
     let stream = null;
     let statsInterval = null;
     let topInterval = null;
+    let dockerStatsInterval = null;
 
     if (!req.auth) {
         ws.close(1008, 'Unauthorized');
@@ -1163,6 +1164,75 @@ wss.on('connection', (ws, req) => {
                     } catch (e) {
                         console.error('[TOP] 发送数据错误:', e.message);
                     }
+                }
+            });
+        });
+    };
+
+    let dockerStatsInFlight = false;
+    const collectDockerStats = () => {
+        if (!sshClient || ws.readyState !== WebSocket.OPEN) {
+            if (dockerStatsInterval) {
+                clearInterval(dockerStatsInterval);
+                dockerStatsInterval = null;
+            }
+            return;
+        }
+        if (dockerStatsInFlight) return;
+        dockerStatsInFlight = true;
+
+        const cmd = 'if command -v docker >/dev/null 2>&1; then docker stats --no-stream --format "{{json .}}"; else echo "__DOCKER_NOT_INSTALLED__"; fi';
+
+        sshClient.exec(cmd, (err, execStream) => {
+            if (err) {
+                dockerStatsInFlight = false;
+                console.error('[DockerStats] 执行命令错误:', err.message);
+                return;
+            }
+
+            let output = '';
+            let errorOutput = '';
+            execStream.on('data', (chunk) => {
+                output += chunk.toString();
+            });
+            execStream.stderr.on('data', (chunk) => {
+                errorOutput += chunk.toString();
+            });
+            execStream.on('close', () => {
+                dockerStatsInFlight = false;
+                const trimmed = output.trim();
+                const trimmedErr = errorOutput.trim();
+
+                try {
+                    if (trimmed === '__DOCKER_NOT_INSTALLED__') {
+                        ws.send(JSON.stringify({
+                            type: 'dockerStats',
+                            data: { available: false, error: '远程主机未安装 Docker', containers: [] }
+                        }));
+                        return;
+                    }
+
+                    if (trimmedErr) {
+                        ws.send(JSON.stringify({
+                            type: 'dockerStats',
+                            data: { available: false, error: trimmedErr, containers: [] }
+                        }));
+                        return;
+                    }
+
+                    const containers = trimmed
+                        ? trimmed.split('\n').map(line => {
+                            try { return JSON.parse(line.trim()); }
+                            catch { return null; }
+                        }).filter(Boolean)
+                        : [];
+
+                    ws.send(JSON.stringify({
+                        type: 'dockerStats',
+                        data: { available: true, containers }
+                    }));
+                } catch (e) {
+                    console.error('[DockerStats] 发送数据错误:', e.message);
                 }
             });
         });
@@ -1277,6 +1347,10 @@ wss.on('connection', (ws, req) => {
                         clearInterval(topInterval);
                         topInterval = null;
                     }
+                    if (dockerStatsInterval) {
+                        clearInterval(dockerStatsInterval);
+                        dockerStatsInterval = null;
+                    }
                     if (stream) stream.end();
                     if (sshClient) sshClient.end();
                     break;
@@ -1318,6 +1392,28 @@ wss.on('connection', (ws, req) => {
                 case 'refreshTop':
                     if (sshClient) {
                         collectTop();
+                    }
+                    break;
+
+                case 'startDockerStats':
+                    if (sshClient && !dockerStatsInterval) {
+                        console.log('[DockerStats] 开始 Docker 监控');
+                        collectDockerStats();
+                        dockerStatsInterval = setInterval(collectDockerStats, 3000);
+                    }
+                    break;
+
+                case 'stopDockerStats':
+                    if (dockerStatsInterval) {
+                        console.log('[DockerStats] 停止 Docker 监控');
+                        clearInterval(dockerStatsInterval);
+                        dockerStatsInterval = null;
+                    }
+                    break;
+
+                case 'refreshDockerStats':
+                    if (sshClient) {
+                        collectDockerStats();
                     }
                     break;
 
@@ -1372,6 +1468,10 @@ wss.on('connection', (ws, req) => {
         if (topInterval) {
             clearInterval(topInterval);
             topInterval = null;
+        }
+        if (dockerStatsInterval) {
+            clearInterval(dockerStatsInterval);
+            dockerStatsInterval = null;
         }
         if (stream) stream.end();
         if (sshClient) sshClient.end();

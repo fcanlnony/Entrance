@@ -550,6 +550,152 @@
             color: #fff;
         }
 
+        /* Docker Stats Panel */
+        .docker-panel-container {
+            margin-top: 12px;
+            background: var(--color-bg-2);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: all .3s ease;
+        }
+        .docker-panel-hint {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .docker-panel-hint:hover { background: var(--color-bg-3); }
+        .docker-panel-hint .hint-info { display: flex; gap: 16px; }
+        .docker-panel-hint .hint-item { display: flex; align-items: center; gap: 4px; }
+        .docker-panel-hint .hint-docker-count { color: #2496ed; }
+        .docker-panel-hint .hint-docker-cpu { color: #0078D7; }
+        .docker-panel-hint .hint-docker-mem { color: #107c10; }
+        .docker-panel-hint .hint-expand {
+            display: flex; align-items: center; gap: 4px;
+            color: var(--color-text-3); font-size: 11px;
+        }
+        .docker-panel-hint:hover .hint-expand { color: var(--color-accent); }
+        .docker-panel-content {
+            display: none;
+            border-top: 1px solid var(--color-border);
+        }
+        .docker-panel-container.active .docker-panel-content { display: block; }
+        .docker-panel-header {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; padding: 10px 12px;
+            background: var(--color-bg-2); border-bottom: 1px solid var(--color-border);
+        }
+        .docker-panel-header-left { display: flex; align-items: center; gap: 12px; }
+        .docker-panel-header h4 {
+            font-size: 13px; font-weight: 500;
+            display: flex; align-items: center; gap: 8px; white-space: nowrap;
+        }
+        .docker-panel-header h4 i { color: #2496ed; }
+        .docker-mode-switch { display: flex; gap: 0; }
+        .docker-mode-tag {
+            padding: 4px 10px; border: 1px solid var(--color-border);
+            background: var(--color-bg-3); color: var(--color-text-2);
+            font-size: 11px; cursor: pointer; transition: all .2s;
+        }
+        .docker-mode-tag:first-child { border-radius: 4px 0 0 4px; }
+        .docker-mode-tag:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+        .docker-mode-tag:hover { border-color: var(--color-accent); color: var(--color-text); }
+        .docker-mode-tag.active {
+            background: rgba(36, 150, 237, 0.15);
+            border-color: #2496ed; color: #2496ed;
+        }
+        .docker-mode-tag.active + .docker-mode-tag { border-left-color: #2496ed; }
+        .docker-panel-controls { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+        .docker-panel-status { font-size: 11px; color: var(--color-text-2); white-space: nowrap; }
+        .docker-panel-body { display: grid; grid-template-columns: 1fr; min-height: 0; }
+        .docker-panel-body.single-mode { grid-template-columns: 200px minmax(0, 1fr); }
+        .docker-container-list {
+            display: none; padding: 8px;
+            background: var(--color-bg-1); border-right: 1px solid var(--color-border);
+            max-height: 340px; overflow-y: auto;
+        }
+        .docker-panel-body.single-mode .docker-container-list {
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .docker-container-item {
+            width: 100%; text-align: left; padding: 8px 10px;
+            background: var(--color-bg-2); border: 1px solid var(--color-border);
+            border-radius: 6px; color: var(--color-text); cursor: pointer; transition: all .2s;
+        }
+        .docker-container-item:hover { border-color: var(--color-accent); background: var(--color-bg-3); }
+        .docker-container-item.active {
+            border-color: #2496ed; background: rgba(36, 150, 237, 0.12);
+            box-shadow: inset 0 0 0 1px rgba(36, 150, 237, 0.35);
+        }
+        .docker-container-name {
+            display: block; font-size: 12px; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .docker-container-meta {
+            display: block; margin-top: 2px; color: var(--color-text-2); font-size: 10px;
+        }
+        .docker-metrics-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 12px; padding: 12px; background: var(--color-bg-1);
+        }
+        .docker-panel-empty {
+            display: flex; align-items: center; justify-content: center;
+            grid-column: 1 / -1; min-height: 180px;
+            color: var(--color-text-3); font-size: 13px;
+        }
+        .docker-metric-card {
+            background: var(--color-bg-2); border: 1px solid var(--color-border);
+            border-radius: 10px; padding: 12px;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .docker-metric-head {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 8px; width: 100%;
+        }
+        .docker-metric-title {
+            font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+        }
+        .docker-metric-mode {
+            font-size: 10px; color: var(--color-text-2);
+            padding: 2px 8px; border-radius: 999px;
+            background: var(--color-bg-3); border: 1px solid var(--color-border);
+        }
+        .docker-ring-wrap { display: flex; align-items: center; justify-content: center; }
+        .docker-ring {
+            position: relative; width: 110px; height: 110px;
+        }
+        .docker-ring svg { width: 110px; height: 110px; transform: rotate(-90deg); }
+        .docker-ring-track, .docker-ring-progress { fill: none; stroke-width: 10; }
+        .docker-ring-track { stroke: rgba(255, 255, 255, 0.08); }
+        [data-theme="light"] .docker-ring-track { stroke: rgba(0, 0, 0, 0.08); }
+        .docker-ring-progress {
+            stroke: var(--ring-color); stroke-linecap: round;
+            transition: stroke-dashoffset .35s ease;
+        }
+        .docker-ring-center {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 0 14px;
+        }
+        .docker-ring-center strong {
+            font-size: 16px; line-height: 1.1; font-family: Consolas, monospace;
+        }
+        .docker-ring-center span {
+            margin-top: 2px; font-size: 10px; color: var(--color-text-2);
+        }
+        .docker-metric-detail {
+            font-size: 11px; color: var(--color-text-2); text-align: center; line-height: 1.4;
+        }
+        @media (max-width: 960px) {
+            .docker-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .docker-panel-body.single-mode { grid-template-columns: 1fr; }
+            .docker-container-list { border-right: none; border-bottom: 1px solid var(--color-border); max-height: 160px; }
+        }
+
         /* Kill Modal */
         .kill-process-info {
             background: var(--color-bg-1);
@@ -1222,6 +1368,54 @@
                                         <tr><td colspan="10" style="text-align:center;color:var(--color-text-3);padding:20px">连接SSH后自动获取进程信息</td></tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Docker Stats Panel -->
+                    <div class="docker-panel-container" id="dockerPanelContainer">
+                        <div class="docker-panel-hint" id="dockerPanelHint">
+                            <div class="hint-info">
+                                <div class="hint-item hint-docker-count">
+                                    <i class="fab fa-docker"></i>
+                                    <span>容器:</span>
+                                    <span id="dockerContainerCountValue">--</span>
+                                </div>
+                                <div class="hint-item hint-docker-cpu">
+                                    <i class="fas fa-microchip"></i>
+                                    <span>CPU:</span>
+                                    <span id="dockerCpuHintValue">--</span>
+                                </div>
+                                <div class="hint-item hint-docker-mem">
+                                    <i class="fas fa-memory"></i>
+                                    <span>内存:</span>
+                                    <span id="dockerMemHintValue">--</span>
+                                </div>
+                            </div>
+                            <div class="hint-expand">
+                                <span>展开 Docker</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="docker-panel-content">
+                            <div class="docker-panel-header">
+                                <div class="docker-panel-header-left">
+                                    <h4><i class="fab fa-docker"></i> Docker Stats</h4>
+                                    <div class="docker-mode-switch" id="dockerModeSwitch">
+                                        <button type="button" class="docker-mode-tag active" data-mode="total">总计</button>
+                                        <button type="button" class="docker-mode-tag" data-mode="single">详细</button>
+                                    </div>
+                                </div>
+                                <div class="docker-panel-controls">
+                                    <span class="docker-panel-status" id="dockerPanelStatus">连接 SSH 后自动获取容器信息</span>
+                                    <button class="btn btn-sm btn-secondary" id="dockerRefreshBtn" title="刷新"><i class="fas fa-sync-alt"></i></button>
+                                    <button class="btn btn-sm btn-secondary" id="dockerCloseBtn" title="收起"><i class="fas fa-chevron-up"></i></button>
+                                </div>
+                            </div>
+                            <div class="docker-panel-body" id="dockerPanelBody">
+                                <div class="docker-container-list" id="dockerContainerList"></div>
+                                <div class="docker-metrics-grid" id="dockerMetricsGrid">
+                                    <div class="docker-panel-empty">连接 SSH 后自动获取 Docker Stats</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1999,6 +2193,14 @@
             topProcesses: [],        // 进程列表
             topSortField: 'cpu',     // 排序字段
             topSortDesc: true,       // 降序
+            // Docker stats panel
+            dockerStatsActive: false,
+            dockerExpanded: false,
+            dockerMode: 'total',
+            dockerContainers: [],
+            dockerSelectedId: null,
+            dockerAvailable: null,
+            dockerError: '',
             init() {
                 this.term = new Terminal({
                     theme: {
@@ -2064,10 +2266,13 @@
                             this.startStats();
                             // 自动开始采集TOP数据
                             this.startTop();
+                            // 自动开始采集Docker Stats
+                            this.startDockerStats();
                             break;
                         case 'data': this.term.write(msg.data); break;
                         case 'stats': this.handleStats(msg.data); break;
                         case 'top': this.handleTop(msg.data); break;
+                        case 'dockerStats': this.handleDockerStats(msg.data); break;
                         case 'killResult': this.handleKillResult(msg.data); break;
                         case 'error':
                             this.term.writeln(`\x1b[31m错误: ${msg.message}\x1b[0m`);
@@ -2078,6 +2283,7 @@
                             this.host = null;
                             this.stopStats();
                             this.stopTop();
+                            this.stopDockerStats();
                             this.updateStatus(false);
                             this.term.writeln('\n\x1b[33m连接已断开\x1b[0m');
                             Toast.info('SSH 连接已断开');
@@ -2091,6 +2297,9 @@
                 this.ws.onclose = () => {
                     if (State.sshConnected) {
                         State.sshConnected = false;
+                        this.stopStats();
+                        this.stopTop();
+                        this.stopDockerStats();
                         this.updateStatus(false);
                     }
                 };
@@ -2433,6 +2642,205 @@
                 } else {
                     Toast.error(data.message || '操作失败');
                 }
+            },
+            // ---- Docker Stats ----
+            startDockerStats() {
+                if (this.dockerStatsActive) return;
+                this.dockerStatsActive = true;
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ type: 'startDockerStats' }));
+                }
+            },
+            stopDockerStats() {
+                const container = document.getElementById('dockerPanelContainer');
+                const body = document.getElementById('dockerPanelBody');
+                this.dockerStatsActive = false;
+                this.dockerExpanded = false;
+                this.dockerMode = 'total';
+                this.dockerContainers = [];
+                this.dockerSelectedId = null;
+                this.dockerAvailable = null;
+                this.dockerError = '';
+                container.classList.remove('active');
+                body.classList.remove('single-mode');
+                document.getElementById('dockerContainerCountValue').textContent = '--';
+                document.getElementById('dockerCpuHintValue').textContent = '--';
+                document.getElementById('dockerMemHintValue').textContent = '--';
+                document.getElementById('dockerPanelStatus').textContent = '连接 SSH 后自动获取容器信息';
+                document.getElementById('dockerContainerList').innerHTML = '';
+                document.getElementById('dockerMetricsGrid').innerHTML = '<div class="docker-panel-empty">连接 SSH 后自动获取 Docker Stats</div>';
+                document.querySelectorAll('#dockerModeSwitch .docker-mode-tag').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.mode === 'total');
+                });
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ type: 'stopDockerStats' }));
+                }
+            },
+            toggleDockerPanel() {
+                if (!State.sshConnected) { Toast.error('请先连接 SSH'); return; }
+                const container = document.getElementById('dockerPanelContainer');
+                this.dockerExpanded = !this.dockerExpanded;
+                container.classList.toggle('active', this.dockerExpanded);
+            },
+            refreshDockerStats() {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN && State.sshConnected) {
+                    this.ws.send(JSON.stringify({ type: 'refreshDockerStats' }));
+                }
+            },
+            setDockerMode(mode) {
+                if (this.dockerMode === mode) return;
+                this.dockerMode = mode;
+                if (mode === 'single' && !this.dockerSelectedId && this.dockerContainers.length) {
+                    this.dockerSelectedId = this.dockerContainers[0].id;
+                }
+                this.renderDockerPanel();
+            },
+            selectDockerContainer(id) {
+                this.dockerSelectedId = id;
+                this.renderDockerPanel();
+            },
+            handleDockerStats(data) {
+                this.dockerAvailable = data && data.available !== false;
+                this.dockerError = (data && data.error) ? data.error : '';
+                const containers = this.dockerAvailable && Array.isArray(data.containers)
+                    ? data.containers.map(c => this._normalizeContainer(c)).filter(Boolean)
+                    : [];
+                containers.sort((a, b) => b.cpuPercent - a.cpuPercent || b.memPercent - a.memPercent);
+                this.dockerContainers = containers;
+                if (!containers.some(c => c.id === this.dockerSelectedId)) {
+                    this.dockerSelectedId = containers.length ? containers[0].id : null;
+                }
+                const totals = this._dockerAggregate(containers);
+                document.getElementById('dockerContainerCountValue').textContent = this.dockerAvailable ? String(containers.length) : '--';
+                document.getElementById('dockerCpuHintValue').textContent = this.dockerAvailable ? totals.cpuPercent.toFixed(1) + '%' : '--';
+                document.getElementById('dockerMemHintValue').textContent = this.dockerAvailable ? totals.memPercent.toFixed(1) + '%' : '--';
+                this.renderDockerPanel();
+            },
+            renderDockerPanel() {
+                const body = document.getElementById('dockerPanelBody');
+                const list = document.getElementById('dockerContainerList');
+                const metrics = document.getElementById('dockerMetricsGrid');
+                const status = document.getElementById('dockerPanelStatus');
+                const isSingle = this.dockerMode === 'single';
+                body.classList.toggle('single-mode', isSingle);
+                document.querySelectorAll('#dockerModeSwitch .docker-mode-tag').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.mode === this.dockerMode);
+                });
+                if (this.dockerAvailable === null) {
+                    status.textContent = '连接 SSH 后自动获取容器信息';
+                    list.innerHTML = '';
+                    metrics.innerHTML = '<div class="docker-panel-empty">连接 SSH 后自动获取 Docker Stats</div>';
+                    return;
+                }
+                if (!this.dockerAvailable) {
+                    const errMsg = this.dockerError || 'Docker 不可用';
+                    status.textContent = errMsg;
+                    list.innerHTML = '';
+                    metrics.innerHTML = `<div class="docker-panel-empty">${escapeHtml(errMsg)}</div>`;
+                    return;
+                }
+                if (!this.dockerContainers.length) {
+                    status.textContent = '暂无运行中的容器';
+                    list.innerHTML = '';
+                    metrics.innerHTML = '<div class="docker-panel-empty">未检测到正在运行的容器</div>';
+                    return;
+                }
+                // Render container list (single mode)
+                if (isSingle) {
+                    list.innerHTML = this.dockerContainers.map(c => {
+                        const active = c.id === this.dockerSelectedId ? ' active' : '';
+                        return `<button type="button" class="docker-container-item${active}" data-container-id="${escapeHtml(c.id)}">
+                            <span class="docker-container-name" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+                            <span class="docker-container-meta">CPU ${c.cpuPercent.toFixed(1)}% · MEM ${c.memPercent.toFixed(1)}%</span>
+                        </button>`;
+                    }).join('');
+                } else {
+                    list.innerHTML = '';
+                }
+                const totals = this._dockerAggregate(this.dockerContainers);
+                const selected = isSingle ? this.dockerContainers.find(c => c.id === this.dockerSelectedId) : null;
+                if (isSingle && !selected) {
+                    status.textContent = '请选择一个容器';
+                    metrics.innerHTML = '<div class="docker-panel-empty">请从左侧选择容器</div>';
+                    return;
+                }
+                const scope = selected || totals;
+                const badge = isSingle ? '详细' : '总计';
+                status.textContent = isSingle ? `容器: ${selected.name}` : `总计 · ${this.dockerContainers.length} 个容器`;
+                // Build metric cards
+                const netTotal = scope.netIn + scope.netOut;
+                const blockTotal = scope.blockRead + scope.blockWrite;
+                const allNetTotal = totals.netIn + totals.netOut;
+                const allBlockTotal = totals.blockRead + totals.blockWrite;
+                const netPct = isSingle ? (allNetTotal > 0 ? Math.min(netTotal / allNetTotal * 100, 100) : 0) : (netTotal > 0 ? 100 : 0);
+                const blockPct = isSingle ? (allBlockTotal > 0 ? Math.min(blockTotal / allBlockTotal * 100, 100) : 0) : (blockTotal > 0 ? 100 : 0);
+                const cards = [
+                    { label: 'CPU', color: '#0078D7', pct: Math.min(scope.cpuPercent, 100), text: scope.cpuPercent.toFixed(1) + '%', sub: badge, detail: isSingle ? scope.name : `${this.dockerContainers.length} 容器叠加` },
+                    { label: 'MEM', color: '#107c10', pct: Math.min(scope.memPercent, 100), text: scope.memPercent.toFixed(1) + '%', sub: this.formatSize(scope.memUsed) + ' 已用', detail: `${this.formatSize(scope.memUsed)} / ${scope.memLimit > 0 ? this.formatSize(scope.memLimit) : '无限制'}` },
+                    { label: 'NET I/O', color: '#ff8c00', pct: netPct, text: this.formatSize(netTotal), sub: isSingle ? netPct.toFixed(1) + '% 占总量' : '总流量', detail: `IN ${this.formatSize(scope.netIn)} / OUT ${this.formatSize(scope.netOut)}` },
+                    { label: 'BLOCK I/O', color: '#d83b01', pct: blockPct, text: this.formatSize(blockTotal), sub: isSingle ? blockPct.toFixed(1) + '% 占总量' : '总流量', detail: `R ${this.formatSize(scope.blockRead)} / W ${this.formatSize(scope.blockWrite)}` }
+                ];
+                metrics.innerHTML = cards.map(c => this._renderRingCard(c, badge)).join('');
+            },
+            _renderRingCard(m, badge) {
+                const r = 40, circ = 2 * Math.PI * r;
+                const pct = Math.max(0, Math.min(m.pct, 100));
+                const off = circ * (1 - pct / 100);
+                return `<div class="docker-metric-card">
+                    <div class="docker-metric-head">
+                        <span class="docker-metric-title">${escapeHtml(m.label)}</span>
+                        <span class="docker-metric-mode">${escapeHtml(badge)}</span>
+                    </div>
+                    <div class="docker-ring-wrap">
+                        <div class="docker-ring" style="--ring-color:${m.color}">
+                            <svg viewBox="0 0 110 110">
+                                <circle class="docker-ring-track" cx="55" cy="55" r="${r}"></circle>
+                                <circle class="docker-ring-progress" cx="55" cy="55" r="${r}" style="stroke-dasharray:${circ.toFixed(2)};stroke-dashoffset:${off.toFixed(2)}"></circle>
+                            </svg>
+                            <div class="docker-ring-center">
+                                <strong>${escapeHtml(m.text)}</strong>
+                                <span>${escapeHtml(m.sub)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="docker-metric-detail">${escapeHtml(m.detail)}</div>
+                </div>`;
+            },
+            _normalizeContainer(item) {
+                const id = String(item.ID || item.Container || item.Name || '').trim();
+                if (!id) return null;
+                const name = String(item.Name || item.Container || id).trim();
+                const pairOf = (v) => { const p = String(v || '').split('/'); return [this._parseBytes(p[0]), this._parseBytes(p[1])]; };
+                const [memUsed, memLimit] = pairOf(item.MemUsage);
+                const [netIn, netOut] = pairOf(item.NetIO);
+                const [blockRead, blockWrite] = pairOf(item.BlockIO);
+                return {
+                    id, name,
+                    cpuPercent: parseFloat(String(item.CPUPerc || '0').replace('%', '')) || 0,
+                    memPercent: parseFloat(String(item.MemPerc || '0').replace('%', '')) || 0,
+                    memUsed, memLimit, netIn, netOut, blockRead, blockWrite,
+                    pids: parseInt(item.PIDs, 10) || 0
+                };
+            },
+            _dockerAggregate(containers) {
+                return containers.reduce((a, c) => {
+                    a.cpuPercent += c.cpuPercent; a.memPercent += c.memPercent;
+                    a.memUsed += c.memUsed; a.memLimit += c.memLimit;
+                    a.netIn += c.netIn; a.netOut += c.netOut;
+                    a.blockRead += c.blockRead; a.blockWrite += c.blockWrite;
+                    a.pids += c.pids;
+                    return a;
+                }, { cpuPercent: 0, memPercent: 0, memUsed: 0, memLimit: 0, netIn: 0, netOut: 0, blockRead: 0, blockWrite: 0, pids: 0 });
+            },
+            _parseBytes(v) {
+                const s = String(v || '').trim();
+                if (!s || s === '--') return 0;
+                const m = s.replace(/,/g, '').match(/^([\d.]+)\s*([A-Za-z]*)/);
+                if (!m) return parseFloat(s) || 0;
+                const n = parseFloat(m[1]);
+                const u = (m[2] || 'B').toUpperCase();
+                const mul = { B:1, K:1e3, KB:1e3, MB:1e6, GB:1e9, TB:1e12, KIB:1024, MIB:1048576, GIB:1073741824, TIB:1099511627776 };
+                return n * (mul[u] || 1);
             },
             // Format bytes to human readable
             formatSize(bytes) {
@@ -4656,6 +5064,19 @@
                 document.getElementById('topRefreshBtn').addEventListener('click', () => Terminal_.refreshTop());
                 document.getElementById('topSortBy').addEventListener('change', () => Terminal_.renderTopTable());
                 document.getElementById('topShowCount').addEventListener('change', () => Terminal_.renderTopTable());
+
+                // Docker Stats Panel
+                document.getElementById('dockerPanelHint').addEventListener('click', () => Terminal_.toggleDockerPanel());
+                document.getElementById('dockerCloseBtn').addEventListener('click', () => Terminal_.toggleDockerPanel());
+                document.getElementById('dockerRefreshBtn').addEventListener('click', () => Terminal_.refreshDockerStats());
+                document.getElementById('dockerModeSwitch').addEventListener('click', e => {
+                    const btn = e.target.closest('.docker-mode-tag');
+                    if (btn) Terminal_.setDockerMode(btn.dataset.mode);
+                });
+                document.getElementById('dockerContainerList').addEventListener('click', e => {
+                    const item = e.target.closest('.docker-container-item');
+                    if (item) Terminal_.selectDockerContainer(item.dataset.containerId);
+                });
 
                 // Kill Modal
                 document.getElementById('killCancel').addEventListener('click', () => document.getElementById('killModal').classList.remove('active'));

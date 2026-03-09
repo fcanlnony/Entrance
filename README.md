@@ -27,6 +27,14 @@
     - SIGHUP (1) - 挂起/重载配置
     - SIGSTOP (19) - 暂停进程
     - SIGCONT (18) - 继续进程
+- **Docker 监控** - 容器资源监控面板
+  - 连接后自动检测远程主机 Docker 环境，状态栏显示容器数 / CPU / 内存
+  - 点击状态栏展开查看详细指标
+  - SVG 圆环图展示 CPU、MEM、NET I/O、BLOCK I/O 四项指标
+  - **总计模式** - 叠加显示所有容器的资源占用
+  - **单个模式** - 左侧容器列表可选择，右侧显示选中容器的详细数据
+  - 基于 `docker stats --no-stream` 命令，每 3 秒采样一次
+  - 自动处理 Docker 未安装或权限不足等异常情况
 
 ### 本地 Shell 终端
 - 在浏览器中访问服务器本地终端
@@ -266,6 +274,15 @@ WebSocket 连接到 `ws://host:port/ssh?token=...`，消息格式：
 
 // 发送信号给进程（杀进程）
 { "type": "kill", "pid": 1234, "signal": 15 }
+
+// 开始 Docker 监控（每3秒采集 docker stats --no-stream）
+{ "type": "startDockerStats" }
+
+// 停止 Docker 监控
+{ "type": "stopDockerStats" }
+
+// 手动刷新 Docker 数据
+{ "type": "refreshDockerStats" }
 ```
 
 服务器返回的系统监控数据格式：
@@ -287,6 +304,29 @@ WebSocket 连接到 `ws://host:port/ssh?token=...`，消息格式：
   "data": {
     "uptime": "10:15:03 up 5 days...",  // uptime 命令输出
     "ps": "USER PID %CPU %MEM ..."       // ps aux 命令输出
+  }
+}
+```
+
+服务器返回的 Docker 监控数据格式：
+```javascript
+{
+  "type": "dockerStats",
+  "data": {
+    "available": true,                // Docker 是否可用
+    "error": null,                    // 错误信息（不可用时）
+    "containers": [                   // 容器列表（docker stats --format json 输出）
+      {
+        "ID": "abc123...",
+        "Name": "my-container",
+        "CPUPerc": "1.25%",
+        "MemPerc": "12.50%",
+        "MemUsage": "256MiB / 2GiB",
+        "NetIO": "1.2MB / 3.4MB",
+        "BlockIO": "10MB / 20MB",
+        "PIDs": "15"
+      }
+    ]
   }
 }
 ```

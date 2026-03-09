@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, and SFTP file management.
+Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, SFTP file management, and Docker container monitoring.
 
 ## Build and Development Commands
 
@@ -27,11 +27,15 @@ node server.js
 ### Project Structure
 ```
 .
-├── index.html      # Single-page frontend (HTML + CSS + JavaScript)
-├── server.js       # Express backend server
-├── package.json    # Dependency manifest
-├── users.json      # User account data (generated at runtime)
-└── userdata/       # User data directory (generated at runtime)
+├── public/
+│   ├── index.html      # Single-page frontend (HTML + CSS + JavaScript)
+│   └── vnc-client.js   # VNC browser client
+├── server.js           # Express backend server (HTTP + WebSocket + SSH/SFTP/Docker)
+├── local-shell.js      # Local shell module (Linux only)
+├── vnc.js              # VNC WebSocket proxy
+├── package.json        # Dependency manifest
+├── users.json          # User account data (generated at runtime)
+└── userdata/           # User data directory (generated at runtime)
 ```
 
 ### Frontend Architecture
@@ -51,6 +55,15 @@ node server.js
 2. **UserDataManager** - User data management (host lists, stats)
 3. **SFTP Sessions** - SFTP session management
 4. **Guest Sessions** - Guest session management
+5. **Docker Stats** - Docker container resource monitoring via `docker stats --no-stream`
+
+### SSH Monitoring Panels
+The SSH view includes three collapsible monitoring panels below the terminal:
+1. **System Stats** - Real-time CPU/Memory/Disk I/O line chart (1s interval via `/proc/*`)
+2. **TOP (Process List)** - Process table with sort/filter/kill (2s interval via `ps aux`)
+3. **Docker Stats** - Container resource rings for CPU/MEM/NET IO/BLOCK IO (3s interval via `docker stats --no-stream`), with "Total" (aggregate) and "Single" (per-container) view modes
+
+All three panels follow the same pattern: `collectXxx()` server function → `setInterval` polling → WebSocket message → client `handleXxx()` → render.
 
 ## Key Dependencies
 
@@ -64,6 +77,8 @@ node server.js
 ### Frontend (CDN)
 - `xterm.js` - Terminal emulator
 - `xterm-addon-fit` - Terminal fit addon
+- `Chart.js` - System stats line chart
+- `noVNC` - VNC client
 - `Font Awesome` - Icon library
 
 ## Development Workflow
