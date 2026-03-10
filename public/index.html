@@ -109,6 +109,23 @@
         }
         .sidebar-title { font-size: 16px; font-weight: 600; white-space: nowrap; transition: opacity .2s; }
         .sidebar.collapsed .sidebar-title { opacity: 0; }
+        .sidebar-about-btn {
+            margin-left: auto;
+            padding: 8px 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            background: var(--color-bg-2);
+            color: var(--color-text-2);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background .15s, color .15s, border-color .3s;
+            flex-shrink: 0;
+        }
+        .sidebar-about-btn:hover { background: var(--color-bg-3); color: var(--color-text); }
+        .sidebar-about-btn span { white-space: nowrap; transition: opacity .2s, width .2s; }
+        .sidebar.collapsed .sidebar-about-btn span { opacity: 0; width: 0; overflow: hidden; }
         .sidebar-nav { flex: 1; padding: 12px; overflow-y: auto; }
         .nav-item {
             display: flex; align-items: center; gap: 12px;
@@ -900,6 +917,22 @@
         .modal h3 i { color: var(--color-accent); }
         .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
         .modal-actions .btn { flex: 1; }
+        .about-modal-content { display: flex; flex-direction: column; gap: 14px; }
+        .about-item { display: flex; flex-direction: column; gap: 6px; }
+        .about-label { font-size: 12px; color: var(--color-text-3); }
+        .about-link {
+            color: var(--color-accent);
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .about-link:hover { text-decoration: underline; }
+        .about-note {
+            margin: 0;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: var(--color-bg-2);
+            color: var(--color-text-2);
+        }
 
         /* Toast */
         .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
@@ -1163,6 +1196,10 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span class="sidebar-title">Entrance Tools</span>
+                <button class="sidebar-about-btn" id="aboutBtn" title="关于">
+                    <i class="fas fa-link"></i>
+                    <span>About</span>
+                </button>
             </div>
             <nav class="sidebar-nav">
                 <div class="nav-item active" data-view="ssh"><i class="fas fa-terminal"></i><span>SSH 终端</span></div>
@@ -1838,6 +1875,27 @@
             <div class="modal-actions">
                 <button class="btn btn-secondary" id="killCancel">取消</button>
                 <button class="btn btn-danger" id="killConfirm"><i class="fas fa-skull"></i> 发送信号</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: 关于 -->
+    <div class="modal-overlay" id="aboutModal">
+        <div class="modal">
+            <h3><i class="fas fa-circle-info"></i> 关于</h3>
+            <div class="about-modal-content">
+                <div class="about-item">
+                    <span class="about-label">版本号</span>
+                    <strong>0.1.6</strong>
+                </div>
+                <div class="about-item">
+                    <span class="about-label">项目信息</span>
+                    <a class="about-link" href="https://github.com/fcanlnony/Entrance" target="_blank" rel="noopener noreferrer">https://github.com/fcanlnony/Entrance</a>
+                </div>
+                <p class="about-note">欢迎提交issue和pr</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" id="aboutClose">关闭</button>
             </div>
         </div>
     </div>
@@ -5082,6 +5140,11 @@
                 document.getElementById('killCancel').addEventListener('click', () => document.getElementById('killModal').classList.remove('active'));
                 document.getElementById('killConfirm').addEventListener('click', () => Terminal_.killProcess());
                 document.getElementById('killModal').addEventListener('click', e => { if (e.target.id === 'killModal') e.target.classList.remove('active'); });
+
+                // About Modal
+                document.getElementById('aboutBtn').addEventListener('click', () => document.getElementById('aboutModal').classList.add('active'));
+                document.getElementById('aboutClose').addEventListener('click', () => document.getElementById('aboutModal').classList.remove('active'));
+                document.getElementById('aboutModal').addEventListener('click', e => { if (e.target.id === 'aboutModal') e.target.classList.remove('active'); });
 
                 // SFTP
                 document.getElementById('sftpConnectBtn').addEventListener('click', () => {
