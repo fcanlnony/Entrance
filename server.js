@@ -1845,9 +1845,9 @@ vncProxy.init(server, '/vnc', { verifyToken, validateTargetHost });
 // ============================================
 const localShellService = localShell.init(server, '/localshell');
 if (localShellService.available) {
-    console.log('[Server] 本地 Shell 服务已启用 (Linux)');
+    console.log(`[Server] 本地 Shell 服务已启用 (${localShell.getPlatform()})`);
 } else {
-    console.log('[Server] 本地 Shell 服务不可用 (仅支持 Linux)');
+    console.log(`[Server] 本地 Shell 服务不可用 (当前平台: ${localShell.getPlatform()})`);
 }
 
 // 添加本地 shell 状态检查 API

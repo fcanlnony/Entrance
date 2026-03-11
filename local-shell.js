@@ -1,7 +1,7 @@
 /**
- * Local Shell Module (Linux Only)
- * 使用 script + child_process 实现本地终端
- * 无需编译原生模块，仅支持 Linux
+ * Local Shell Module
+ * Linux/macOS 使用 script + child_process 实现本地终端
+ * Windows 直接 spawn shell 进程，无需编译原生模块
  */
 
 const WebSocket = require('ws');
@@ -11,11 +11,17 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-// 检查是否为 Linux
-const isLinux = process.platform === 'linux';
+const platform = process.platform;
+const isLinux = platform === 'linux';
+const isMacOS = platform === 'darwin';
+const isWindows = platform === 'win32';
+const SUPPORTED_PLATFORMS = new Set(['linux', 'darwin', 'win32']);
 
 // 获取默认 shell
 function getDefaultShell() {
+    if (isWindows) {
+        return process.env.COMSPEC || 'cmd.exe';
+    }
     return process.env.SHELL || '/usr/bin/bash';
 }
 
@@ -31,30 +37,73 @@ function resolveShellFromPath(shellName) {
     if (!shellName || shellName.includes('/') || shellName.includes('\\')) {
         return null;
     }
+
+    // Windows: cmd/cmd.exe 直接通过 COMSPEC 解析
+    if (isWindows && process.env.COMSPEC) {
+        const normalized = shellName.toLowerCase();
+        if ((normalized === 'cmd' || normalized === 'cmd.exe') && fs.existsSync(process.env.COMSPEC)) {
+            try {
+                return fs.realpathSync(process.env.COMSPEC);
+            } catch {}
+        }
+    }
+
+    // Windows 上自动补 .exe 扩展名
+    const candidates = [shellName];
+    if (isWindows && path.extname(shellName).toLowerCase() !== '.exe') {
+        candidates.push(`${shellName}.exe`);
+    }
+
     const dirs = getPathShellNames();
     for (const dir of dirs) {
-        const candidate = path.join(dir, shellName);
-        if (!fs.existsSync(candidate)) continue;
-        try {
-            fs.accessSync(candidate, fs.constants.X_OK);
-            return fs.realpathSync(candidate);
-        } catch {}
+        for (const name of candidates) {
+            const candidate = path.join(dir, name);
+            if (!fs.existsSync(candidate)) continue;
+            try {
+                fs.accessSync(candidate, fs.constants.X_OK);
+                return fs.realpathSync(candidate);
+            } catch {}
+        }
     }
     return null;
 }
 
 function getAllowedShell(defaultShell) {
+    // Windows 默认 shell 可能是绝对路径（如 COMSPEC）
+    if (isWindows && defaultShell && (defaultShell.includes('/') || defaultShell.includes('\\'))) {
+        if (fs.existsSync(defaultShell)) {
+            try {
+                return fs.realpathSync(defaultShell);
+            } catch {}
+        }
+    }
+
     const defaultName = path.basename(defaultShell || '');
     let resolved = resolveShellFromPath(defaultName);
     if (resolved) {
         return resolved;
     }
-    const fallbacks = ['bash', 'sh', 'zsh'];
+    const fallbacks = isWindows ? ['cmd', 'powershell'] : ['bash', 'sh', 'zsh'];
     for (const name of fallbacks) {
         resolved = resolveShellFromPath(name);
         if (resolved) return resolved;
     }
     return null;
+}
+
+/**
+ * 根据平台构造 shell 启动参数
+ */
+function getShellSpawnOptions(shell) {
+    if (isWindows) {
+        return { command: shell, args: [] };
+    }
+    if (isMacOS) {
+        // macOS 的 script 没有 -c 参数
+        return { command: 'script', args: ['-q', '/dev/null', shell, '-i'] };
+    }
+    // Linux
+    return { command: 'script', args: ['-q', '/dev/null', '-c', `${shell} -i`] };
 }
 
 // 存储活动的 shell 会话
@@ -70,9 +119,9 @@ let localShellWss = null;
 let localShellPath = '/localshell';
 
 function init(server, wsPath = '/localshell') {
-    if (!isLinux) {
-        console.warn('[LocalShell] 跳过初始化 - 仅支持 Linux 系统');
-        return { available: false, reason: 'not_linux', wss: null, path: wsPath };
+    if (!isAvailable()) {
+        console.warn(`[LocalShell] 跳过初始化 - 当前平台不支持: ${platform}`);
+        return { available: false, reason: 'not_supported_platform', wss: null, path: wsPath };
     }
 
     localShellPath = wsPath;
@@ -135,14 +184,9 @@ function init(server, wsPath = '/localshell') {
                         console.log(`[LocalShell] 启动 shell: ${shell} (cwd: ${cwd})`);
 
                         try {
-                            // 使用 script 命令创建伪终端
-                            // script -q /dev/null -c "bash -i" 会创建一个带 PTY 的交互式 shell
-                            shellProcess = spawn('script', [
-                                '-q',           // 静默模式
-                                '/dev/null',    // 不保存输出到文件
-                                '-c',           // 指定要运行的命令
-                                `${shell} -i`   // 交互式 shell
-                            ], {
+                            // Unix 使用 script 创建 PTY；Windows 直接启动 shell 进程
+                            const spawnOpts = getShellSpawnOptions(shell);
+                            shellProcess = spawn(spawnOpts.command, spawnOpts.args, {
                                 cwd: cwd,
                                 env: env,
                                 stdio: ['pipe', 'pipe', 'pipe']
@@ -213,14 +257,12 @@ function init(server, wsPath = '/localshell') {
                         break;
 
                     case 'resize':
-                        // script 方式不直接支持 resize，但可以通过 stty 调整
-                        // 保存新的尺寸
+                        // Windows 不支持 stty；Unix 下通过 stty 调整终端大小
                         const session = shellSessions.get(sessionId);
                         if (session) {
                             session.cols = data.cols || 80;
                             session.rows = data.rows || 24;
-                            // 发送 stty 命令调整终端大小
-                            if (shellProcess && shellProcess.stdin.writable) {
+                            if (!isWindows && shellProcess && shellProcess.stdin.writable) {
                                 shellProcess.stdin.write(`stty cols ${session.cols} rows ${session.rows}\n`);
                             }
                         }
@@ -293,10 +335,10 @@ function closeAll() {
 }
 
 /**
- * 检查是否可用（仅 Linux）
+ * 检查当前平台是否支持本地 Shell
  */
 function isAvailable() {
-    return isLinux;
+    return SUPPORTED_PLATFORMS.has(platform);
 }
 
 /**

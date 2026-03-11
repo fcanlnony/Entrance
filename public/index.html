@@ -1203,7 +1203,7 @@
             </div>
             <nav class="sidebar-nav">
                 <div class="nav-item active" data-view="ssh"><i class="fas fa-terminal"></i><span>SSH 终端</span></div>
-                <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>本地 Shell</span><span id="shellLinuxBadge" style="font-size:10px;background:var(--color-accent);color:#fff;padding:2px 6px;border-radius:4px;margin-left:auto;display:none">Linux</span></div>
+                <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>终端</span></div>
                 <div class="nav-item" data-view="sftp"><i class="fas fa-folder-tree"></i><span>SFTP 管理</span></div>
                 <div class="nav-item" data-view="vnc"><i class="fas fa-desktop"></i><span>VNC 远程</span></div>
                 <div class="nav-item" data-view="security"><i class="fas fa-shield-halved"></i><span>内网白名单</span></div>
@@ -1461,11 +1461,11 @@
 
             <!-- Local Shell -->
             <div class="view" id="view-shell">
-                <div class="header"><h2><i class="fas fa-laptop-code"></i> 本地 Shell</h2></div>
+                <div class="header"><h2><i class="fas fa-laptop-code"></i> 终端</h2></div>
                 <div class="content">
                     <div id="shellNotAvailable" style="display:none;padding:20px;background:var(--color-bg-2);border-radius:8px;margin-bottom:20px">
-                        <p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 本地 Shell 服务不可用</p>
-                        <p id="shellNotAvailableReason" style="color:var(--color-text-2);font-size:13px">此功能仅支持 Linux 服务器</p>
+                        <p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 终端服务不可用</p>
+                        <p id="shellNotAvailableReason" style="color:var(--color-text-2);font-size:13px">当前服务器平台暂不支持终端功能</p>
                     </div>
                     <div class="sftp-status disconnected" id="shellStatus">
                         <div class="status-dot"></div>
@@ -1473,11 +1473,13 @@
                         <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
                             <span id="shellInfo" style="font-size:12px;color:var(--color-text-3)"></span>
                         </div>
-                        <input type="text" id="shellPathInput" placeholder="Shell 名称 (PATH 内，如 bash)" style="width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-bg-2);color:var(--color-text-1);font-size:13px" list="shellPathList">
+                        <input type="text" id="shellPathInput" placeholder="Shell 名称 (PATH 内，如 bash、cmd、powershell)" style="width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-bg-2);color:var(--color-text-1);font-size:13px" list="shellPathList">
                         <datalist id="shellPathList">
+                            <option value="cmd">
+                            <option value="powershell">
                             <option value="bash">
-                            <option value="zsh">
                             <option value="sh">
+                            <option value="zsh">
                             <option value="fish">
                             <option value="tcsh">
                         </datalist>
@@ -1489,7 +1491,7 @@
                             <div class="terminal-dot red"></div>
                             <div class="terminal-dot yellow"></div>
                             <div class="terminal-dot green"></div>
-                            <span class="terminal-title" id="shellTermTitle">本地终端 - 未启动</span>
+                            <span class="terminal-title" id="shellTermTitle">终端 - 未启动</span>
                             <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
                                 <button class="btn btn-sm btn-secondary" id="shellClearBtn"><i class="fas fa-eraser"></i> 清屏</button>
                             </div>
@@ -1886,7 +1888,7 @@
             <div class="about-modal-content">
                 <div class="about-item">
                     <span class="about-label">版本号</span>
-                    <strong>0.1.6</strong>
+                    <strong>0.1.7</strong>
                 </div>
                 <div class="about-item">
                     <span class="about-label">项目信息</span>
@@ -4768,26 +4770,19 @@
                     this.shellInfo = data.shell || '';
                     this.platform = data.platform || 'unknown';
 
-                    // 显示 Linux 标签
-                    document.getElementById('shellLinuxBadge').style.display = 'inline';
-
                     if (!this.available) {
                         document.getElementById('shellNotAvailable').style.display = 'block';
                         document.getElementById('shellStartBtn').disabled = true;
-                        // 显示具体原因
-                        if (this.platform !== 'linux') {
-                            document.getElementById('shellNotAvailableReason').innerHTML =
-                                `此功能仅支持 Linux 服务器<br><small style="color:var(--color-text-3)">当前服务器: ${this.platform}</small>`;
-                        }
+                        document.getElementById('shellNotAvailableReason').innerHTML =
+                            `当前服务器平台暂不支持终端功能<br><small style="color:var(--color-text-3)">当前服务器: ${this.platform}</small>`;
                     } else {
-                        const displayShell = this.shellInfo === '/bin/bash' ? '/usr/bin/bash' : this.shellInfo;
-                        document.getElementById('shellInfo').textContent = displayShell;
+                        document.getElementById('shellInfo').textContent = this.shellInfo;
                     }
                 } catch (e) {
                     console.error('[LocalShell] 检查状态失败:', e);
                     document.getElementById('shellNotAvailable').style.display = 'block';
                     document.getElementById('shellStartBtn').disabled = true;
-                    document.getElementById('shellLinuxBadge').style.display = 'inline';
+                    document.getElementById('shellNotAvailableReason').textContent = '无法检查终端服务状态';
                 }
 
                 // 初始化终端
@@ -4839,10 +4834,10 @@
             welcome() {
                 this.term.writeln('');
                 this.term.writeln('\x1b[1;34m  ╔══════════════════════════════════════════╗\x1b[0m');
-                this.term.writeln('\x1b[1;34m  ║\x1b[0m          \x1b[1;36mLocal Shell Terminal\x1b[0m            \x1b[1;34m║\x1b[0m');
+                this.term.writeln('\x1b[1;34m  ║\x1b[0m              \x1b[1;36mTerminal\x1b[0m                   \x1b[1;34m║\x1b[0m');
                 this.term.writeln('\x1b[1;34m  ╚══════════════════════════════════════════╝\x1b[0m');
                 this.term.writeln('');
-                this.term.writeln('\x1b[90m  点击 "启动" 按钮开启本地终端\x1b[0m');
+                this.term.writeln('\x1b[90m  点击 "启动" 按钮开启终端\x1b[0m');
                 this.term.writeln('');
             },
 
@@ -4852,7 +4847,7 @@
                     return;
                 }
                 if (!this.available) {
-                    Toast.error('本地 Shell 服务不可用');
+                    Toast.error('终端服务不可用');
                     return;
                 }
 
@@ -4884,7 +4879,7 @@
                                 this.connected = true;
                                 this.term.clear();
                                 this.updateStatus(true, msg.shell);
-                                Toast.success('本地 Shell 已启动');
+                                Toast.success('终端已启动');
                                 this.doFit();
                                 break;
                             case 'data':
@@ -4893,8 +4888,8 @@
                             case 'exit':
                                 this.connected = false;
                                 this.updateStatus(false);
-                                this.term.writeln(`\n\x1b[33mShell 已退出 (code: ${msg.exitCode})\x1b[0m`);
-                                Toast.info('Shell 已退出');
+                                this.term.writeln(`\n\x1b[33m终端已退出 (code: ${msg.exitCode})\x1b[0m`);
+                                Toast.info('终端已退出');
                                 break;
                             case 'error':
                                 Toast.error(msg.message);
@@ -4927,8 +4922,8 @@
                 }
                 this.connected = false;
                 this.updateStatus(false);
-                this.term.writeln('\n\x1b[33mShell 已停止\x1b[0m');
-                Toast.info('Shell 已停止');
+                this.term.writeln('\n\x1b[33m终端已停止\x1b[0m');
+                Toast.info('终端已停止');
             },
 
             updateStatus(running, shell = '') {
@@ -4944,14 +4939,14 @@
                     text.textContent = '运行中';
                     startBtn.style.display = 'none';
                     stopBtn.style.display = 'inline-flex';
-                    title.textContent = `本地终端 - ${shell || this.shellInfo}`;
+                    title.textContent = `终端 - ${shell || this.shellInfo}`;
                 } else {
                     status.classList.remove('connected');
                     status.classList.add('disconnected');
                     text.textContent = '未启动';
                     startBtn.style.display = 'inline-flex';
                     stopBtn.style.display = 'none';
-                    title.textContent = '本地终端 - 未启动';
+                    title.textContent = '终端 - 未启动';
                 }
             }
         };
