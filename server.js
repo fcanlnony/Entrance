@@ -38,6 +38,7 @@ const AUTH_SECRET_ENV = 'AUTH_SECRET';
 const AUTH_TOKEN_TTL = parseInt(process.env.AUTH_TOKEN_TTL || '43200', 10);
 const LOGIN_WINDOW_MS = parseInt(process.env.LOGIN_WINDOW_MS || '900000', 10);
 const LOGIN_MAX_ATTEMPTS = parseInt(process.env.LOGIN_MAX_ATTEMPTS || '5', 10);
+const DESKTOP_NOLOGIN = process.env.ENTRANCE_DESKTOP_NOLOGIN === '1';
 const STRICT_HOST_KEY_CHECKING = process.env.STRICT_HOST_KEY_CHECKING === 'true';
 const ALLOWED_TARGETS = (process.env.ALLOWED_TARGETS || '')
     .split(',')
@@ -293,6 +294,15 @@ function verifyToken(token) {
     }
 }
 
+// ENTRANCE_DESKTOP_NOLOGIN: 跳过登录，自动以 admin 身份访问
+function getNoLoginPayload() {
+    return DESKTOP_NOLOGIN ? { sub: 'admin', role: 'admin' } : null;
+}
+
+function resolveAuth(token) {
+    return (token ? verifyToken(token) : null) || getNoLoginPayload();
+}
+
 const loginAttempts = new Map();
 
 function getLoginAttemptKey(req) {
@@ -342,12 +352,9 @@ function getTokenFromRequest(req) {
 
 function requireAuth(req, res, next) {
     const token = getTokenFromRequest(req);
-    if (!token) {
-        return res.status(401).json({ error: '未登录' });
-    }
-    const payload = verifyToken(token);
+    const payload = resolveAuth(token);
     if (!payload) {
-        return res.status(401).json({ error: '登录已过期' });
+        return res.status(401).json({ error: token ? '登录已过期' : '未登录' });
     }
     req.auth = payload;
     next();
@@ -380,8 +387,7 @@ function rejectUpgrade(socket, statusCode, message) {
 
 function authenticateUpgrade(request) {
     const token = getTokenFromRequest(request);
-    if (!token) return null;
-    return verifyToken(token);
+    return resolveAuth(token);
 }
 
 function hostMatchesAllowlist(host) {
@@ -933,6 +939,20 @@ app.post('/api/auth/login', async (req, res) => {
         recordLoginAttempt(rateKey, false);
         res.status(401).json({ success: false, error: '用户名或密码错误' });
     }
+});
+
+// 免登录模式检查
+app.get('/api/auth/nologin', (req, res) => {
+    const payload = getNoLoginPayload();
+    if (!payload) {
+        return res.json({ nologin: false });
+    }
+    res.json({
+        nologin: true,
+        token: signToken(payload, AUTH_TOKEN_TTL),
+        username: payload.sub,
+        role: payload.role,
+    });
 });
 
 // 验证已保存的登录状态

@@ -2165,6 +2165,22 @@
                 });
                 document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
 
+                this._bootstrap();
+            },
+            async _bootstrap() {
+                try {
+                    const res = await fetch(`${Config.API}/api/auth/nologin`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.nologin) {
+                            this.setSession(data);
+                            this.hideLogin();
+                            UI.showDashboard();
+                            return;
+                        }
+                    }
+                } catch {}
+
                 const savedToken = Storage.getToken();
                 if (savedToken) {
                     State.token = savedToken;
