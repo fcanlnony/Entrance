@@ -1474,16 +1474,8 @@
                         <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
                             <span id="shellInfo" style="font-size:12px;color:var(--color-text-3)"></span>
                         </div>
-                        <input type="text" id="shellPathInput" placeholder="Shell 名称 (PATH 内，如 bash、cmd、powershell)" style="width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-bg-2);color:var(--color-text-1);font-size:13px" list="shellPathList">
-                        <datalist id="shellPathList">
-                            <option value="cmd">
-                            <option value="powershell">
-                            <option value="bash">
-                            <option value="sh">
-                            <option value="zsh">
-                            <option value="fish">
-                            <option value="tcsh">
-                        </datalist>
+                        <select id="shellPathInput" style="width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-bg-2);color:var(--color-text-1);font-size:13px">
+                        </select>
                         <button class="btn btn-success btn-sm" id="shellStartBtn"><i class="fas fa-play"></i> 启动</button>
                         <button class="btn btn-danger btn-sm" id="shellStopBtn" style="display:none"><i class="fas fa-stop"></i> 停止</button>
                     </div>
@@ -4855,8 +4847,55 @@
             ws: null,
             connected: false,
             available: false,
+            platform: 'unknown',
             shellInfo: '',
             initialized: false,
+
+            getShellOptions() {
+                const shellOptions = {
+                    win32: ['cmd', 'powershell'],
+                    linux: ['bash', 'zsh', 'fish'],
+                    darwin: ['zsh', 'bash']
+                };
+                return shellOptions[this.platform] || [];
+            },
+
+            normalizeShellName(shell) {
+                return String(shell || '')
+                    .trim()
+                    .split(/[\\/]/)
+                    .pop()
+                    .replace(/\.exe$/i, '')
+                    .toLowerCase();
+            },
+
+            updateShellOptions() {
+                const select = document.getElementById('shellPathInput');
+                const options = this.getShellOptions();
+                const preferredShell = this.normalizeShellName(this.shellInfo);
+
+                select.innerHTML = '';
+
+                options.forEach((shellName) => {
+                    const option = document.createElement('option');
+                    option.value = shellName;
+                    option.textContent = shellName;
+                    select.appendChild(option);
+                });
+
+                const preferredOption = options.includes(preferredShell) ? preferredShell : options[0];
+                if (preferredOption) {
+                    select.value = preferredOption;
+                    select.disabled = false;
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = '当前平台无可选 Shell';
+                    select.appendChild(option);
+                    select.value = '';
+                    select.disabled = true;
+                }
+            },
 
             async init() {
                 if (this.initialized) return;
@@ -4871,6 +4910,7 @@
                     this.available = data.available;
                     this.shellInfo = data.shell || '';
                     this.platform = data.platform || 'unknown';
+                    this.updateShellOptions();
 
                     if (!this.available) {
                         document.getElementById('shellNotAvailable').style.display = 'block';
@@ -4882,6 +4922,7 @@
                     }
                 } catch (e) {
                     console.error('[LocalShell] 检查状态失败:', e);
+                    this.updateShellOptions();
                     document.getElementById('shellNotAvailable').style.display = 'block';
                     document.getElementById('shellStartBtn').disabled = true;
                     document.getElementById('shellNotAvailableReason').textContent = '无法检查终端服务状态';
