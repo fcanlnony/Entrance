@@ -2147,11 +2147,19 @@
             <div class="about-modal-content">
                 <div class="about-item">
                     <span class="about-label">版本号</span>
-                    <strong>0.1.7</strong>
+                    <strong id="aboutVersionValue">0.1.8</strong>
                 </div>
                 <div class="about-item">
                     <span class="about-label">项目信息</span>
-                    <a class="about-link" href="https://github.com/fcanlnony/Entrance" target="_blank" rel="noopener noreferrer">https://github.com/fcanlnony/Entrance</a>
+                    <a class="about-link" id="aboutProjectHomepageLink" href="https://github.com/fcanlnony/Entrance" target="_blank" rel="noopener noreferrer">https://github.com/fcanlnony/Entrance</a>
+                </div>
+                <div class="about-item" id="aboutDesktopVersionItem" style="display:none">
+                    <span class="about-label">桌面客户端版本</span>
+                    <strong id="aboutDesktopVersionValue">未设置</strong>
+                </div>
+                <div class="about-item" id="aboutDesktopHomepageItem" style="display:none">
+                    <span class="about-label">桌面客户端项目主页</span>
+                    <a class="about-link" id="aboutDesktopHomepageLink" href="https://github.com/EntranceToolBox/Entrance-Desktop" target="_blank" rel="noopener noreferrer">https://github.com/EntranceToolBox/Entrance-Desktop</a>
                 </div>
                 <p class="about-note">欢迎提交issue和pr</p>
             </div>
@@ -2187,6 +2195,11 @@
             isNologin: false,
             username: '',
             token: '',
+            appVersion: '0.1.8',
+            projectHomepage: 'https://github.com/fcanlnony/Entrance',
+            desktopVersion: '',
+            desktopProjectHomepage: 'https://github.com/EntranceToolBox/Entrance-Desktop',
+            showDesktopClientInfo: false,
             hosts: [],
             editingHostIndex: null,
             sshConnected: false,
@@ -2532,6 +2545,52 @@
             success(m) { this.show(m, 'success'); },
             error(m) { this.show(m, 'error'); },
             info(m) { this.show(m, 'info'); }
+        };
+
+        const About = {
+            init() {
+                this.render();
+                this.load();
+            },
+            async load() {
+                try {
+                    const res = await fetch(`${Config.API}/api/app-info`);
+                    if (!res.ok) {
+                        return;
+                    }
+                    const data = await res.json();
+                    State.appVersion = data.version || State.appVersion;
+                    State.projectHomepage = data.projectHomepage || State.projectHomepage;
+                    State.showDesktopClientInfo = data.desktopNoLogin === true;
+                    State.desktopVersion = data.desktopVersion || '';
+                    State.desktopProjectHomepage = data.desktopProjectHomepage || State.desktopProjectHomepage;
+                    this.render();
+                } catch {}
+            },
+            render() {
+                document.getElementById('aboutVersionValue').textContent = State.appVersion;
+
+                const projectLink = document.getElementById('aboutProjectHomepageLink');
+                projectLink.href = State.projectHomepage;
+                projectLink.textContent = State.projectHomepage;
+
+                const desktopVersionItem = document.getElementById('aboutDesktopVersionItem');
+                const desktopHomepageItem = document.getElementById('aboutDesktopHomepageItem');
+                if (!State.showDesktopClientInfo) {
+                    desktopVersionItem.style.display = 'none';
+                    desktopHomepageItem.style.display = 'none';
+                    return;
+                }
+
+                document.getElementById('aboutDesktopVersionValue').textContent = State.desktopVersion || '未设置';
+
+                const desktopHomepageLink = document.getElementById('aboutDesktopHomepageLink');
+                desktopHomepageLink.href = State.desktopProjectHomepage;
+                desktopHomepageLink.textContent = State.desktopProjectHomepage;
+
+                desktopVersionItem.style.display = '';
+                desktopHomepageItem.style.display = '';
+            }
         };
 
         const Auth = {
@@ -5789,6 +5848,7 @@
         // UI
         const UI = {
             init() {
+                About.init();
                 Theme.init();
                 Settings.init();
                 Auth.init();

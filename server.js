@@ -18,6 +18,7 @@ const argon2 = require('argon2');
 const archiver = require('archiver');
 const vncProxy = require('./vnc');
 const localShell = require('./local-shell');
+const { version: APP_VERSION } = require('./package.json');
 
 const app = express();
 const server = http.createServer(app);
@@ -39,6 +40,9 @@ const AUTH_TOKEN_TTL = parseInt(process.env.AUTH_TOKEN_TTL || '43200', 10);
 const LOGIN_WINDOW_MS = parseInt(process.env.LOGIN_WINDOW_MS || '900000', 10);
 const LOGIN_MAX_ATTEMPTS = parseInt(process.env.LOGIN_MAX_ATTEMPTS || '5', 10);
 const DESKTOP_NOLOGIN = process.env.ENTRANCE_DESKTOP_NOLOGIN === '1';
+const DESKTOP_VERSION = String(process.env.ENTRANCE_DESKTOP_VERSION || '').trim();
+const PROJECT_HOMEPAGE = 'https://github.com/fcanlnony/Entrance';
+const DESKTOP_PROJECT_HOMEPAGE = 'https://github.com/EntranceToolBox/Entrance-Desktop';
 const STRICT_HOST_KEY_CHECKING = process.env.STRICT_HOST_KEY_CHECKING === 'true';
 const ALLOWED_TARGETS = (process.env.ALLOWED_TARGETS || '')
     .split(',')
@@ -297,6 +301,19 @@ function verifyToken(token) {
 // ENTRANCE_DESKTOP_NOLOGIN: 跳过登录，自动以 admin 身份访问
 function getNoLoginPayload() {
     return DESKTOP_NOLOGIN ? { sub: 'admin', role: 'admin' } : null;
+}
+
+function getPublicAppInfo() {
+    const info = {
+        version: APP_VERSION,
+        projectHomepage: PROJECT_HOMEPAGE,
+        desktopNoLogin: DESKTOP_NOLOGIN
+    };
+    if (DESKTOP_NOLOGIN) {
+        info.desktopVersion = DESKTOP_VERSION || '未设置';
+        info.desktopProjectHomepage = DESKTOP_PROJECT_HOMEPAGE;
+    }
+    return info;
 }
 
 function resolveAuth(token) {
@@ -951,14 +968,19 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/nologin', (req, res) => {
     const payload = getNoLoginPayload();
     if (!payload) {
-        return res.json({ nologin: false });
+        return res.json({ nologin: false, ...getPublicAppInfo() });
     }
     res.json({
         nologin: true,
         token: signToken(payload, AUTH_TOKEN_TTL),
         username: payload.sub,
         role: payload.role,
+        ...getPublicAppInfo()
     });
+});
+
+app.get('/api/app-info', (req, res) => {
+    res.json(getPublicAppInfo());
 });
 
 // 验证已保存的登录状态
