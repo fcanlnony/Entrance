@@ -64,8 +64,8 @@ docker compose up -d --build
 
 ### Frontend Architecture
 - Single-file HTML app with no build step
-- Modular JavaScript objects: `State`, `Storage`, `Theme`, `Toast`, `Users`, `Terminal_`, `SFTP`, `Hosts`, `UI`
-- CSS variables for theme switching
+- Modular JavaScript objects: `State`, `Storage`, `Theme`, `Settings`, `Toast`, `Users`, `Terminal_`, `SFTP`, `Hosts`, `UI`
+- CSS variables for theme switching and Material You color scheme support (`data-color-scheme` attribute)
 - Microsoft Fluent Design style
 
 ### Backend Architecture
@@ -86,6 +86,7 @@ docker compose up -d --build
 6. **SFTP Sessions** - In-memory SFTP session management
 7. **Local Shell Service** - Cross-platform local shell WebSocket endpoint
 8. **Docker Stats** - Docker container resource monitoring via `docker stats --no-stream`
+9. **Settings** - In-app settings view for password change (disabled in `ENTRANCE_DESKTOP_NOLOGIN` mode) and Material You color scheme selection (default, sakura, ocean, forest, twilight, amber)
 
 ### SSH Monitoring Panels
 The SSH view includes three collapsible monitoring panels below the terminal:
@@ -141,3 +142,5 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 - SFTP sessions are stored in memory (Map).
 - User data is isolated per user in separate JSON files under `ENTRANCE_DATA_DIR`.
 - Local shell access is admin-only and supported on Linux, macOS, and Windows.
+- The Settings view allows users to change their own password via `PUT /api/users/:username/password` (Argon2id hashed). When `ENTRANCE_DESKTOP_NOLOGIN=1`, the password form is hidden and a notice is shown instead.
+- Color schemes are stored in `localStorage` (`colorScheme` key) and applied via the `data-color-scheme` attribute on `<html>`. Available schemes: default, sakura, ocean, forest, twilight, amber.

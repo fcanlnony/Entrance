@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light" data-color-scheme="default">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,9 +16,12 @@
             --color-bg-2: #202020;
             --color-bg-3: #2a2a2a;
             --color-bg-acrylic: rgba(32, 32, 32, 0.85);
-            --color-accent: #0078D7;
-            --color-accent-hover: #1a86dc;
-            --color-accent-light: rgba(0, 120, 215, 0.3);
+            --color-accent: #6b7280;
+            --color-accent-hover: #7c8594;
+            --color-accent-light: rgba(148, 163, 184, 0.18);
+            --color-accent-soft: rgba(148, 163, 184, 0.1);
+            --color-accent-fill: rgba(148, 163, 184, 0.52);
+            --color-accent-outline: rgba(148, 163, 184, 0.34);
             --color-text: #fff;
             --color-text-2: #a0a0a0;
             --color-text-3: #6a6a6a;
@@ -28,27 +31,147 @@
             --color-error: #e81123;
             --sidebar-width: 240px;
             --sidebar-collapsed: 60px;
-            --terminal-bg: #1a1a1a;
+            --terminal-bg: #181818;
+            --terminal-screen-bg: #101214;
+            --terminal-screen-text: #f3f4f6;
+            --terminal-screen-cursor: #f3f4f6;
+            --terminal-screen-selection: rgba(255, 255, 255, 0.16);
+            --terminal-screen-black: #111827;
+            --terminal-screen-red: #ef4444;
+            --terminal-screen-green: #22c55e;
+            --terminal-screen-yellow: #f59e0b;
+            --terminal-screen-blue: #9ca3af;
+            --terminal-screen-magenta: #a1a1aa;
+            --terminal-screen-cyan: #cbd5e1;
+            --terminal-screen-white: #f3f4f6;
         }
 
         /* 亮色主题 */
         [data-theme="light"] {
-            --color-bg-deep: #f0f2f5;
-            --color-bg-1: #ffffff;
-            --color-bg-2: #f5f5f5;
-            --color-bg-3: #e8e8e8;
-            --color-bg-acrylic: rgba(255, 255, 255, 0.85);
-            --color-text: #1a1a1a;
-            --color-text-2: #666666;
-            --color-text-3: #999999;
-            --color-border: #d0d0d0;
-            --terminal-bg: #1a1a1a;
+            --color-bg-deep: #ebedf0;
+            --color-bg-1: #fafafb;
+            --color-bg-2: #f1f3f5;
+            --color-bg-3: #e4e7eb;
+            --color-bg-acrylic: rgba(250, 250, 251, 0.9);
+            --color-accent: #4b5563;
+            --color-accent-hover: #374151;
+            --color-accent-light: rgba(75, 85, 99, 0.16);
+            --color-accent-soft: rgba(75, 85, 99, 0.08);
+            --color-accent-fill: rgba(75, 85, 99, 0.42);
+            --color-accent-outline: rgba(75, 85, 99, 0.22);
+            --color-text: #1f2937;
+            --color-text-2: #5f6875;
+            --color-text-3: #8a94a3;
+            --color-border: #d8dde3;
+            --terminal-bg: #f8fafb;
+            --terminal-screen-bg: #f4f5f7;
+            --terminal-screen-text: #1f2937;
+            --terminal-screen-cursor: #374151;
+            --terminal-screen-selection: rgba(55, 65, 81, 0.14);
+            --terminal-screen-black: #1f2937;
+            --terminal-screen-red: #b91c1c;
+            --terminal-screen-green: #166534;
+            --terminal-screen-yellow: #b45309;
+            --terminal-screen-blue: #6b7280;
+            --terminal-screen-magenta: #52525b;
+            --terminal-screen-cyan: #475569;
+            --terminal-screen-white: #4b5563;
+        }
+
+        /* Material You 配色方案 — 樱花粉 */
+        [data-color-scheme="sakura"] {
+            --color-accent: #e8b7c8;
+            --color-accent-hover: #f2c6d4;
+            --color-accent-light: rgba(232, 183, 200, 0.20);
+            --color-accent-soft: rgba(232, 183, 200, 0.11);
+            --color-accent-fill: rgba(232, 183, 200, 0.50);
+            --color-accent-outline: rgba(232, 183, 200, 0.34);
+        }
+        [data-theme="light"][data-color-scheme="sakura"] {
+            --color-accent: #9d4760;
+            --color-accent-hover: #83384e;
+            --color-accent-light: rgba(157, 71, 96, 0.18);
+            --color-accent-soft: rgba(157, 71, 96, 0.08);
+            --color-accent-fill: rgba(157, 71, 96, 0.40);
+            --color-accent-outline: rgba(157, 71, 96, 0.24);
+        }
+
+        /* Material You 配色方案 — 海洋蓝 */
+        [data-color-scheme="ocean"] {
+            --color-accent: #9cccf4;
+            --color-accent-hover: #b8dcfb;
+            --color-accent-light: rgba(156, 204, 244, 0.20);
+            --color-accent-soft: rgba(156, 204, 244, 0.11);
+            --color-accent-fill: rgba(156, 204, 244, 0.50);
+            --color-accent-outline: rgba(156, 204, 244, 0.34);
+        }
+        [data-theme="light"][data-color-scheme="ocean"] {
+            --color-accent: #2f6f9f;
+            --color-accent-hover: #215a84;
+            --color-accent-light: rgba(47, 111, 159, 0.18);
+            --color-accent-soft: rgba(47, 111, 159, 0.08);
+            --color-accent-fill: rgba(47, 111, 159, 0.40);
+            --color-accent-outline: rgba(47, 111, 159, 0.24);
+        }
+
+        /* Material You 配色方案 — 森林绿 */
+        [data-color-scheme="forest"] {
+            --color-accent: #9fcf9f;
+            --color-accent-hover: #b8ddb8;
+            --color-accent-light: rgba(159, 207, 159, 0.20);
+            --color-accent-soft: rgba(159, 207, 159, 0.11);
+            --color-accent-fill: rgba(159, 207, 159, 0.50);
+            --color-accent-outline: rgba(159, 207, 159, 0.34);
+        }
+        [data-theme="light"][data-color-scheme="forest"] {
+            --color-accent: #447348;
+            --color-accent-hover: #335b37;
+            --color-accent-light: rgba(68, 115, 72, 0.18);
+            --color-accent-soft: rgba(68, 115, 72, 0.08);
+            --color-accent-fill: rgba(68, 115, 72, 0.40);
+            --color-accent-outline: rgba(68, 115, 72, 0.24);
+        }
+
+        /* Material You 配色方案 — 暮光紫 */
+        [data-color-scheme="twilight"] {
+            --color-accent: #d0c0f4;
+            --color-accent-hover: #ddd1fb;
+            --color-accent-light: rgba(208, 192, 244, 0.20);
+            --color-accent-soft: rgba(208, 192, 244, 0.11);
+            --color-accent-fill: rgba(208, 192, 244, 0.50);
+            --color-accent-outline: rgba(208, 192, 244, 0.34);
+        }
+        [data-theme="light"][data-color-scheme="twilight"] {
+            --color-accent: #6c59a0;
+            --color-accent-hover: #564584;
+            --color-accent-light: rgba(108, 89, 160, 0.18);
+            --color-accent-soft: rgba(108, 89, 160, 0.08);
+            --color-accent-fill: rgba(108, 89, 160, 0.40);
+            --color-accent-outline: rgba(108, 89, 160, 0.24);
+        }
+
+        /* Material You 配色方案 — 琥珀橙 */
+        [data-color-scheme="amber"] {
+            --color-accent: #f2c27d;
+            --color-accent-hover: #ffd39c;
+            --color-accent-light: rgba(242, 194, 125, 0.20);
+            --color-accent-soft: rgba(242, 194, 125, 0.11);
+            --color-accent-fill: rgba(242, 194, 125, 0.50);
+            --color-accent-outline: rgba(242, 194, 125, 0.34);
+        }
+        [data-theme="light"][data-color-scheme="amber"] {
+            --color-accent: #a76617;
+            --color-accent-hover: #8d530f;
+            --color-accent-light: rgba(167, 102, 23, 0.18);
+            --color-accent-soft: rgba(167, 102, 23, 0.08);
+            --color-accent-fill: rgba(167, 102, 23, 0.40);
+            --color-accent-outline: rgba(167, 102, 23, 0.24);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
-            background: var(--color-bg-deep);
+            background: linear-gradient(180deg, var(--color-bg-deep) 0%, var(--color-bg-2) 100%);
             color: var(--color-text);
             height: 100vh;
             overflow: hidden;
@@ -135,7 +258,7 @@
         }
         .nav-item::before {
             content: ''; position: absolute; inset: 0;
-            background: radial-gradient(circle 120px at var(--x) var(--y), rgba(0,120,215,0.1), transparent);
+            background: radial-gradient(circle 120px at var(--x) var(--y), var(--color-accent-soft), transparent);
             opacity: 0; transition: opacity .15s; pointer-events: none;
         }
         .nav-item:hover::before { opacity: 1; }
@@ -180,9 +303,9 @@
         /* 登录遮罩 */
         .auth-overlay {
             position: fixed; inset: 0; z-index: 200;
-            background: radial-gradient(circle at 20% 20%, rgba(0,120,215,0.2), transparent 60%),
-                        radial-gradient(circle at 80% 80%, rgba(16,124,16,0.15), transparent 55%),
-                        rgba(0,0,0,0.65);
+            background: radial-gradient(circle at 18% 20%, rgba(148, 163, 184, 0.2), transparent 58%),
+                        radial-gradient(circle at 82% 78%, rgba(203, 213, 225, 0.24), transparent 54%),
+                        linear-gradient(135deg, #f8fafc 0%, #eef2f6 46%, #e5e7eb 100%);
             display: flex; align-items: center; justify-content: center;
             transition: opacity .3s, visibility .3s;
         }
@@ -192,7 +315,7 @@
             background: var(--color-bg-1);
             border: 1px solid var(--color-border);
             border-radius: 14px;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
         }
         .auth-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
         .auth-sub { color: var(--color-text-2); font-size: 13px; margin-bottom: 18px; }
@@ -285,23 +408,37 @@
         }
         .host-delete:hover { color: var(--color-error); background: rgba(232,17,35,0.1); }
         .terminal-box {
-            flex: 1; background: var(--terminal-bg); border: 1px solid var(--color-border);
-            border-radius: 8px; padding: 12px; min-height: 300px;
-            display: flex; flex-direction: column;
+            flex: 1;
+            background: var(--terminal-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 12px;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
         }
         .terminal-header {
             display: flex; align-items: center; gap: 8px;
             padding-bottom: 12px; border-bottom: 1px solid var(--color-border); margin-bottom: 12px;
         }
-        .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
-        .terminal-dot.red { background: var(--color-error); }
-        .terminal-dot.yellow { background: var(--color-warning); }
-        .terminal-dot.green { background: var(--color-success); }
-        .terminal-title { flex: 1; margin-left: 12px; color: #a0a0a0; font-size: 13px; }
+        .terminal-title { flex: 1; color: var(--color-text-2); font-size: 13px; }
         .terminal-status { display: flex; align-items: center; gap: 6px; font-size: 12px; }
         .terminal-status.connected { color: var(--color-success); }
-        .terminal-status.disconnected { color: #6a6a6a; }
-        #terminal { flex: 1; }
+        .terminal-status.disconnected { color: var(--color-text-3); }
+        .terminal-screen {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            display: flex;
+            background: var(--terminal-screen-bg);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .terminal-screen .xterm {
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+        }
 
         /* System Stats Monitor */
         .sys-stats-container {
@@ -333,7 +470,7 @@
             align-items: center;
             gap: 4px;
         }
-        .sys-stats-hint .hint-cpu { color: #0078D7; }
+        .sys-stats-hint .hint-cpu { color: var(--color-accent); }
         .sys-stats-hint .hint-mem { color: #107c10; }
         .sys-stats-hint .hint-disk { color: #ff8c00; }
         .sys-stats-hint .hint-expand {
@@ -408,7 +545,7 @@
             align-items: center;
             gap: 4px;
         }
-        .top-panel-hint .hint-procs { color: #0078D7; }
+        .top-panel-hint .hint-procs { color: var(--color-accent); }
         .top-panel-hint .hint-running { color: #107c10; }
         .top-panel-hint .hint-load { color: #ff8c00; }
         .top-panel-hint .hint-expand {
@@ -534,7 +671,7 @@
         }
         .top-panel-table .col-pid { width: 60px; text-align: right; }
         .top-panel-table .col-user { width: 80px; }
-        .top-panel-table .col-cpu { width: 60px; text-align: right; color: #0078D7; }
+        .top-panel-table .col-cpu { width: 60px; text-align: right; color: var(--color-accent); }
         .top-panel-table .col-mem { width: 60px; text-align: right; color: #107c10; }
         .top-panel-table .col-vsz { width: 80px; text-align: right; }
         .top-panel-table .col-rss { width: 80px; text-align: right; }
@@ -548,7 +685,7 @@
             margin-right: 4px;
             vertical-align: middle;
         }
-        .top-cpu-bar { background: rgba(0, 120, 215, 0.6); }
+        .top-cpu-bar { background: var(--color-accent-fill); }
         .top-mem-bar { background: rgba(16, 124, 16, 0.6); }
         .top-panel-table .col-action { width: 50px; text-align: center; }
         .top-kill-btn {
@@ -588,8 +725,8 @@
         .docker-panel-hint:hover { background: var(--color-bg-3); }
         .docker-panel-hint .hint-info { display: flex; gap: 16px; }
         .docker-panel-hint .hint-item { display: flex; align-items: center; gap: 4px; }
-        .docker-panel-hint .hint-docker-count { color: #2496ed; }
-        .docker-panel-hint .hint-docker-cpu { color: #0078D7; }
+        .docker-panel-hint .hint-docker-count { color: var(--color-accent); }
+        .docker-panel-hint .hint-docker-cpu { color: var(--color-accent); }
         .docker-panel-hint .hint-docker-mem { color: #107c10; }
         .docker-panel-hint .hint-expand {
             display: flex; align-items: center; gap: 4px;
@@ -611,7 +748,7 @@
             font-size: 13px; font-weight: 500;
             display: flex; align-items: center; gap: 8px; white-space: nowrap;
         }
-        .docker-panel-header h4 i { color: #2496ed; }
+        .docker-panel-header h4 i { color: var(--color-accent); }
         .docker-mode-switch { display: flex; gap: 0; }
         .docker-mode-tag {
             padding: 4px 10px; border: 1px solid var(--color-border);
@@ -622,10 +759,10 @@
         .docker-mode-tag:last-child { border-radius: 0 4px 4px 0; border-left: none; }
         .docker-mode-tag:hover { border-color: var(--color-accent); color: var(--color-text); }
         .docker-mode-tag.active {
-            background: rgba(36, 150, 237, 0.15);
-            border-color: #2496ed; color: #2496ed;
+            background: var(--color-accent-soft);
+            border-color: var(--color-accent); color: var(--color-accent);
         }
-        .docker-mode-tag.active + .docker-mode-tag { border-left-color: #2496ed; }
+        .docker-mode-tag.active + .docker-mode-tag { border-left-color: var(--color-accent); }
         .docker-panel-controls { display: flex; align-items: center; gap: 8px; margin-left: auto; }
         .docker-panel-status { font-size: 11px; color: var(--color-text-2); white-space: nowrap; }
         .docker-panel-body { display: grid; grid-template-columns: 1fr; min-height: 0; }
@@ -645,8 +782,8 @@
         }
         .docker-container-item:hover { border-color: var(--color-accent); background: var(--color-bg-3); }
         .docker-container-item.active {
-            border-color: #2496ed; background: rgba(36, 150, 237, 0.12);
-            box-shadow: inset 0 0 0 1px rgba(36, 150, 237, 0.35);
+            border-color: var(--color-accent); background: var(--color-accent-soft);
+            box-shadow: inset 0 0 0 1px var(--color-accent-outline);
         }
         .docker-container-name {
             display: block; font-size: 12px; font-weight: 600;
@@ -899,6 +1036,70 @@
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
         .stat-value { font-size: 28px; font-weight: 600; color: var(--color-accent); }
         .stat-label { color: var(--color-text-2); font-size: 13px; }
+
+        /* Settings */
+        .settings-layout {
+            display: grid;
+            grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+            gap: 20px; align-items: start;
+        }
+        .settings-card {
+            background: var(--color-bg-1); border: 1px solid var(--color-border);
+            border-radius: 24px; padding: 24px;
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+            transition: background .3s, border-color .3s, box-shadow .3s;
+        }
+        .settings-card h3 {
+            font-size: 16px; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .settings-card h3 i { color: var(--color-accent); }
+        .settings-desc { color: var(--color-text-2); font-size: 13px; line-height: 1.6; margin-bottom: 18px; }
+        .settings-password-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;
+        }
+        .settings-note {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 18px; padding: 14px 16px;
+            border-radius: 18px; border: 1px solid var(--color-accent-outline);
+            background: var(--color-accent-soft); color: var(--color-text-2); line-height: 1.5;
+        }
+        .settings-note i { color: var(--color-accent); }
+        .settings-actions { display: flex; justify-content: flex-end; margin-top: 6px; }
+        .scheme-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px;
+        }
+        .scheme-card {
+            width: 100%; border: 1px solid var(--color-border); border-radius: 22px;
+            padding: 16px; background: linear-gradient(160deg, var(--color-bg-2) 0%, var(--color-bg-1) 100%);
+            color: var(--color-text); cursor: pointer;
+            display: flex; flex-direction: column; gap: 14px; text-align: left;
+            transition: transform .16s, border-color .2s, box-shadow .2s, background .3s;
+        }
+        .scheme-card:hover { transform: translateY(-1px); border-color: var(--color-accent-outline); }
+        .scheme-card.active {
+            border-color: var(--color-accent);
+            background: linear-gradient(160deg, var(--color-accent-soft) 0%, var(--color-bg-1) 100%);
+            box-shadow: 0 0 0 1px var(--color-accent-outline), 0 18px 32px rgba(15, 23, 42, 0.1);
+        }
+        .scheme-card:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-accent-light); }
+        .scheme-preview { display: flex; align-items: center; gap: 10px; }
+        .scheme-swatch {
+            width: 18px; height: 18px; border-radius: 50%;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+        }
+        .scheme-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .scheme-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .scheme-tone { font-size: 12px; color: var(--color-text-3); }
+        .scheme-badge {
+            flex-shrink: 0; padding: 4px 8px; border-radius: 999px;
+            background: var(--color-accent-light); color: var(--color-accent);
+            font-size: 11px; font-weight: 600;
+        }
+        @media (max-width: 960px) {
+            .settings-layout { grid-template-columns: 1fr; }
+            .scheme-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+        }
 
         /* Modal */
         .modal-overlay {
@@ -1208,6 +1409,7 @@
                 <div class="nav-item" data-view="vnc"><i class="fas fa-desktop"></i><span>VNC 远程</span></div>
                 <div class="nav-item" data-view="security"><i class="fas fa-shield-halved"></i><span>内网白名单</span></div>
                 <div class="nav-item" data-view="serial"><i class="fas fa-microchip"></i><span>串口终端</span></div>
+                <div class="nav-item" data-view="settings"><i class="fas fa-gear"></i><span>设置</span></div>
             </nav>
             <div class="sidebar-footer">
                 <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-chevron-left"></i><span>收起</span></button>
@@ -1266,13 +1468,10 @@
                     </div>
                     <div class="terminal-box">
                         <div class="terminal-header">
-                            <div class="terminal-dot red"></div>
-                            <div class="terminal-dot yellow"></div>
-                            <div class="terminal-dot green"></div>
                             <span class="terminal-title" id="termTitle">终端 - 未连接</span>
                             <div class="terminal-status disconnected" id="termStatus"><i class="fas fa-circle"></i><span>未连接</span></div>
                         </div>
-                        <div id="terminal"></div>
+                        <div class="terminal-screen" id="terminal"></div>
                     </div>
                     <!-- System Stats Monitor -->
                     <div class="sys-stats-container" id="sysStatsContainer">
@@ -1517,15 +1716,12 @@
                     </div>
                     <div class="terminal-box">
                         <div class="terminal-header">
-                            <div class="terminal-dot red"></div>
-                            <div class="terminal-dot yellow"></div>
-                            <div class="terminal-dot green"></div>
                             <span class="terminal-title" id="shellTermTitle">Web 终端 - 未启动</span>
                             <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
                                 <button class="btn btn-sm btn-secondary" id="shellClearBtn"><i class="fas fa-eraser"></i> 清屏</button>
                             </div>
                         </div>
-                        <div id="shellTerminal"></div>
+                        <div class="terminal-screen" id="shellTerminal"></div>
                     </div>
                 </div>
             </div>
@@ -1787,9 +1983,6 @@
                     </div>
                     <div class="terminal-box">
                         <div class="terminal-header">
-                            <div class="terminal-dot red"></div>
-                            <div class="terminal-dot yellow"></div>
-                            <div class="terminal-dot green"></div>
                             <span class="terminal-title" id="serialTermTitle">串口终端 - 未连接</span>
                             <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
                                 <label style="font-size:12px;color:var(--color-text-2)">
@@ -1801,7 +1994,7 @@
                                 <button class="btn btn-sm btn-secondary" id="serialClearBtn"><i class="fas fa-eraser"></i> 清屏</button>
                             </div>
                         </div>
-                        <div id="serialTerminal"></div>
+                        <div class="terminal-screen" id="serialTerminal"></div>
                     </div>
                     <div class="toolbar" style="margin-top:16px">
                         <div class="input-group" style="flex:1">
@@ -1821,6 +2014,43 @@
                                 <button class="btn" id="serialSendBtn" disabled><i class="fas fa-paper-plane"></i> 发送</button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="view" id="view-settings">
+                <div class="header"><h2><i class="fas fa-gear"></i> 设置</h2></div>
+                <div class="content">
+                    <div class="settings-layout">
+                        <section class="settings-card">
+                            <h3><i class="fas fa-key"></i> 修改密码</h3>
+                            <p class="settings-desc">当前账户：<strong id="settingsCurrentUser">--</strong></p>
+                            <div class="settings-note" id="settingsNologinNotice" style="display:none">
+                                <i class="fas fa-ban"></i>
+                                <span>桌面应用不允许修改密码</span>
+                            </div>
+                            <div id="settingsPasswordForm">
+                                <div class="settings-password-grid">
+                                    <div class="form-group">
+                                        <label>新密码</label>
+                                        <input type="password" class="form-input" id="settingsNewPassword" placeholder="输入新密码">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>确认密码</label>
+                                        <input type="password" class="form-input" id="settingsConfirmPassword" placeholder="再次输入新密码">
+                                    </div>
+                                </div>
+                                <div class="settings-actions">
+                                    <button class="btn" id="settingsChangePasswordBtn"><i class="fas fa-key"></i> 修改密码</button>
+                                </div>
+                            </div>
+                        </section>
+                        <section class="settings-card">
+                            <h3><i class="fas fa-palette"></i> 配色方案</h3>
+                            <p class="settings-desc">选择 Material You Design 风格的强调色方案</p>
+                            <div class="scheme-grid" id="colorSchemeGrid"></div>
+                        </section>
                     </div>
                 </div>
             </div>
@@ -1954,6 +2184,7 @@
         const State = {
             loggedIn: false,
             isAdmin: false,
+            isNologin: false,
             username: '',
             token: '',
             hosts: [],
@@ -1964,15 +2195,18 @@
             currentPath: '/',
             selectedFiles: [],
             filesTransferred: 0,
-            theme: 'dark',
+            theme: 'light',
+            colorScheme: 'default',
             // 导航历史
             navHistory: [],
             navIndex: -1
         };
 
         const Storage = {
-            getTheme() { return localStorage.getItem('theme') || 'dark'; },
+            getTheme() { return localStorage.getItem('theme') || 'light'; },
             setTheme(t) { localStorage.setItem('theme', t); },
+            getColorScheme() { return localStorage.getItem('colorScheme') || 'default'; },
+            setColorScheme(s) { localStorage.setItem('colorScheme', s); },
             getToken() { return localStorage.getItem('authToken') || ''; },
             setToken(t) { localStorage.setItem('authToken', t); },
             clearToken() { localStorage.removeItem('authToken'); }
@@ -2150,22 +2384,140 @@
             updateSaveHostButton();
         }
 
+        function getCssVar(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        }
+
         // 主题
         const Theme = {
+            COLOR_SCHEMES: {
+                default:  { label: '默认方案', tone: '中性石墨',  preview: ['#cbd5e1', '#6b7280', '#374151'] },
+                sakura:   { label: '樱花粉',   tone: '柔和花瓣',  preview: ['#ffd9e2', '#f2b7c8', '#9d4760'] },
+                ocean:    { label: '海洋蓝',   tone: '清澈潮汐',  preview: ['#d4ecff', '#87c5f3', '#2f6f9f'] },
+                forest:   { label: '森林绿',   tone: '苔藓林地',  preview: ['#d7f0d5', '#8abf8a', '#447348'] },
+                twilight: { label: '暮光紫',   tone: '柔雾暮色',  preview: ['#ece3ff', '#b6a1e7', '#6c59a0'] },
+                amber:    { label: '琥珀橙',   tone: '温暖日落',  preview: ['#ffe6bf', '#f2bd69', '#a76617'] }
+            },
             init() {
                 State.theme = Storage.getTheme();
+                State.colorScheme = Storage.getColorScheme();
                 this.apply();
+                this.applyColorScheme(State.colorScheme);
                 document.getElementById('themeToggle').addEventListener('click', () => this.toggle());
             },
             apply() {
                 document.documentElement.setAttribute('data-theme', State.theme);
                 const icon = document.querySelector('#themeToggle i');
                 icon.className = State.theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                Terminal_.applyTheme();
+                LocalShell.applyTheme();
+                Serial.applyTheme();
+            },
+            applyColorScheme(scheme, persist = false) {
+                const key = this.COLOR_SCHEMES[scheme] ? scheme : 'default';
+                State.colorScheme = key;
+                document.documentElement.setAttribute('data-color-scheme', key);
+                if (persist) Storage.setColorScheme(key);
+                this.apply();
+                this.renderSchemeGrid();
+            },
+            renderSchemeGrid() {
+                const grid = document.getElementById('colorSchemeGrid');
+                if (!grid) return;
+                grid.innerHTML = Object.entries(this.COLOR_SCHEMES).map(([key, s]) => {
+                    const active = key === State.colorScheme;
+                    const swatches = s.preview.map(c => `<span class="scheme-swatch" style="background:${escapeHtml(c)}"></span>`).join('');
+                    return `<button type="button" class="scheme-card${active ? ' active' : ''}" data-scheme="${escapeHtml(key)}" aria-pressed="${active}">
+                        <div class="scheme-preview">${swatches}</div>
+                        <div class="scheme-meta">
+                            <div><div class="scheme-name">${escapeHtml(s.label)}</div><div class="scheme-tone">${escapeHtml(s.tone)}</div></div>
+                            ${active ? '<span class="scheme-badge">当前</span>' : ''}
+                        </div>
+                    </button>`;
+                }).join('');
+                grid.querySelectorAll('.scheme-card').forEach(card => {
+                    card.addEventListener('click', () => this.applyColorScheme(card.dataset.scheme, true));
+                });
             },
             toggle() {
                 State.theme = State.theme === 'dark' ? 'light' : 'dark';
                 Storage.setTheme(State.theme);
                 this.apply();
+            },
+            getTerminalTheme() {
+                return {
+                    background: getCssVar('--terminal-screen-bg'),
+                    foreground: getCssVar('--terminal-screen-text'),
+                    cursor: getCssVar('--terminal-screen-cursor'),
+                    selection: getCssVar('--terminal-screen-selection'),
+                    black: getCssVar('--terminal-screen-black'),
+                    red: getCssVar('--terminal-screen-red'),
+                    green: getCssVar('--terminal-screen-green'),
+                    yellow: getCssVar('--terminal-screen-yellow'),
+                    blue: getCssVar('--terminal-screen-blue'),
+                    magenta: getCssVar('--terminal-screen-magenta'),
+                    cyan: getCssVar('--terminal-screen-cyan'),
+                    white: getCssVar('--terminal-screen-white')
+                };
+            },
+            getTerminalWelcomeColors() {
+                return State.theme === 'light'
+                    ? { frame: '90', title: '30;1' }
+                    : { frame: '37', title: '97' };
+            }
+        };
+
+        const Settings = {
+            init() {
+                document.getElementById('settingsChangePasswordBtn').addEventListener('click', () => this.changePassword());
+                ['settingsNewPassword', 'settingsConfirmPassword'].forEach(id => {
+                    document.getElementById(id).addEventListener('keypress', e => {
+                        if (e.key === 'Enter') this.changePassword();
+                    });
+                });
+            },
+            render() {
+                document.getElementById('settingsCurrentUser').textContent = State.username || '--';
+                document.getElementById('settingsNologinNotice').style.display = State.isNologin ? 'flex' : 'none';
+                document.getElementById('settingsPasswordForm').style.display = State.isNologin ? 'none' : '';
+                Theme.renderSchemeGrid();
+            },
+            reset() {
+                document.getElementById('settingsNewPassword').value = '';
+                document.getElementById('settingsConfirmPassword').value = '';
+                document.getElementById('settingsChangePasswordBtn').disabled = false;
+                document.getElementById('settingsCurrentUser').textContent = '--';
+                document.getElementById('settingsNologinNotice').style.display = 'none';
+                document.getElementById('settingsPasswordForm').style.display = '';
+            },
+            async changePassword() {
+                if (State.isNologin) { Toast.info('桌面应用不允许修改密码'); return; }
+                if (!State.username) { Toast.error('当前用户不可用'); return; }
+                const pwd = document.getElementById('settingsNewPassword').value;
+                const confirm = document.getElementById('settingsConfirmPassword').value;
+                if (!pwd) { Toast.error('请输入新密码'); return; }
+                if (pwd !== confirm) { Toast.error('两次输入的密码不一致'); return; }
+                const btn = document.getElementById('settingsChangePasswordBtn');
+                btn.disabled = true;
+                try {
+                    const res = await apiFetch(`${Config.API}/api/users/${encodeURIComponent(State.username)}/password`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: pwd })
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok) {
+                        document.getElementById('settingsNewPassword').value = '';
+                        document.getElementById('settingsConfirmPassword').value = '';
+                        Toast.success(data.message || '密码修改成功');
+                    } else {
+                        Toast.error(data.error || '密码修改失败');
+                    }
+                } catch (err) {
+                    Toast.error(`密码修改失败: ${err.message}`);
+                } finally {
+                    btn.disabled = false;
+                }
             }
         };
 
@@ -2201,6 +2553,7 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data && data.nologin) {
+                            State.isNologin = true;
                             this.setSession(data);
                             this.hideLogin();
                             UI.showDashboard();
@@ -2270,6 +2623,7 @@
             clearSession() {
                 State.loggedIn = false;
                 State.isAdmin = false;
+                State.isNologin = false;
                 State.username = '';
                 State.token = '';
                 State.hosts = [];
@@ -2277,6 +2631,7 @@
                 State.navIndex = -1;
                 State.selectedFiles = [];
                 setEditingHostIndex(null);
+                Settings.reset();
                 Storage.clearToken();
                 UI.resetConnections();
                 UI.hideDashboard();
@@ -2333,12 +2688,7 @@
             dockerError: '',
             init() {
                 this.term = new Terminal({
-                    theme: {
-                        background: '#1a1a1a', foreground: '#fff', cursor: '#0078D7',
-                        selection: 'rgba(0,120,215,0.3)',
-                        black: '#1a1a1a', red: '#e81123', green: '#107c10', yellow: '#ff8c00',
-                        blue: '#0078D7', magenta: '#881798', cyan: '#3a96dd', white: '#ccc'
-                    },
+                    theme: Theme.getTerminalTheme(),
                     fontFamily: 'Consolas, Monaco, monospace',
                     fontSize: 14, cursorBlink: true
                 });
@@ -2359,12 +2709,22 @@
                     }
                 });
             },
+            applyTheme() {
+                if (!this.term) return;
+                this.term.setOption('theme', Theme.getTerminalTheme());
+                this.doFit();
+                if (!State.sshConnected) {
+                    this.term.clear();
+                    this.welcome();
+                }
+            },
             doFit() { try { this.fit.fit(); } catch {} },
             welcome() {
+                const colors = Theme.getTerminalWelcomeColors();
                 this.term.writeln('');
-                this.term.writeln('\x1b[1;34m  ╔══════════════════════════════════════════╗\x1b[0m');
-                this.term.writeln('\x1b[1;34m  ║\x1b[0m          \x1b[1;36mEntrance Tools\x1b[0m                  \x1b[1;34m║\x1b[0m');
-                this.term.writeln('\x1b[1;34m  ╚══════════════════════════════════════════╝\x1b[0m');
+                this.term.writeln(`\x1b[${colors.frame}m  ╔══════════════════════════════════════════╗\x1b[0m`);
+                this.term.writeln(`\x1b[${colors.frame}m  ║\x1b[0m          \x1b[${colors.title}mEntrance Tools\x1b[0m                  \x1b[${colors.frame}m║\x1b[0m`);
+                this.term.writeln(`\x1b[${colors.frame}m  ╚══════════════════════════════════════════╝\x1b[0m`);
                 this.term.writeln('');
                 this.term.writeln('\x1b[90m  输入连接信息后点击 SSH 按钮连接服务器\x1b[0m');
                 this.term.writeln('');
@@ -2905,7 +3265,7 @@
                 const netPct = isSingle ? (allNetTotal > 0 ? Math.min(netTotal / allNetTotal * 100, 100) : 0) : (netTotal > 0 ? 100 : 0);
                 const blockPct = isSingle ? (allBlockTotal > 0 ? Math.min(blockTotal / allBlockTotal * 100, 100) : 0) : (blockTotal > 0 ? 100 : 0);
                 const cards = [
-                    { label: 'CPU', color: '#0078D7', pct: Math.min(scope.cpuPercent, 100), text: scope.cpuPercent.toFixed(1) + '%', sub: badge, detail: isSingle ? scope.name : `${this.dockerContainers.length} 容器叠加` },
+                    { label: 'CPU', color: '#4b5563', pct: Math.min(scope.cpuPercent, 100), text: scope.cpuPercent.toFixed(1) + '%', sub: badge, detail: isSingle ? scope.name : `${this.dockerContainers.length} 容器叠加` },
                     { label: 'MEM', color: '#107c10', pct: Math.min(scope.memPercent, 100), text: scope.memPercent.toFixed(1) + '%', sub: this.formatSize(scope.memUsed) + ' 已用', detail: `${this.formatSize(scope.memUsed)} / ${scope.memLimit > 0 ? this.formatSize(scope.memLimit) : '无限制'}` },
                     { label: 'NET I/O', color: '#ff8c00', pct: netPct, text: this.formatSize(netTotal), sub: isSingle ? netPct.toFixed(1) + '% 占总量' : '总流量', detail: `IN ${this.formatSize(scope.netIn)} / OUT ${this.formatSize(scope.netOut)}` },
                     { label: 'BLOCK I/O', color: '#d83b01', pct: blockPct, text: this.formatSize(blockTotal), sub: isSingle ? blockPct.toFixed(1) + '% 占总量' : '总流量', detail: `R ${this.formatSize(scope.blockRead)} / W ${this.formatSize(scope.blockWrite)}` }
@@ -3587,9 +3947,9 @@
 
                 // Color palette for auto-assignment
                 this.colorPalette = [
-                    '#0078D7', '#107c10', '#e81123', '#ff8c00',
-                    '#881798', '#3a96dd', '#00cc6a', '#f7630c',
-                    '#ea005e', '#00b7c3', '#8764b8', '#567c73'
+                    '#4b5563', '#107c10', '#e81123', '#ff8c00',
+                    '#7c3aed', '#6b7280', '#059669', '#c2410c',
+                    '#be185d', '#0f766e', '#8b5cf6', '#57534e'
                 ];
                 this.colorIndex = 0;
 
@@ -3829,10 +4189,10 @@
 
                 // Color palette for sub-variables (a, b, c, d, etc.)
                 this.colorPalette = [
-                    '#0078D7', '#107c10', '#e81123', '#ff8c00',
-                    '#881798', '#3a96dd', '#00cc6a', '#f7630c',
-                    '#ea005e', '#00b7c3', '#8764b8', '#567c73',
-                    '#c239b3', '#6b69d6', '#038387', '#ca5010'
+                    '#4b5563', '#107c10', '#e81123', '#ff8c00',
+                    '#7c3aed', '#6b7280', '#059669', '#c2410c',
+                    '#be185d', '#0f766e', '#8b5cf6', '#57534e',
+                    '#a21caf', '#6366f1', '#047857', '#a16207'
                 ];
                 this.subKeyColors = new Map(); // Map<subKey, color>
                 this.colorIndex = 0;
@@ -4050,8 +4410,8 @@
                             {
                                 label: 'CPU %',
                                 data: this.cpuData,
-                                borderColor: '#0078D7',
-                                backgroundColor: 'rgba(0, 120, 215, 0.1)',
+                                borderColor: '#4b5563',
+                                backgroundColor: 'rgba(75, 85, 99, 0.12)',
                                 borderWidth: 2,
                                 fill: true,
                                 tension: 0.3,
@@ -4317,12 +4677,7 @@
 
                 // 初始化终端
                 this.term = new Terminal({
-                    theme: {
-                        background: '#1a1a1a', foreground: '#fff', cursor: '#0078D7',
-                        selection: 'rgba(0,120,215,0.3)',
-                        black: '#1a1a1a', red: '#e81123', green: '#107c10', yellow: '#ff8c00',
-                        blue: '#0078D7', magenta: '#881798', cyan: '#3a96dd', white: '#ccc'
-                    },
+                    theme: Theme.getTerminalTheme(),
                     fontFamily: 'Consolas, Monaco, monospace',
                     fontSize: 14, cursorBlink: true,
                     convertEol: true
@@ -4365,6 +4720,16 @@
 
                 // Demo mode button
                 document.getElementById('serialDemoBtn').addEventListener('click', () => this.startDemo());
+            },
+
+            applyTheme() {
+                if (!this.term) return;
+                this.term.setOption('theme', Theme.getTerminalTheme());
+                this.doFit();
+                if (!this.connected && !this.demoMode) {
+                    this.term.clear();
+                    this.welcome();
+                }
             },
 
             // Start demo mode - simulates waveform data without real serial port
@@ -4531,10 +4896,11 @@
             },
 
             welcome() {
+                const colors = Theme.getTerminalWelcomeColors();
                 this.term.writeln('');
-                this.term.writeln('\x1b[1;34m  ╔══════════════════════════════════════════╗\x1b[0m');
-                this.term.writeln('\x1b[1;34m  ║\x1b[0m    \x1b[1;36mSerial Terminal (WebSerial)\x1b[0m          \x1b[1;34m║\x1b[0m');
-                this.term.writeln('\x1b[1;34m  ╚══════════════════════════════════════════╝\x1b[0m');
+                this.term.writeln(`\x1b[${colors.frame}m  ╔══════════════════════════════════════════╗\x1b[0m`);
+                this.term.writeln(`\x1b[${colors.frame}m  ║\x1b[0m    \x1b[${colors.title}mSerial Terminal (WebSerial)\x1b[0m          \x1b[${colors.frame}m║\x1b[0m`);
+                this.term.writeln(`\x1b[${colors.frame}m  ╚══════════════════════════════════════════╝\x1b[0m`);
                 this.term.writeln('');
                 this.term.writeln('\x1b[90m  点击 "连接串口" 按钮选择串口设备\x1b[0m');
                 this.term.writeln('');
@@ -5015,12 +5381,7 @@
 
                 // 初始化终端
                 this.term = new Terminal({
-                    theme: {
-                        background: '#1a1a1a', foreground: '#fff', cursor: '#0078D7',
-                        selection: 'rgba(0,120,215,0.3)',
-                        black: '#1a1a1a', red: '#e81123', green: '#107c10', yellow: '#ff8c00',
-                        blue: '#0078D7', magenta: '#881798', cyan: '#3a96dd', white: '#ccc'
-                    },
+                    theme: Theme.getTerminalTheme(),
                     fontFamily: 'Consolas, Monaco, monospace',
                     fontSize: 14,
                     cursorBlink: true
@@ -5056,6 +5417,16 @@
                 });
             },
 
+            applyTheme() {
+                if (!this.term) return;
+                this.term.setOption('theme', Theme.getTerminalTheme());
+                this.doFit();
+                if (!this.connected) {
+                    this.term.clear();
+                    this.welcome();
+                }
+            },
+
             doFit() {
                 try { this.fit.fit(); } catch {}
             },
@@ -5071,10 +5442,11 @@
             },
 
             welcome() {
+                const colors = Theme.getTerminalWelcomeColors();
                 this.term.writeln('');
-                this.term.writeln('\x1b[1;34m  ╔══════════════════════════════════════════╗\x1b[0m');
-                this.term.writeln('\x1b[1;34m  ║\x1b[0m              \x1b[1;36mTerminal\x1b[0m                   \x1b[1;34m║\x1b[0m');
-                this.term.writeln('\x1b[1;34m  ╚══════════════════════════════════════════╝\x1b[0m');
+                this.term.writeln(`\x1b[${colors.frame}m  ╔══════════════════════════════════════════╗\x1b[0m`);
+                this.term.writeln(`\x1b[${colors.frame}m  ║\x1b[0m              \x1b[${colors.title}mTerminal\x1b[0m                   \x1b[${colors.frame}m║\x1b[0m`);
+                this.term.writeln(`\x1b[${colors.frame}m  ╚══════════════════════════════════════════╝\x1b[0m`);
                 this.term.writeln('');
                 this.term.writeln(this.isSshLocalhostMode()
                     ? '\x1b[90m  填写本机 SSH 凭据后点击 "连接" 按钮开启终端\x1b[0m'
@@ -5418,6 +5790,7 @@
         const UI = {
             init() {
                 Theme.init();
+                Settings.init();
                 Auth.init();
 
                 // 侧边栏
@@ -5583,6 +5956,7 @@
             showDashboard() {
                 document.getElementById('dashboard').classList.add('visible');
                 this.applyRole();
+                Settings.render();
                 if (!this.started) {
                     this.started = true;
                     Terminal_.init();
@@ -5640,6 +6014,7 @@
             switchView(name) {
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === name));
                 document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${name}`));
+                if (name === 'settings') Settings.render();
                 if (name === 'ssh') setTimeout(() => Terminal_.doFit(), 100);
                 if (name === 'shell') setTimeout(() => LocalShell.doFit(), 100);
                 if (name === 'serial') setTimeout(() => Serial.doFit(), 100);
