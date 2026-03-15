@@ -459,6 +459,12 @@ function isPrivateIp(address) {
     return false;
 }
 
+function isLoopbackHost(host) {
+    if (!host || typeof host !== 'string') return false;
+    const normalized = host.trim().toLowerCase();
+    return normalized === 'localhost' || normalized === '127.0.0.1' || normalized === '::1';
+}
+
 const PrivateNetworkManager = {
     load() {
         if (!fs.existsSync(PRIVATE_NETWORKS_FILE)) {
@@ -1376,10 +1382,26 @@ wss.on('connection', (ws, req) => {
                         break;
                     }
 
-                    const hostCheck = await validateTargetHost(host);
-                    if (!hostCheck.ok) {
-                        ws.send(JSON.stringify({ type: 'error', message: hostCheck.error }));
-                        break;
+                    const isLocalShellMode = data.localShellMode === true;
+                    if (isLocalShellMode) {
+                        if (req.auth.role !== 'admin') {
+                            ws.send(JSON.stringify({ type: 'error', message: '仅管理员可使用本机 SSH 终端' }));
+                            break;
+                        }
+                        if (localShell.getPlatform() !== 'win32') {
+                            ws.send(JSON.stringify({ type: 'error', message: '当前平台不支持本机 SSH 终端模式' }));
+                            break;
+                        }
+                        if (!isLoopbackHost(host)) {
+                            ws.send(JSON.stringify({ type: 'error', message: '本机 SSH 终端仅允许连接 localhost 或 127.0.0.1' }));
+                            break;
+                        }
+                    } else {
+                        const hostCheck = await validateTargetHost(host);
+                        if (!hostCheck.ok) {
+                            ws.send(JSON.stringify({ type: 'error', message: hostCheck.error }));
+                            break;
+                        }
                     }
 
                     sshClient = new Client();
@@ -1965,11 +1987,22 @@ if (localShellService.available) {
 
 // 添加本地 shell 状态检查 API
 app.get('/api/localshell/status', requireAdmin, (req, res) => {
+    const platform = localShell.getPlatform();
+    const mode = platform === 'win32' ? 'ssh-localhost' : 'native';
     res.json({
         available: localShell.isAvailable(),
         sessions: localShell.getSessionCount(),
         shell: localShell.getDefaultShell(),
-        platform: localShell.getPlatform()
+        platform,
+        mode,
+        sshLocalhost: mode === 'ssh-localhost'
+            ? {
+                host: '127.0.0.1',
+                port: 22,
+                username: process.env.USERNAME || '',
+                note: 'Windows 下通过 OpenSSH Server 为 Web 终端提供 PTY/ConPTY 语义。'
+            }
+            : null
     });
 });
 

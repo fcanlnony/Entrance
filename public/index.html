@@ -1468,6 +1468,42 @@
                         <p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 终端服务不可用</p>
                         <p id="shellNotAvailableReason" style="color:var(--color-text-2);font-size:13px">当前服务器平台暂不支持终端功能</p>
                     </div>
+                    <div id="shellModeNote" style="display:none;padding:14px 16px;background:var(--color-bg-1);border:1px solid var(--color-border);border-radius:8px;margin-bottom:20px;color:var(--color-text-2);font-size:13px;line-height:1.6"></div>
+                    <div class="toolbar" id="shellSshConfig" style="display:none">
+                        <div class="input-group">
+                            <label>目标主机</label>
+                            <input type="text" class="form-input" id="shellHost" value="127.0.0.1" readonly>
+                        </div>
+                        <div class="input-group">
+                            <label>端口</label>
+                            <input type="number" class="form-input" id="shellPort" value="22" min="1" max="65535" style="width:90px">
+                        </div>
+                        <div class="input-group">
+                            <label>用户名</label>
+                            <input type="text" class="form-input" id="shellUser" placeholder="Windows 用户名" maxlength="128">
+                        </div>
+                        <div class="input-group">
+                            <label>认证方式</label>
+                            <select class="form-input" id="shellAuthType">
+                                <option value="password" selected>密码</option>
+                                <option value="key">私钥</option>
+                            </select>
+                        </div>
+                        <div class="input-group" id="shellPasswordGroup">
+                            <label>密码</label>
+                            <input type="password" class="form-input" id="shellPass" placeholder="Windows 登录密码" maxlength="2048">
+                        </div>
+                        <div class="auth-key-panel" id="shellKeyPanel">
+                            <div class="input-group key-input-group">
+                                <label>私钥</label>
+                                <textarea class="form-input key-input" id="shellPrivateKey" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" maxlength="65536" spellcheck="false"></textarea>
+                            </div>
+                            <div class="input-group">
+                                <label>私钥口令（可选）</label>
+                                <input type="password" class="form-input" id="shellPassphrase" placeholder="私钥口令" maxlength="4096">
+                            </div>
+                        </div>
+                    </div>
                     <div class="sftp-status disconnected" id="shellStatus">
                         <div class="status-dot"></div>
                         <span class="sftp-status-text" id="shellStatusText">未启动</span>
@@ -4850,6 +4886,18 @@
             platform: 'unknown',
             shellInfo: '',
             initialized: false,
+            transportMode: 'native',
+            sshDefaults: {
+                host: '127.0.0.1',
+                port: 22,
+                username: '',
+                note: ''
+            },
+            connectionLabel: '',
+
+            isSshLocalhostMode() {
+                return this.transportMode === 'ssh-localhost';
+            },
 
             getShellOptions() {
                 const shellOptions = {
@@ -4897,6 +4945,41 @@
                 }
             },
 
+            configureTransportUi() {
+                const isSshLocalhost = this.isSshLocalhostMode();
+                const shellInfo = document.getElementById('shellInfo');
+                const shellPathInput = document.getElementById('shellPathInput');
+                const sshConfig = document.getElementById('shellSshConfig');
+                const modeNote = document.getElementById('shellModeNote');
+                const startBtn = document.getElementById('shellStartBtn');
+                const stopBtn = document.getElementById('shellStopBtn');
+
+                shellPathInput.style.display = isSshLocalhost ? 'none' : '';
+                sshConfig.style.display = isSshLocalhost ? 'flex' : 'none';
+                startBtn.innerHTML = isSshLocalhost
+                    ? '<i class="fas fa-plug"></i> 连接'
+                    : '<i class="fas fa-play"></i> 启动';
+                stopBtn.innerHTML = isSshLocalhost
+                    ? '<i class="fas fa-times"></i> 断开'
+                    : '<i class="fas fa-stop"></i> 停止';
+
+                if (isSshLocalhost) {
+                    document.getElementById('shellHost').value = this.sshDefaults.host || '127.0.0.1';
+                    document.getElementById('shellPort').value = this.sshDefaults.port || 22;
+                    document.getElementById('shellUser').value = this.sshDefaults.username || '';
+                    shellInfo.textContent = `SSH 到 ${this.sshDefaults.host || '127.0.0.1'}`;
+                    modeNote.style.display = 'block';
+                    modeNote.innerHTML = `${escapeHtml(this.sshDefaults.note || 'Windows 下通过 SSH 连接本机，借助 OpenSSH Server 获取真正的终端语义。')}<br>请先在系统中启用 <code>OpenSSH Server</code>，再使用本机账号登录。`;
+                    updateAuthFields('shell', document.getElementById('shellAuthType').value);
+                } else {
+                    shellInfo.textContent = this.shellInfo;
+                    modeNote.style.display = 'none';
+                    modeNote.textContent = '';
+                }
+
+                this.updateStatus(false);
+            },
+
             async init() {
                 if (this.initialized) return;
                 this.initialized = true;
@@ -4910,19 +4993,21 @@
                     this.available = data.available;
                     this.shellInfo = data.shell || '';
                     this.platform = data.platform || 'unknown';
+                    this.transportMode = data.mode || (this.platform === 'win32' ? 'ssh-localhost' : 'native');
+                    this.sshDefaults = Object.assign({}, this.sshDefaults, data.sshLocalhost || {});
                     this.updateShellOptions();
+                    this.configureTransportUi();
 
                     if (!this.available) {
                         document.getElementById('shellNotAvailable').style.display = 'block';
                         document.getElementById('shellStartBtn').disabled = true;
                         document.getElementById('shellNotAvailableReason').innerHTML =
                             `当前服务器平台暂不支持终端功能<br><small style="color:var(--color-text-3)">当前服务器: ${this.platform}</small>`;
-                    } else {
-                        document.getElementById('shellInfo').textContent = this.shellInfo;
                     }
                 } catch (e) {
                     console.error('[LocalShell] 检查状态失败:', e);
                     this.updateShellOptions();
+                    this.configureTransportUi();
                     document.getElementById('shellNotAvailable').style.display = 'block';
                     document.getElementById('shellStartBtn').disabled = true;
                     document.getElementById('shellNotAvailableReason').textContent = '无法检查终端服务状态';
@@ -4964,6 +5049,7 @@
                 // 绑定事件
                 document.getElementById('shellStartBtn').addEventListener('click', () => this.start());
                 document.getElementById('shellStopBtn').addEventListener('click', () => this.stop());
+                document.getElementById('shellAuthType').addEventListener('change', (e) => updateAuthFields('shell', e.target.value));
                 document.getElementById('shellClearBtn').addEventListener('click', () => {
                     this.term.clear();
                     if (!this.connected) this.welcome();
@@ -4974,13 +5060,25 @@
                 try { this.fit.fit(); } catch {}
             },
 
+            syncSize() {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({
+                        type: 'resize',
+                        cols: this.term.cols,
+                        rows: this.term.rows
+                    }));
+                }
+            },
+
             welcome() {
                 this.term.writeln('');
                 this.term.writeln('\x1b[1;34m  ╔══════════════════════════════════════════╗\x1b[0m');
                 this.term.writeln('\x1b[1;34m  ║\x1b[0m              \x1b[1;36mTerminal\x1b[0m                   \x1b[1;34m║\x1b[0m');
                 this.term.writeln('\x1b[1;34m  ╚══════════════════════════════════════════╝\x1b[0m');
                 this.term.writeln('');
-                this.term.writeln('\x1b[90m  点击 "启动" 按钮开启终端\x1b[0m');
+                this.term.writeln(this.isSshLocalhostMode()
+                    ? '\x1b[90m  填写本机 SSH 凭据后点击 "连接" 按钮开启终端\x1b[0m'
+                    : '\x1b[90m  点击 "启动" 按钮开启终端\x1b[0m');
                 this.term.writeln('');
             },
 
@@ -4995,12 +5093,20 @@
                 }
 
                 if (this.ws) {
-                    this.ws.close();
+                    this.stop({ quiet: true });
                 }
 
+                this.term.clear();
+                if (this.isSshLocalhostMode()) {
+                    this.startViaLocalhostSsh();
+                } else {
+                    this.startViaNativeShell();
+                }
+            },
+
+            startViaNativeShell() {
                 const shellPath = document.getElementById('shellPathInput').value.trim();
-                const wsUrl = buildWsUrl('/localshell');
-                this.ws = new WebSocket(wsUrl);
+                this.ws = new WebSocket(buildWsUrl('/localshell'));
 
                 this.ws.onopen = () => {
                     const msg = {
@@ -5020,8 +5126,9 @@
                         switch (msg.type) {
                             case 'started':
                                 this.connected = true;
+                                this.connectionLabel = msg.shell || this.shellInfo;
                                 this.term.clear();
-                                this.updateStatus(true, msg.shell);
+                                this.updateStatus(true, this.connectionLabel);
                                 Toast.success('终端已启动');
                                 this.doFit();
                                 break;
@@ -5030,6 +5137,7 @@
                                 break;
                             case 'exit':
                                 this.connected = false;
+                                this.connectionLabel = '';
                                 this.updateStatus(false);
                                 this.term.writeln(`\n\x1b[33m终端已退出 (code: ${msg.exitCode})\x1b[0m`);
                                 Toast.info('终端已退出');
@@ -5052,21 +5160,118 @@
                 this.ws.onclose = () => {
                     if (this.connected) {
                         this.connected = false;
+                        this.connectionLabel = '';
                         this.updateStatus(false);
                     }
                 };
             },
 
-            stop() {
+            startViaLocalhostSsh() {
+                const host = (document.getElementById('shellHost').value || '127.0.0.1').trim() || '127.0.0.1';
+                const port = parseInt(document.getElementById('shellPort').value || '22', 10);
+                const username = document.getElementById('shellUser').value.trim();
+                let authPayload = null;
+
+                if (!Number.isFinite(port) || port < 1 || port > 65535) {
+                    Toast.error('SSH 端口范围必须是 1-65535');
+                    return;
+                }
+                if (!username) {
+                    Toast.error('请输入 Windows 用户名');
+                    return;
+                }
+
+                try {
+                    authPayload = readCredentialForm('shell');
+                } catch (err) {
+                    Toast.error(err.message);
+                    return;
+                }
+
+                this.connectionLabel = `${username}@${host}:${port}`;
+                this.term.writeln(`\x1b[33m正在连接 ${this.connectionLabel}...\x1b[0m`);
+                this.term.writeln('\x1b[90m目标为本机 OpenSSH Server，用于提供 Windows 终端 PTY 语义\x1b[0m\n');
+
+                this.ws = new WebSocket(buildWsUrl('/ssh'));
+                this.ws.onopen = () => {
+                    this.ws.send(JSON.stringify({
+                        type: 'connect',
+                        host,
+                        port,
+                        username,
+                        localShellMode: true,
+                        ...authPayload
+                    }));
+                };
+
+                this.ws.onmessage = (e) => {
+                    try {
+                        const msg = JSON.parse(e.data);
+                        switch (msg.type) {
+                            case 'connected':
+                                this.connected = true;
+                                this.updateStatus(true, this.connectionLabel);
+                                Toast.success(`已连接到 ${this.connectionLabel}`);
+                                this.doFit();
+                                this.syncSize();
+                                break;
+                            case 'data':
+                                this.term.write(msg.data);
+                                break;
+                            case 'disconnected':
+                                if (this.connected) {
+                                    this.connected = false;
+                                    this.connectionLabel = '';
+                                    this.updateStatus(false);
+                                    this.term.writeln('\n\x1b[33m本机 SSH 终端已断开\x1b[0m');
+                                    Toast.info('本机 SSH 终端已断开');
+                                }
+                                break;
+                            case 'error':
+                                Toast.error(msg.message);
+                                this.term.writeln(`\x1b[31m错误: ${msg.message}\x1b[0m`);
+                                break;
+                        }
+                    } catch (err) {
+                        console.error('[LocalShell] SSH 消息解析错误:', err);
+                    }
+                };
+
+                this.ws.onerror = () => {
+                    this.term.writeln('\x1b[31mSSH 连接失败，请确认 OpenSSH Server 已启用并允许本机登录\x1b[0m');
+                    Toast.error('本机 SSH 连接失败');
+                };
+
+                this.ws.onclose = () => {
+                    if (this.connected) {
+                        this.connected = false;
+                        this.connectionLabel = '';
+                        this.updateStatus(false);
+                    }
+                };
+            },
+
+            stop(options = {}) {
+                const quiet = options.quiet === true;
+                const wasConnected = this.connected;
+                this.connected = false;
+                this.connectionLabel = '';
                 if (this.ws) {
-                    this.ws.send(JSON.stringify({ type: 'stop' }));
+                    if (this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({
+                            type: this.isSshLocalhostMode() ? 'disconnect' : 'stop'
+                        }));
+                    }
                     this.ws.close();
                     this.ws = null;
                 }
-                this.connected = false;
                 this.updateStatus(false);
-                this.term.writeln('\n\x1b[33m终端已停止\x1b[0m');
-                Toast.info('终端已停止');
+                if (!quiet && wasConnected) {
+                    this.term.writeln(this.isSshLocalhostMode()
+                        ? '\n\x1b[33m本机 SSH 终端已断开\x1b[0m'
+                        : '\n\x1b[33m终端已停止\x1b[0m');
+                    Toast.info(this.isSshLocalhostMode() ? '本机 SSH 终端已断开' : '终端已停止');
+                }
             },
 
             updateStatus(running, shell = '') {
@@ -5075,21 +5280,24 @@
                 const startBtn = document.getElementById('shellStartBtn');
                 const stopBtn = document.getElementById('shellStopBtn');
                 const title = document.getElementById('shellTermTitle');
+                const idleText = this.isSshLocalhostMode() ? '未连接' : '未启动';
+                const activeText = this.isSshLocalhostMode() ? '已连接' : '运行中';
+                const idleTitle = this.isSshLocalhostMode() ? 'Web 终端 - 本机 SSH' : 'Web 终端 - 未启动';
 
                 if (running) {
                     status.classList.remove('disconnected');
                     status.classList.add('connected');
-                    text.textContent = '运行中';
+                    text.textContent = activeText;
                     startBtn.style.display = 'none';
                     stopBtn.style.display = 'inline-flex';
                     title.textContent = `Web 终端 - ${shell || this.shellInfo}`;
                 } else {
                     status.classList.remove('connected');
                     status.classList.add('disconnected');
-                    text.textContent = '未启动';
+                    text.textContent = idleText;
                     startBtn.style.display = 'inline-flex';
                     stopBtn.style.display = 'none';
-                    title.textContent = 'Web 终端 - 未启动';
+                    title.textContent = idleTitle;
                 }
             }
         };
