@@ -334,6 +334,9 @@
             background: var(--color-bg-1);
             transition: background .3s, border-color .3s;
         }
+        .header-bar {
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        }
         .header h2 { font-size: 18px; display: flex; align-items: center; gap: 12px; }
         .header h2 i { color: var(--color-accent); }
         .content { flex: 1; padding: 20px; overflow-y: auto; }
@@ -1065,6 +1068,62 @@
             background: var(--color-accent-soft); color: var(--color-text-2); line-height: 1.5;
         }
         .settings-note i { color: var(--color-accent); }
+        .settings-divider {
+            margin: 22px 0 18px;
+            border-top: 1px solid var(--color-border);
+        }
+        .settings-link-panel {
+            width: 100%;
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            padding: 18px 20px;
+            background: linear-gradient(160deg, var(--color-bg-2) 0%, var(--color-bg-1) 100%);
+            color: var(--color-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            text-align: left;
+            transition: transform .16s, border-color .2s, box-shadow .2s, background .3s;
+        }
+        .settings-link-panel:hover {
+            transform: translateY(-1px);
+            border-color: var(--color-accent-outline);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+        }
+        .settings-link-panel:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--color-accent-light);
+        }
+        .settings-link-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+        .settings-link-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .settings-link-title i { color: var(--color-accent); }
+        .settings-link-desc {
+            color: var(--color-text-2);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .settings-link-action {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--color-accent);
+            font-size: 13px;
+            font-weight: 600;
+        }
         .settings-actions { display: flex; justify-content: flex-end; margin-top: 6px; }
         .scheme-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px;
@@ -1099,6 +1158,8 @@
         @media (max-width: 960px) {
             .settings-layout { grid-template-columns: 1fr; }
             .scheme-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+            .settings-link-panel { align-items: flex-start; flex-direction: column; }
+            .settings-link-action { margin-left: 32px; }
         }
 
         /* Modal */
@@ -1404,10 +1465,9 @@
             </div>
             <nav class="sidebar-nav">
                 <div class="nav-item active" data-view="ssh"><i class="fas fa-terminal"></i><span>SSH 终端</span></div>
-                <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>Web 终端</span></div>
                 <div class="nav-item" data-view="sftp"><i class="fas fa-folder-tree"></i><span>SFTP 管理</span></div>
                 <div class="nav-item" data-view="vnc"><i class="fas fa-desktop"></i><span>VNC 远程</span></div>
-                <div class="nav-item" data-view="security"><i class="fas fa-shield-halved"></i><span>内网白名单</span></div>
+                <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>Web 终端</span></div>
                 <div class="nav-item" data-view="serial"><i class="fas fa-microchip"></i><span>串口终端</span></div>
                 <div class="nav-item" data-view="settings"><i class="fas fa-gear"></i><span>设置</span></div>
             </nav>
@@ -1868,7 +1928,12 @@
 
             <!-- Security -->
             <div class="view" id="view-security">
-                <div class="header"><h2><i class="fas fa-shield-halved"></i> 内网白名单</h2></div>
+                <div class="header">
+                    <div class="header-bar">
+                        <h2><i class="fas fa-shield-halved"></i> 内网白名单</h2>
+                        <button class="btn btn-secondary btn-sm" id="securityBackToSettingsBtn"><i class="fas fa-arrow-left"></i> 返回设置</button>
+                    </div>
+                </div>
                 <div class="content">
                     <div style="padding:12px 16px;border:1px solid var(--color-border);background:var(--color-bg-2);border-radius:8px;margin-bottom:16px;color:var(--color-text-2);font-size:13px">
                         仅允许私有网段（如 10.0.0.0/8、192.168.0.0/16）用于 SSH/SFTP/VNC 连接。修改后立即生效。
@@ -2044,6 +2109,16 @@
                                 <div class="settings-actions">
                                     <button class="btn" id="settingsChangePasswordBtn"><i class="fas fa-key"></i> 修改密码</button>
                                 </div>
+                            </div>
+                            <div id="settingsPrivateNetworkSection" style="display:none">
+                                <div class="settings-divider"></div>
+                                <button type="button" class="settings-link-panel" id="settingsOpenPrivateNetworksBtn">
+                                    <span class="settings-link-copy">
+                                        <span class="settings-link-title"><i class="fas fa-shield-halved"></i> 内网白名单</span>
+                                        <span class="settings-link-desc">管理 SSH、SFTP、VNC 可访问的内网网段。点击后进入白名单页进行新增或删除。</span>
+                                    </span>
+                                    <span class="settings-link-action">进入管理 <i class="fas fa-arrow-right"></i></span>
+                                </button>
                             </div>
                         </section>
                         <section class="settings-card">
@@ -2381,6 +2456,50 @@
             fillCredentialForm('ssh', host);
         }
 
+        function isPrivateNetworkBlockedError(error, code = '') {
+            const normalizedCode = String(code || '').trim().toLowerCase();
+            if (normalizedCode === 'private_network_not_whitelisted') {
+                return true;
+            }
+            const normalizedError = String(error || '').trim().toLowerCase();
+            return normalizedError.includes('内网白名单')
+                || normalizedError.includes('私有网络地址未在白名单')
+                || normalizedError.includes('内网地址')
+                || normalizedError.includes('private network');
+        }
+
+        function formatConnectionError(serviceLabel, error, code = '') {
+            const normalized = String(error || `${serviceLabel} 连接失败`).trim().replace(/[。\s]+$/u, '');
+            if (!isPrivateNetworkBlockedError(normalized, code)) {
+                return normalized || `${serviceLabel} 连接失败`;
+            }
+            if (normalized.includes('设置') && normalized.includes('内网白名单')) {
+                return `${serviceLabel} 连接被拦截：${normalized}`;
+            }
+            return `${serviceLabel} 连接被拦截：${normalized}。请先到 设置 -> 内网白名单 放行对应网段。`;
+        }
+
+        async function validateTargetForConnection(serviceLabel, host) {
+            try {
+                const res = await apiFetch(`${Config.API}/api/security/validate-target?host=${encodeURIComponent(host)}`);
+                if (res.ok) {
+                    return { ok: true };
+                }
+                const data = await res.json().catch(() => ({}));
+                return {
+                    ok: false,
+                    error: formatConnectionError(serviceLabel, data.error || '目标地址校验失败', data.code),
+                    code: data.code || ''
+                };
+            } catch (err) {
+                return {
+                    ok: false,
+                    error: `${serviceLabel} 目标地址校验失败: ${err.message}`,
+                    code: ''
+                };
+            }
+        }
+
         function updateSaveHostButton() {
             const btn = document.getElementById('saveHostBtn');
             const cancelBtn = document.getElementById('cancelEditHostBtn');
@@ -2531,6 +2650,8 @@
         const Settings = {
             init() {
                 document.getElementById('settingsChangePasswordBtn').addEventListener('click', () => this.changePassword());
+                document.getElementById('settingsOpenPrivateNetworksBtn').addEventListener('click', () => this.openPrivateNetworks());
+                document.getElementById('securityBackToSettingsBtn').addEventListener('click', () => UI.switchView('settings'));
                 ['settingsNewPassword', 'settingsConfirmPassword'].forEach(id => {
                     document.getElementById(id).addEventListener('keypress', e => {
                         if (e.key === 'Enter') this.changePassword();
@@ -2541,6 +2662,7 @@
                 document.getElementById('settingsCurrentUser').textContent = State.username || '--';
                 document.getElementById('settingsNologinNotice').style.display = State.isNologin ? 'flex' : 'none';
                 document.getElementById('settingsPasswordForm').style.display = State.isNologin ? 'none' : '';
+                document.getElementById('settingsPrivateNetworkSection').style.display = State.isAdmin ? '' : 'none';
                 Theme.renderSchemeGrid();
             },
             reset() {
@@ -2550,6 +2672,15 @@
                 document.getElementById('settingsCurrentUser').textContent = '--';
                 document.getElementById('settingsNologinNotice').style.display = 'none';
                 document.getElementById('settingsPasswordForm').style.display = '';
+                document.getElementById('settingsPrivateNetworkSection').style.display = 'none';
+            },
+            openPrivateNetworks() {
+                if (!State.isAdmin) {
+                    Toast.error('仅管理员可管理内网白名单');
+                    return;
+                }
+                Security.load();
+                UI.switchView('security');
             },
             async changePassword() {
                 if (State.isNologin) { Toast.info('桌面应用不允许修改密码'); return; }
@@ -2836,10 +2967,16 @@
                 this.term.writeln('\x1b[90m  输入连接信息后点击 SSH 按钮连接服务器\x1b[0m');
                 this.term.writeln('');
             },
-            connect(host, port, user, authPayload = {}) {
+            async connect(host, port, user, authPayload = {}) {
                 if (this.ws) this.ws.close();
                 this.term.clear();
                 this.term.writeln(`\x1b[33m正在连接 ${user}@${host}:${port}...\x1b[0m\n`);
+                const targetCheck = await validateTargetForConnection('SSH', host);
+                if (!targetCheck.ok) {
+                    this.term.writeln(`\x1b[31m${targetCheck.error}\x1b[0m`);
+                    Toast.error(targetCheck.error);
+                    return;
+                }
                 this.ws = new WebSocket(buildWsUrl('/ssh'));
                 this.ws.onopen = () => {
                     this.ws.send(JSON.stringify({
@@ -2872,8 +3009,11 @@
                         case 'dockerStats': this.handleDockerStats(msg.data); break;
                         case 'killResult': this.handleKillResult(msg.data); break;
                         case 'error':
-                            this.term.writeln(`\x1b[31m错误: ${msg.message}\x1b[0m`);
-                            Toast.error(msg.message);
+                            {
+                                const message = formatConnectionError('SSH', msg.message, msg.code);
+                                this.term.writeln(`\x1b[31m错误: ${message}\x1b[0m`);
+                                Toast.error(message);
+                            }
                             break;
                         case 'disconnected':
                             State.sshConnected = false;
@@ -3452,6 +3592,11 @@
         // SFTP
         const SFTP = {
             async connect(host, port, user, authPayload = {}) {
+                const targetCheck = await validateTargetForConnection('SFTP', host);
+                if (!targetCheck.ok) {
+                    Toast.error(targetCheck.error);
+                    return;
+                }
                 try {
                     const payload = { host, port: +port, username: user, ...authPayload };
                     const res = await apiFetch(`${Config.API}/api/sftp/connect`, {
@@ -3472,7 +3617,7 @@
                         await this.navigate(State.currentPath);
                         this.enableBtns(true);
                     } else {
-                        Toast.error(data.error || '连接失败');
+                        Toast.error(formatConnectionError('SFTP', data.error || '连接失败', data.code));
                     }
                 } catch (e) {
                     Toast.error('连接失败: ' + e.message);
@@ -5809,7 +5954,7 @@
                             }
                         },
                         onError: (msg) => {
-                            Toast.error(msg);
+                            Toast.error(formatConnectionError('VNC', msg));
                         },
                         onDesktopName: (name) => {
                             document.getElementById('vncStatusText').textContent = `已连接: ${name}`;
@@ -5824,7 +5969,7 @@
                 }
             },
 
-            connect() {
+            async connect() {
                 const host = document.getElementById('vncHost').value.trim();
                 const port = document.getElementById('vncPort').value || 5900;
                 const password = document.getElementById('vncPassword').value;
@@ -5833,6 +5978,12 @@
 
                 if (!host) {
                     Toast.error('请输入 VNC 主机地址');
+                    return;
+                }
+
+                const targetCheck = await validateTargetForConnection('VNC', host);
+                if (!targetCheck.ok) {
+                    Toast.error(targetCheck.error);
                     return;
                 }
 
@@ -6101,31 +6252,35 @@
             applyRole() {
                 const shellNav = document.querySelector('.nav-item[data-view="shell"]');
                 const shellView = document.getElementById('view-shell');
-                const securityNav = document.querySelector('.nav-item[data-view="security"]');
                 const securityView = document.getElementById('view-security');
+                const securityActive = securityView?.classList.contains('active');
                 if (!State.isAdmin) {
-                    shellNav.style.display = 'none';
-                    shellView.style.display = 'none';
-                    securityNav.style.display = 'none';
-                    securityView.style.display = 'none';
+                    if (shellNav) shellNav.style.display = 'none';
+                    if (shellView) shellView.style.display = 'none';
+                    if (securityView) securityView.style.display = 'none';
                     const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-                    if (activeView === 'shell' || activeView === 'security') {
+                    if (activeView === 'shell') {
                         this.switchView('ssh');
+                    } else if (securityActive) {
+                        this.switchView('settings');
                     }
                 } else {
-                    shellNav.style.display = '';
-                    shellView.style.display = '';
-                    securityNav.style.display = '';
-                    securityView.style.display = '';
+                    if (shellNav) shellNav.style.display = '';
+                    if (shellView) shellView.style.display = '';
+                    if (securityView) securityView.style.display = '';
                 }
             },
             switchView(name) {
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === name));
-                document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${name}`));
-                if (name === 'settings') Settings.render();
-                if (name === 'ssh') setTimeout(() => Terminal_.doFit(), 100);
-                if (name === 'shell') setTimeout(() => LocalShell.doFit(), 100);
-                if (name === 'serial') setTimeout(() => Serial.doFit(), 100);
+                let nextView = name;
+                if (nextView === 'shell' && !State.isAdmin) nextView = 'ssh';
+                if (nextView === 'security' && !State.isAdmin) nextView = 'settings';
+                const activeNav = nextView === 'security' ? 'settings' : nextView;
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === activeNav));
+                document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${nextView}`));
+                if (nextView === 'settings') Settings.render();
+                if (nextView === 'ssh') setTimeout(() => Terminal_.doFit(), 100);
+                if (nextView === 'shell') setTimeout(() => LocalShell.doFit(), 100);
+                if (nextView === 'serial') setTimeout(() => Serial.doFit(), 100);
             }
         };
 

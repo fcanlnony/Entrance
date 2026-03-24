@@ -532,31 +532,36 @@ function isIpAllowedByPrivateWhitelist(address) {
 
 async function validateTargetHost(host) {
     if (!host || typeof host !== 'string') {
-        return { ok: false, error: '目标主机无效' };
+        return { ok: false, code: 'invalid_target_host', error: '目标主机无效' };
     }
     const trimmed = host.trim();
     if (ALLOWED_TARGETS.length && !hostMatchesAllowlist(trimmed)) {
-        return { ok: false, error: '目标主机不在白名单' };
+        return { ok: false, code: 'target_not_allowed', error: '目标主机不在允许列表中' };
     }
     try {
         const records = await dns.promises.lookup(trimmed, { all: true });
         if (!records.length) {
-            return { ok: false, error: '目标主机无法解析' };
+            return { ok: false, code: 'target_unresolved', error: '目标主机无法解析' };
         }
+        const addresses = records.map(record => record.address);
         if (!ALLOW_PRIVATE_NETWORKS) {
-            const privateAddresses = records
-                .map(record => record.address)
-                .filter(address => isPrivateIp(address));
+            const privateAddresses = addresses.filter(address => isPrivateIp(address));
             if (privateAddresses.length) {
-                const allAllowed = privateAddresses.every(address => isIpAllowedByPrivateWhitelist(address));
-                if (!allAllowed) {
-                    return { ok: false, error: '私有网络地址未在白名单' };
+                const blockedAddresses = privateAddresses.filter(address => !isIpAllowedByPrivateWhitelist(address));
+                if (blockedAddresses.length) {
+                    return {
+                        ok: false,
+                        code: 'private_network_not_whitelisted',
+                        error: '目标主机解析到内网地址，但未在内网白名单中放行',
+                        addresses,
+                        blockedAddresses
+                    };
                 }
             }
         }
-        return { ok: true, addresses: records.map(r => r.address) };
+        return { ok: true, addresses };
     } catch (err) {
-        return { ok: false, error: '目标主机解析失败' };
+        return { ok: false, code: 'target_lookup_failed', error: '目标主机解析失败' };
     }
 }
 
@@ -1203,6 +1208,23 @@ app.put('/api/security/private-networks', requireAdmin, (req, res) => {
     }
 });
 
+app.get('/api/security/validate-target', async (req, res) => {
+    let host = '';
+
+    try {
+        host = normalizeRequiredString(req.query.host, '主机地址', SSH_HOST_MAX_LENGTH);
+    } catch (err) {
+        return res.status(400).json({ ok: false, code: 'invalid_target_host', error: err.message });
+    }
+
+    const result = await validateTargetHost(host);
+    if (!result.ok) {
+        return res.status(400).json(result);
+    }
+
+    res.json(result);
+});
+
 // ============================================
 // WebSocket 服务器 - SSH 连接
 // ============================================
@@ -1421,7 +1443,7 @@ wss.on('connection', (ws, req) => {
                     } else {
                         const hostCheck = await validateTargetHost(host);
                         if (!hostCheck.ok) {
-                            ws.send(JSON.stringify({ type: 'error', message: hostCheck.error }));
+                            ws.send(JSON.stringify({ type: 'error', message: hostCheck.error, code: hostCheck.code }));
                             break;
                         }
                     }
@@ -1675,7 +1697,7 @@ app.post('/api/sftp/connect', async (req, res) => {
 
     const hostCheck = await validateTargetHost(normalizedHost);
     if (!hostCheck.ok) {
-        return res.status(400).json({ error: hostCheck.error });
+        return res.status(400).json({ error: hostCheck.error, code: hostCheck.code });
     }
 
     console.log(`[SFTP] 正在连接: ${normalizedUsername}@${normalizedHost}:${normalizedPort} (${credentials.authType})`);
