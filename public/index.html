@@ -442,6 +442,254 @@
             height: 100%;
             padding: 10px;
         }
+        .flashdebug-section {
+            margin-top: 24px;
+            padding: 18px;
+            background: var(--color-bg-1);
+            border: 1px solid var(--color-border);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+        }
+        .flashdebug-switchbar {
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) auto minmax(280px, 1fr);
+            gap: 16px;
+            align-items: center;
+        }
+        .flashdebug-title h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .flashdebug-title p {
+            font-size: 12px;
+            color: var(--color-text-2);
+        }
+        .feature-tag-group {
+            justify-self: center;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px;
+            border-radius: 999px;
+            border: 1px solid var(--color-border);
+            background: var(--color-bg-2);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+        .feature-tag {
+            min-width: 108px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--color-text-2);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s, color .2s, transform .1s, box-shadow .2s;
+        }
+        .feature-tag:hover { color: var(--color-text); }
+        .feature-tag.active {
+            background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+            color: #fff;
+            box-shadow: 0 8px 20px var(--color-accent-light);
+        }
+        .feature-tag:active { transform: scale(0.98); }
+        .feature-tag:disabled { opacity: 0.45; cursor: not-allowed; }
+        .flashdebug-toolbox {
+            justify-self: end;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            min-width: 0;
+        }
+        .flashdebug-tool-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            width: 100%;
+        }
+        .flashdebug-path-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            max-width: 100%;
+            border-radius: 999px;
+            border: 1px solid var(--color-border);
+            background: var(--color-bg-2);
+            color: var(--color-text-2);
+            font-size: 12px;
+        }
+        .flashdebug-path-badge.ok {
+            color: var(--color-success);
+            border-color: rgba(16, 124, 16, 0.35);
+            background: rgba(16, 124, 16, 0.08);
+        }
+        .flashdebug-path-badge.warn {
+            color: var(--color-warning);
+            border-color: rgba(255, 140, 0, 0.35);
+            background: rgba(255, 140, 0, 0.08);
+        }
+        .flashdebug-path-badge.error {
+            color: var(--color-error);
+            border-color: rgba(232, 17, 35, 0.35);
+            background: rgba(232, 17, 35, 0.08);
+        }
+        .flashdebug-manual-path {
+            display: none;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 12px 14px;
+            border: 1px dashed var(--color-border);
+            border-radius: 12px;
+            background: var(--color-bg-2);
+        }
+        .flashdebug-access-note {
+            display: none;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 140, 0, 0.22);
+            background: rgba(255, 140, 0, 0.08);
+            color: var(--color-warning);
+            font-size: 12px;
+        }
+        .flashdebug-card {
+            display: none;
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px solid var(--color-border);
+            background: linear-gradient(180deg, var(--color-bg-2) 0%, var(--color-bg-1) 100%);
+        }
+        .flashdebug-card.active { display: block; }
+        .flashdebug-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .flashdebug-card-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .flashdebug-card-subtitle {
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--color-text-2);
+        }
+        .flashdebug-card-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--color-border);
+            background: var(--color-bg-3);
+            color: var(--color-text-2);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .flashdebug-card-status.running {
+            color: var(--color-success);
+            border-color: rgba(16, 124, 16, 0.35);
+            background: rgba(16, 124, 16, 0.08);
+        }
+        .flashdebug-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        .flashdebug-grid .input-group { min-width: 0; }
+        .flashdebug-grid .input-group.wide { grid-column: 1 / -1; }
+        .flashdebug-field-note {
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--color-text-3);
+            line-height: 1.45;
+        }
+        .flashdebug-checkbox-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding-top: 6px;
+        }
+        .flashdebug-checkbox-row label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--color-text-2);
+        }
+        .flashdebug-inline-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .flashdebug-inline-actions .form-input {
+            flex: 1;
+            min-width: 0;
+        }
+        .flashdebug-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        .flashdebug-log {
+            margin-top: 16px;
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            background: var(--terminal-bg);
+            overflow: hidden;
+        }
+        .flashdebug-log summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--color-text-2);
+            background: rgba(0, 0, 0, 0.06);
+            user-select: none;
+        }
+        .flashdebug-log summary::-webkit-details-marker { display: none; }
+        .flashdebug-log[open] summary {
+            border-bottom: 1px solid var(--color-border);
+        }
+        .flashdebug-log pre {
+            margin: 0;
+            padding: 14px;
+            max-height: 240px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 12px;
+            line-height: 1.55;
+            color: var(--terminal-screen-text);
+            background: var(--terminal-screen-bg);
+        }
+        .flashdebug-hidden { display: none !important; }
+        @media (max-width: 1100px) {
+            .flashdebug-switchbar { grid-template-columns: 1fr; }
+            .feature-tag-group { justify-self: start; }
+            .flashdebug-toolbox {
+                justify-self: stretch;
+                align-items: flex-start;
+            }
+            .flashdebug-tool-row { justify-content: flex-start; }
+        }
 
         /* System Stats Monitor */
         .sys-stats-container {
@@ -1469,6 +1717,7 @@
                 <div class="nav-item" data-view="vnc"><i class="fas fa-desktop"></i><span>VNC 远程</span></div>
                 <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>Web 终端</span></div>
                 <div class="nav-item" data-view="serial"><i class="fas fa-microchip"></i><span>串口终端</span></div>
+                <div class="nav-item" data-view="flashdebug"><i class="fas fa-bolt"></i><span>烧录调试</span></div>
                 <div class="nav-item" data-view="settings"><i class="fas fa-gear"></i><span>设置</span></div>
             </nav>
             <div class="sidebar-footer">
@@ -2080,6 +2329,204 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="view" id="view-flashdebug">
+                <div class="header"><h2><i class="fas fa-bolt"></i> 烧录调试</h2></div>
+                <div class="content">
+                    <section class="flashdebug-section" id="flashdebugSection">
+                        <div class="flashdebug-switchbar">
+                            <div class="flashdebug-title">
+                                <h3><i class="fas fa-microchip"></i> 烧录调试</h3>
+                                <p>GUI 封装 OpenOCD、pyOCD、probe-rs，复用串口页统一风格与工作流。</p>
+                            </div>
+                            <div class="feature-tag-group" id="flashDebugModeTags">
+                                <button type="button" class="feature-tag active" data-mode="flash">烧录</button>
+                                <button type="button" class="feature-tag" data-mode="debug">实时调试</button>
+                            </div>
+                            <div class="flashdebug-toolbox">
+                                <div class="flashdebug-tool-row">
+                                    <span class="flashdebug-path-badge warn" id="flashDebugPathBadge">
+                                        <i class="fas fa-magnifying-glass"></i>
+                                        <span>正在检测 PATH...</span>
+                                    </span>
+                                    <button class="btn btn-sm btn-secondary" id="flashDebugRefreshBtn"><i class="fas fa-rotate"></i> 检测</button>
+                                </div>
+                                <div class="flashdebug-tool-row">
+                                    <select class="form-input" id="flashDebugToolSelector" style="width:160px">
+                                        <option value="openocd">openocd</option>
+                                        <option value="pyocd">pyocd</option>
+                                        <option value="probe-rs">probe-rs</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-secondary" id="flashDebugManualBtn"><i class="fas fa-folder-open"></i> 路径</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flashdebug-manual-path" id="flashDebugManualPathRow">
+                            <div class="input-group" style="flex:1;min-width:260px">
+                                <label>手动路径</label>
+                                <input type="text" class="form-input" id="flashDebugManualPath" placeholder="当 PATH 未命中时，在这里填写工具绝对路径">
+                            </div>
+                            <div class="flashdebug-field-note" style="min-width:220px">
+                                仅允许填写与当前工具同名的可执行文件，例如 `openocd`、`pyocd`、`probe-rs`。
+                            </div>
+                        </div>
+                        <div class="flashdebug-access-note" id="flashDebugAccessNote">
+                            <i class="fas fa-lock"></i> 该功能需要管理员权限，当前账户只能查看界面，不能启动本机烧录或调试会话。
+                        </div>
+                        <div class="flashdebug-card active" id="flashDebugFlashCard">
+                            <div class="flashdebug-card-header">
+                                <div>
+                                    <div class="flashdebug-card-title">烧录任务</div>
+                                    <div class="flashdebug-card-subtitle">选择烧录器、固件路径、速率和验证选项，然后由 GUI 生成对应 CLI。</div>
+                                </div>
+                                <span class="flashdebug-card-status" id="flashStatusBadge"><i class="fas fa-circle"></i> 空闲</span>
+                            </div>
+                            <div class="flashdebug-grid">
+                                <div class="input-group">
+                                    <label id="flashProbeLabel">烧录器</label>
+                                    <select class="form-input" id="flashProbeSelect">
+                                        <option value="">自动检测 / 留空手填</option>
+                                    </select>
+                                    <div class="flashdebug-field-note" id="flashProbeHint">优先从所选工具列举可用烧录器；无结果时可直接在右侧输入。</div>
+                                </div>
+                                <div class="input-group">
+                                    <label>烧录器标识 / 配置</label>
+                                    <input type="text" class="form-input" id="flashProbeInput" placeholder="例如 cmsis-dap、st-link、UID 或 probe 选择串">
+                                </div>
+                                <div class="input-group">
+                                    <label id="flashTargetLabel">目标芯片 / 目标配置</label>
+                                    <input type="text" class="form-input" id="flashTargetInput" placeholder="例如 target/stm32f4x.cfg 或 stm32f103rc">
+                                    <div class="flashdebug-field-note" id="flashTargetConfigHint"></div>
+                                </div>
+                                <div class="input-group" id="flashInterfaceGroup">
+                                    <label>接口配置</label>
+                                    <input type="text" class="form-input" id="flashInterfaceConfigInput" placeholder="可选，留空时使用 interface/<烧录器>.cfg">
+                                    <div class="flashdebug-field-note" id="flashInterfaceConfigHint"></div>
+                                </div>
+                                <div class="input-group">
+                                    <label id="flashSpeedLabel">波特率 / 速率</label>
+                                    <input type="text" class="form-input" id="flashSpeedInput" list="flashDebugSpeedOptions" placeholder="例如 4000、1000000、10m">
+                                </div>
+                                <div class="input-group wide">
+                                    <label>固件路径</label>
+                                    <div class="flashdebug-inline-actions">
+                                        <input type="text" class="form-input" id="flashFirmwarePath" placeholder="输入固件在当前主机上的绝对路径">
+                                        <button class="btn btn-sm btn-secondary" id="flashFirmwareSelectBtn"><i class="fas fa-file-arrow-up"></i> 选择文件</button>
+                                    </div>
+                                    <div class="flashdebug-field-note" id="flashFirmwareUploadHint">选择本地文件后会上传到当前 Entrance 主机的临时目录，并自动回填路径。</div>
+                                </div>
+                                <div class="input-group wide">
+                                    <label>附加参数</label>
+                                    <input type="text" class="form-input" id="flashExtraArgs" placeholder="可选，补充板卡专用 CLI 参数">
+                                </div>
+                                <div class="input-group wide">
+                                    <div class="flashdebug-checkbox-row">
+                                        <label><input type="checkbox" id="flashRequestElevation"> 请求管理员/root 权限</label>
+                                        <label><input type="checkbox" id="flashVerify" checked> 写后校验</label>
+                                        <label><input type="checkbox" id="flashReset" checked> 烧录后复位</label>
+                                    </div>
+                                    <div class="flashdebug-field-note" id="flashPrivilegeHint">正在检测管理员/root 提权方式...</div>
+                                    <div class="flashdebug-field-note" id="flashVerifyHint">不同工具的校验参数并不完全一致；未显式支持时会沿用各自默认策略。</div>
+                                </div>
+                            </div>
+                            <div class="flashdebug-actions">
+                                <button class="btn btn-danger" id="flashStopBtn" disabled><i class="fas fa-stop"></i> 停止</button>
+                                <button class="btn btn-secondary" id="flashClearLogBtn"><i class="fas fa-eraser"></i> 清空日志</button>
+                                <button class="btn btn-success" id="flashStartBtn"><i class="fas fa-bolt"></i> 开始烧录</button>
+                            </div>
+                            <details class="flashdebug-log" id="flashLogDetails">
+                                <summary>
+                                    <span><i class="fas fa-terminal"></i> 烧录消息框</span>
+                                    <span>CLI 命令与实时输出</span>
+                                </summary>
+                                <pre id="flashLogOutput"></pre>
+                            </details>
+                        </div>
+                        <div class="flashdebug-card" id="flashDebugDebugCard">
+                            <div class="flashdebug-card-header">
+                                <div>
+                                    <div class="flashdebug-card-title">实时调试</div>
+                                    <div class="flashdebug-card-subtitle">启动 GDB 或 DAP 调试后端，并持续输出 GUI 封装后的命令与日志。</div>
+                                </div>
+                                <span class="flashdebug-card-status" id="debugStatusBadge"><i class="fas fa-circle"></i> 空闲</span>
+                            </div>
+                            <div class="flashdebug-grid">
+                                <div class="input-group">
+                                    <label id="debugProbeLabel">烧录器 / 调试器</label>
+                                    <select class="form-input" id="debugProbeSelect">
+                                        <option value="">自动检测 / 留空手填</option>
+                                    </select>
+                                    <div class="flashdebug-field-note" id="debugProbeHint">支持自动列举的工具会填充下拉；否则请手动输入 UID 或适配器名。</div>
+                                </div>
+                                <div class="input-group">
+                                    <label>烧录器标识 / 配置</label>
+                                    <input type="text" class="form-input" id="debugProbeInput" placeholder="例如 cmsis-dap、st-link、UID 或 probe 选择串">
+                                </div>
+                                <div class="input-group">
+                                    <label id="debugTargetLabel">目标芯片 / 目标配置</label>
+                                    <input type="text" class="form-input" id="debugTargetInput" placeholder="例如 target/stm32f4x.cfg 或 stm32f103rc">
+                                    <div class="flashdebug-field-note" id="debugTargetConfigHint"></div>
+                                </div>
+                                <div class="input-group" id="debugInterfaceGroup">
+                                    <label>接口配置</label>
+                                    <input type="text" class="form-input" id="debugInterfaceConfigInput" placeholder="可选，留空时使用 interface/<烧录器>.cfg">
+                                    <div class="flashdebug-field-note" id="debugInterfaceConfigHint"></div>
+                                </div>
+                                <div class="input-group">
+                                    <label id="debugSpeedLabel">波特率 / 速率</label>
+                                    <input type="text" class="form-input" id="debugSpeedInput" list="flashDebugSpeedOptions" placeholder="例如 4000、1000000、10m">
+                                </div>
+                                <div class="input-group">
+                                    <label id="debugPortLabel">调试端口</label>
+                                    <input type="number" class="form-input" id="debugPortInput" value="3333" min="1" max="65535">
+                                </div>
+                                <div class="input-group" id="debugTelnetGroup">
+                                    <label>Telnet 端口</label>
+                                    <input type="number" class="form-input" id="debugTelnetPortInput" value="4444" min="1" max="65535">
+                                </div>
+                                <div class="input-group wide" id="debugElfGroup">
+                                    <label>ELF / 符号文件</label>
+                                    <input type="text" class="form-input" id="debugElfPath" placeholder="可选，为 pyOCD 传入 ELF 文件">
+                                </div>
+                                <div class="input-group wide">
+                                    <label>附加参数</label>
+                                    <input type="text" class="form-input" id="debugExtraArgs" placeholder="可选，补充板卡专用 CLI 参数">
+                                </div>
+                                <div class="input-group wide">
+                                    <div class="flashdebug-checkbox-row">
+                                        <label><input type="checkbox" id="debugRequestElevation"> 请求管理员/root 权限</label>
+                                    </div>
+                                    <div class="flashdebug-field-note" id="debugPrivilegeHint">正在检测管理员/root 提权方式...</div>
+                                </div>
+                            </div>
+                            <div class="flashdebug-actions">
+                                <button class="btn btn-danger" id="debugStopBtn" disabled><i class="fas fa-stop"></i> 停止</button>
+                                <button class="btn btn-secondary" id="debugClearLogBtn"><i class="fas fa-eraser"></i> 清空日志</button>
+                                <button class="btn btn-success" id="debugStartBtn"><i class="fas fa-bug"></i> 启动调试</button>
+                            </div>
+                            <details class="flashdebug-log" id="debugLogDetails">
+                                <summary>
+                                    <span><i class="fas fa-terminal"></i> 调试消息框</span>
+                                    <span>CLI 命令与实时输出</span>
+                                </summary>
+                                <pre id="debugLogOutput"></pre>
+                            </details>
+                        </div>
+                        <datalist id="flashDebugSpeedOptions">
+                            <option value="1000"></option>
+                            <option value="2000"></option>
+                            <option value="4000"></option>
+                            <option value="8000"></option>
+                            <option value="1000000"></option>
+                            <option value="2000000"></option>
+                            <option value="10m"></option>
+                        </datalist>
+                        <datalist id="flashDebugTargetConfigOptions"></datalist>
+                        <datalist id="flashDebugInterfaceConfigOptions"></datalist>
+                        <input type="file" class="hidden-input" id="flashFirmwareFilePicker">
+                    </section>
                 </div>
             </div>
 
@@ -5494,6 +5941,779 @@
             }
         };
 
+        const FlashDebug = {
+            initialized: false,
+            ws: null,
+            wsReadyPromise: null,
+            currentTool: 'openocd',
+            currentMode: 'flash',
+            manualPathForced: false,
+            tooling: null,
+            running: {
+                flash: false,
+                debug: false
+            },
+            presets: {
+                openocd: {
+                    probeLabel: '烧录器 Adapter',
+                    probeHint: '来自 OpenOCD 的 adapter list，通常映射到 interface/<adapter>.cfg。',
+                    probePlaceholder: '例如 cmsis-dap、st-link',
+                    targetLabel: '目标配置',
+                    targetPlaceholder: '例如 target/stm32f4x.cfg',
+                    targetHint: '支持从 OpenOCD 的 target 目录中搜索并选择 .cfg。',
+                    speedLabel: '适配器速率 (kHz)',
+                    speedPlaceholder: '例如 4000',
+                    showInterface: true,
+                    interfacePlaceholder: '可选，留空时使用 interface/<烧录器>.cfg',
+                    interfaceHint: '支持从 OpenOCD 的 interface 目录中搜索并选择 .cfg。',
+                    debugPortLabel: 'GDB 端口',
+                    defaultDebugPort: 3333,
+                    showTelnet: true,
+                    defaultTelnetPort: 4444,
+                    showElf: false,
+                    verifyHint: 'OpenOCD 会按 GUI 选项追加 verify/reset/exit 指令。'
+                },
+                pyocd: {
+                    probeLabel: 'Probe UID',
+                    probeHint: '优先自动列出已连接 probe，也可手动填写 UID 或部分 UID。',
+                    probePlaceholder: '例如 cmsisdap:12345678 或部分 UID',
+                    targetLabel: '目标芯片',
+                    targetPlaceholder: '例如 stm32f103rc',
+                    targetHint: '请输入 pyOCD 支持的目标芯片名称。',
+                    speedLabel: '调试频率 (Hz)',
+                    speedPlaceholder: '例如 1000000、10m',
+                    showInterface: false,
+                    interfacePlaceholder: '',
+                    interfaceHint: '',
+                    debugPortLabel: 'GDB 端口',
+                    defaultDebugPort: 3333,
+                    showTelnet: true,
+                    defaultTelnetPort: 4444,
+                    showElf: true,
+                    verifyHint: 'pyOCD 的写后校验沿用自身默认烧录策略。'
+                },
+                'probe-rs': {
+                    probeLabel: 'Probe 选择',
+                    probeHint: '优先自动列出当前 probe，也可手动填写 probe 选择串。',
+                    probePlaceholder: '例如 0483:3748 或 0483:3748:SERIAL',
+                    targetLabel: '目标芯片',
+                    targetPlaceholder: '例如 STM32F103C8',
+                    targetHint: '请输入 probe-rs 支持的芯片名称。',
+                    speedLabel: '调试速率 (kHz)',
+                    speedPlaceholder: '例如 4000',
+                    showInterface: false,
+                    interfacePlaceholder: '',
+                    interfaceHint: '',
+                    debugPortLabel: 'GDB 端口',
+                    defaultDebugPort: 1337,
+                    showTelnet: false,
+                    defaultTelnetPort: '',
+                    showElf: false,
+                    verifyHint: 'probe-rs 的写后校验沿用当前 CLI 默认行为。'
+                }
+            },
+
+            init() {
+                if (this.initialized) return;
+                this.initialized = true;
+
+                this.currentTool = document.getElementById('flashDebugToolSelector').value || 'openocd';
+                this.currentMode = 'flash';
+
+                document.querySelectorAll('#flashDebugModeTags .feature-tag').forEach((btn) => {
+                    btn.addEventListener('click', () => this.applyMode(btn.dataset.mode));
+                });
+
+                document.getElementById('flashDebugToolSelector').addEventListener('change', () => {
+                    this.currentTool = document.getElementById('flashDebugToolSelector').value;
+                    this.manualPathForced = false;
+                    document.getElementById('flashDebugManualPath').value = '';
+                    this.updateManualPathVisibility();
+                    this.applyToolPreset();
+                    this.refreshTooling(true);
+                });
+
+                document.getElementById('flashDebugRefreshBtn').addEventListener('click', () => this.refreshTooling());
+                document.getElementById('flashDebugManualBtn').addEventListener('click', () => this.toggleManualPath());
+                document.getElementById('flashDebugManualPath').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.refreshTooling();
+                });
+                document.getElementById('flashDebugManualPath').addEventListener('blur', () => {
+                    if (this.manualPathForced || document.getElementById('flashDebugManualPath').value.trim()) {
+                        this.refreshTooling(true);
+                    }
+                });
+
+                document.getElementById('flashProbeSelect').addEventListener('change', () => {
+                    document.getElementById('flashProbeInput').value = document.getElementById('flashProbeSelect').value;
+                });
+                document.getElementById('debugProbeSelect').addEventListener('change', () => {
+                    document.getElementById('debugProbeInput').value = document.getElementById('debugProbeSelect').value;
+                });
+                document.getElementById('flashFirmwareSelectBtn').addEventListener('click', () => this.pickFirmwareFile());
+                document.getElementById('flashFirmwarePath').addEventListener('input', () => this.syncFirmwareUploadHint());
+                document.getElementById('flashFirmwareFilePicker').addEventListener('change', (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (file) {
+                        this.uploadFirmwareFile(file);
+                    }
+                    e.target.value = '';
+                });
+
+                document.getElementById('flashStartBtn').addEventListener('click', () => this.startAction('flash'));
+                document.getElementById('flashStopBtn').addEventListener('click', () => this.stopAction('flash'));
+                document.getElementById('flashClearLogBtn').addEventListener('click', () => this.clearLog('flash'));
+
+                document.getElementById('debugStartBtn').addEventListener('click', () => this.startAction('debug'));
+                document.getElementById('debugStopBtn').addEventListener('click', () => this.stopAction('debug'));
+                document.getElementById('debugClearLogBtn').addEventListener('click', () => this.clearLog('debug'));
+                document.getElementById('flashRequestElevation').addEventListener('change', (e) => {
+                    document.getElementById('debugRequestElevation').checked = e.target.checked;
+                });
+                document.getElementById('debugRequestElevation').addEventListener('change', (e) => {
+                    document.getElementById('flashRequestElevation').checked = e.target.checked;
+                });
+
+                this.applyToolPreset();
+                this.applyMode(this.currentMode);
+                this.applyAccessState();
+                this.syncFirmwareUploadHint();
+                this.refreshTooling(true);
+            },
+
+            isBusy() {
+                return this.running.flash || this.running.debug;
+            },
+
+            applyMode(mode) {
+                this.currentMode = mode === 'debug' ? 'debug' : 'flash';
+                document.querySelectorAll('#flashDebugModeTags .feature-tag').forEach((btn) => {
+                    btn.classList.toggle('active', btn.dataset.mode === this.currentMode);
+                });
+                document.getElementById('flashDebugFlashCard').classList.toggle('active', this.currentMode === 'flash');
+                document.getElementById('flashDebugDebugCard').classList.toggle('active', this.currentMode === 'debug');
+            },
+
+            applyAccessState() {
+                if (!this.initialized) return;
+                document.getElementById('flashDebugAccessNote').style.display = State.isAdmin ? 'none' : 'block';
+                this.syncControls();
+            },
+
+            syncControls() {
+                if (!this.initialized) return;
+
+                const locked = !State.isAdmin;
+                const busy = this.isBusy();
+                const generalIds = [
+                    'flashDebugToolSelector',
+                    'flashDebugRefreshBtn',
+                    'flashDebugManualBtn',
+                    'flashDebugManualPath',
+                    'flashProbeSelect',
+                    'flashProbeInput',
+                    'flashTargetInput',
+                    'flashInterfaceConfigInput',
+                    'flashSpeedInput',
+                    'flashFirmwarePath',
+                    'flashFirmwareSelectBtn',
+                    'flashExtraArgs',
+                    'flashRequestElevation',
+                    'flashVerify',
+                    'flashReset',
+                    'debugProbeSelect',
+                    'debugProbeInput',
+                    'debugTargetInput',
+                    'debugInterfaceConfigInput',
+                    'debugSpeedInput',
+                    'debugPortInput',
+                    'debugTelnetPortInput',
+                    'debugElfPath',
+                    'debugExtraArgs',
+                    'debugRequestElevation'
+                ];
+
+                generalIds.forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.disabled = locked || busy;
+                    }
+                });
+
+                document.getElementById('flashStartBtn').disabled = locked || busy;
+                document.getElementById('debugStartBtn').disabled = locked || busy;
+                document.getElementById('flashStopBtn').disabled = locked || !this.running.flash;
+                document.getElementById('debugStopBtn').disabled = locked || !this.running.debug;
+                this.syncElevationUi();
+            },
+
+            applyToolPreset() {
+                const preset = this.presets[this.currentTool] || this.presets.openocd;
+
+                document.getElementById('flashProbeLabel').textContent = preset.probeLabel;
+                document.getElementById('debugProbeLabel').textContent = preset.probeLabel;
+                document.getElementById('flashTargetLabel').textContent = preset.targetLabel;
+                document.getElementById('debugTargetLabel').textContent = preset.targetLabel;
+                document.getElementById('flashSpeedLabel').textContent = preset.speedLabel;
+                document.getElementById('debugSpeedLabel').textContent = preset.speedLabel;
+                document.getElementById('debugPortLabel').textContent = preset.debugPortLabel;
+                document.getElementById('flashProbeInput').placeholder = preset.probePlaceholder || '';
+                document.getElementById('debugProbeInput').placeholder = preset.probePlaceholder || '';
+                document.getElementById('flashTargetInput').placeholder = preset.targetPlaceholder;
+                document.getElementById('debugTargetInput').placeholder = preset.targetPlaceholder;
+                document.getElementById('flashSpeedInput').placeholder = preset.speedPlaceholder;
+                document.getElementById('debugSpeedInput').placeholder = preset.speedPlaceholder;
+                document.getElementById('flashInterfaceConfigInput').placeholder = preset.interfacePlaceholder || '';
+                document.getElementById('debugInterfaceConfigInput').placeholder = preset.interfacePlaceholder || '';
+
+                document.getElementById('flashInterfaceGroup').classList.toggle('flashdebug-hidden', !preset.showInterface);
+                document.getElementById('debugInterfaceGroup').classList.toggle('flashdebug-hidden', !preset.showInterface);
+                document.getElementById('debugTelnetGroup').classList.toggle('flashdebug-hidden', !preset.showTelnet);
+                document.getElementById('debugElfGroup').classList.toggle('flashdebug-hidden', !preset.showElf);
+                this.setConfigInputMode(this.currentTool === 'openocd');
+
+                document.getElementById('debugPortInput').value = String(preset.defaultDebugPort || 3333);
+                if (preset.showTelnet) {
+                    document.getElementById('debugTelnetPortInput').value = String(preset.defaultTelnetPort || 4444);
+                }
+
+                this.syncHints();
+            },
+
+            syncHints() {
+                const preset = this.presets[this.currentTool] || this.presets.openocd;
+                const count = this.tooling && Array.isArray(this.tooling.programmers) ? this.tooling.programmers.length : 0;
+                const programmerSource = this.tooling && this.tooling.programmerSource;
+                let listExtra = '';
+
+                if (this.tooling && this.tooling.listError) {
+                    listExtra = ` ${this.tooling.listError}`;
+                } else if (count > 0 && programmerSource === 'plugins') {
+                    listExtra = ` 当前显示 ${count} 个 pyOCD 插件前缀，选择后可在右侧继续补充 UID。`;
+                } else if (count > 0 && programmerSource === 'template') {
+                    listExtra = ' 当前显示 probe-rs 选择模板，可按帮助格式手动补全。';
+                } else if (count > 0) {
+                    listExtra = ` 当前检测到 ${count} 个候选项。`;
+                } else {
+                    listExtra = ' 当前未检测到候选项，可直接手动输入。';
+                }
+
+                document.getElementById('flashProbeHint').textContent = `${preset.probeHint}${listExtra}`;
+                document.getElementById('debugProbeHint').textContent = `${preset.probeHint}${listExtra}`;
+                document.getElementById('flashVerifyHint').textContent = preset.verifyHint;
+                this.syncConfigHints();
+                this.syncElevationUi();
+            },
+
+            getElevationInfo() {
+                return this.tooling && this.tooling.elevation ? this.tooling.elevation : null;
+            },
+
+            getElevationCheckbox(action) {
+                return document.getElementById(action === 'flash' ? 'flashRequestElevation' : 'debugRequestElevation');
+            },
+
+            syncElevationUi() {
+                const info = this.getElevationInfo();
+                const locked = !State.isAdmin;
+                const busy = this.isBusy();
+                const supported = Boolean(info && info.available);
+                const note = info
+                    ? (info.note || '')
+                    : '正在检测管理员/root 提权方式...';
+
+                ['flash', 'debug'].forEach((action) => {
+                    const checkbox = this.getElevationCheckbox(action);
+                    const hint = document.getElementById(action === 'flash' ? 'flashPrivilegeHint' : 'debugPrivilegeHint');
+                    if (!checkbox || !hint) return;
+
+                    if (!supported) {
+                        checkbox.checked = false;
+                    }
+
+                    checkbox.disabled = locked || busy || !supported;
+                    hint.textContent = note || '当前平台暂未检测到可用的管理员/root 提权方式。';
+                });
+            },
+
+            setConfigInputMode(enabled) {
+                const targetListId = 'flashDebugTargetConfigOptions';
+                const interfaceListId = 'flashDebugInterfaceConfigOptions';
+                ['flashTargetInput', 'debugTargetInput'].forEach((id) => {
+                    const input = document.getElementById(id);
+                    if (!input) return;
+                    if (enabled) {
+                        input.setAttribute('list', targetListId);
+                    } else {
+                        input.removeAttribute('list');
+                    }
+                });
+                ['flashInterfaceConfigInput', 'debugInterfaceConfigInput'].forEach((id) => {
+                    const input = document.getElementById(id);
+                    if (!input) return;
+                    if (enabled) {
+                        input.setAttribute('list', interfaceListId);
+                    } else {
+                        input.removeAttribute('list');
+                    }
+                });
+            },
+
+            populateConfigOptions(configs = null) {
+                const targetList = document.getElementById('flashDebugTargetConfigOptions');
+                const interfaceList = document.getElementById('flashDebugInterfaceConfigOptions');
+                targetList.innerHTML = '';
+                interfaceList.innerHTML = '';
+
+                if (!configs) {
+                    this.syncConfigHints();
+                    return;
+                }
+
+                (configs.targetConfigs || []).forEach((value) => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    targetList.appendChild(option);
+                });
+
+                (configs.interfaceConfigs || []).forEach((value) => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    interfaceList.appendChild(option);
+                });
+
+                this.syncConfigHints();
+            },
+
+            syncConfigHints() {
+                const preset = this.presets[this.currentTool] || this.presets.openocd;
+                const configs = this.tooling && this.tooling.configs;
+                let targetHint = preset.targetHint || '';
+                let interfaceHint = preset.interfaceHint || '';
+
+                if (this.currentTool === 'openocd') {
+                    if (configs && !configs.error && configs.scriptsDir) {
+                        const sourceLabel = configs.source === 'system-default' ? '系统默认目录' : 'OpenOCD 安装目录';
+                        targetHint = `已载入 ${configs.targetConfigs.length || 0} 个 target 配置，来源：${sourceLabel} ${configs.scriptsDir}`;
+                        interfaceHint = `已载入 ${configs.interfaceConfigs.length || 0} 个 interface 配置，来源：${sourceLabel} ${configs.scriptsDir}`;
+                    } else if (configs && configs.error) {
+                        targetHint = configs.error;
+                        interfaceHint = configs.error;
+                    }
+                }
+
+                document.getElementById('flashTargetConfigHint').textContent = targetHint;
+                document.getElementById('debugTargetConfigHint').textContent = targetHint;
+                document.getElementById('flashInterfaceConfigHint').textContent = interfaceHint;
+                document.getElementById('debugInterfaceConfigHint').textContent = interfaceHint;
+            },
+
+            updateManualPathVisibility() {
+                const row = document.getElementById('flashDebugManualPathRow');
+                const inputValue = document.getElementById('flashDebugManualPath').value.trim();
+                const required = this.tooling && this.tooling.manualPathRequired;
+                row.style.display = this.manualPathForced || required || Boolean(inputValue) ? 'flex' : 'none';
+            },
+
+            toggleManualPath() {
+                const required = this.tooling && this.tooling.manualPathRequired;
+                if (required && !document.getElementById('flashDebugManualPath').value.trim()) {
+                    this.manualPathForced = true;
+                } else {
+                    this.manualPathForced = !this.manualPathForced;
+                }
+
+                if (!this.manualPathForced && this.tooling && this.tooling.foundInPath) {
+                    document.getElementById('flashDebugManualPath').value = '';
+                }
+
+                this.updateManualPathVisibility();
+                if (!this.manualPathForced) {
+                    this.refreshTooling(true);
+                }
+            },
+
+            setPathBadge(state, text) {
+                const badge = document.getElementById('flashDebugPathBadge');
+                const iconMap = {
+                    ok: 'fa-circle-check',
+                    warn: 'fa-triangle-exclamation',
+                    error: 'fa-circle-xmark'
+                };
+                badge.className = `flashdebug-path-badge ${state}`;
+                badge.innerHTML = `<i class="fas ${iconMap[state] || 'fa-magnifying-glass'}"></i><span></span>`;
+                badge.querySelector('span').textContent = text;
+            },
+
+            populateProgrammers(programmers = []) {
+                const placeholder = this.currentTool === 'openocd'
+                    ? '自动列出 adapter / 留空手填'
+                    : '自动列出 probe / 留空手填';
+
+                ['flashProbeSelect', 'debugProbeSelect'].forEach((id) => {
+                    const select = document.getElementById(id);
+                    select.innerHTML = '';
+                    const baseOption = document.createElement('option');
+                    baseOption.value = '';
+                    baseOption.textContent = placeholder;
+                    select.appendChild(baseOption);
+
+                    programmers.forEach((item) => {
+                        const option = document.createElement('option');
+                        option.value = item.value;
+                        option.textContent = item.label;
+                        select.appendChild(option);
+                    });
+                });
+            },
+
+            async refreshTooling(silent = false) {
+                if (!this.initialized) return;
+                if (!State.isAdmin) {
+                    this.setPathBadge('warn', '仅管理员可启动本机烧录调试');
+                    this.tooling = null;
+                    this.populateProgrammers([]);
+                    this.populateConfigOptions(null);
+                    this.syncHints();
+                    return;
+                }
+
+                const manualPath = document.getElementById('flashDebugManualPath').value.trim();
+                this.setPathBadge('warn', `正在检测 ${this.currentTool} ...`);
+
+                try {
+                    const url = new URL(`${Config.API}/api/flashdebug/tooling`);
+                    url.searchParams.set('tool', this.currentTool);
+                    if (manualPath) {
+                        url.searchParams.set('path', manualPath);
+                    }
+
+                    const res = await apiFetch(url.toString());
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        throw new Error(data.error || '检测失败');
+                    }
+
+                    this.tooling = data;
+                    if (data.manualPathProvided && data.executablePath) {
+                        document.getElementById('flashDebugManualPath').value = data.executablePath;
+                    }
+
+                    if (data.executablePath) {
+                        const label = data.foundInPath ? `PATH: ${data.executablePath}` : `自定义: ${data.executablePath}`;
+                        this.setPathBadge('ok', label);
+                    } else if (data.manualPathError) {
+                        this.setPathBadge('error', data.manualPathError);
+                    } else {
+                        this.setPathBadge('warn', `${data.label || this.currentTool} 未在 PATH 中找到，请填写手动路径`);
+                    }
+
+                    this.populateProgrammers(data.programmers || []);
+                    this.populateConfigOptions(data.configs || null);
+                    this.manualPathForced = this.manualPathForced || Boolean(data.manualPathRequired);
+                    this.updateManualPathVisibility();
+                    this.syncHints();
+                    this.syncControls();
+                    if (!silent && data.configs && data.configs.error) {
+                        Toast.info(data.configs.error);
+                    }
+                } catch (err) {
+                    this.tooling = null;
+                    this.populateProgrammers([]);
+                    this.populateConfigOptions(null);
+                    this.setPathBadge('error', err.message);
+                    this.syncHints();
+                    this.syncControls();
+                    if (!silent) {
+                        Toast.error(err.message);
+                    }
+                }
+            },
+
+            pickFirmwareFile() {
+                if (!State.isAdmin || this.isBusy()) return;
+                document.getElementById('flashFirmwareFilePicker').click();
+            },
+
+            formatUploadSize(bytes) {
+                const size = Number(bytes || 0);
+                if (!size) return '-';
+                const units = ['B', 'KB', 'MB', 'GB'];
+                let value = size;
+                let unitIndex = 0;
+                while (value >= 1024 && unitIndex < units.length - 1) {
+                    value /= 1024;
+                    unitIndex += 1;
+                }
+                return `${value.toFixed(1)} ${units[unitIndex]}`;
+            },
+
+            syncFirmwareUploadHint(meta = null) {
+                const hint = document.getElementById('flashFirmwareUploadHint');
+                const pathValue = document.getElementById('flashFirmwarePath').value.trim();
+                if (meta && meta.uploading) {
+                    const sizeText = this.formatUploadSize(meta.size);
+                    hint.textContent = `正在上传 ${meta.originalName || '固件文件'} (${sizeText})...`;
+                    return;
+                }
+                if (meta && pathValue) {
+                    const sizeText = this.formatUploadSize(meta.size);
+                    hint.textContent = `已上传 ${meta.originalName || '固件文件'} (${sizeText})，当前路径：${pathValue}`;
+                    return;
+                }
+                if (pathValue) {
+                    hint.textContent = `当前固件路径：${pathValue}`;
+                    return;
+                }
+                hint.textContent = '选择本地文件后会上传到当前 Entrance 主机的临时目录，并自动回填路径。';
+            },
+
+            async uploadFirmwareFile(file) {
+                if (!file) return;
+
+                const form = new FormData();
+                form.append('file', file);
+                const pathInput = document.getElementById('flashFirmwarePath');
+
+                try {
+                    pathInput.placeholder = '正在上传文件...';
+                    this.syncFirmwareUploadHint({
+                        originalName: file.name,
+                        size: file.size,
+                        uploading: true
+                    });
+                    const res = await apiFetch(`${Config.API}/api/flashdebug/upload`, {
+                        method: 'POST',
+                        body: form
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        throw new Error(data.error || '文件上传失败');
+                    }
+                    pathInput.value = data.path || '';
+                    pathInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    pathInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    this.syncFirmwareUploadHint(data);
+                    Toast.success(`已上传 ${data.originalName || file.name}`);
+                } catch (err) {
+                    this.syncFirmwareUploadHint();
+                    Toast.error(err.message);
+                } finally {
+                    pathInput.placeholder = '输入固件在当前主机上的绝对路径';
+                }
+            },
+
+            getExecutablePathForRequest() {
+                return document.getElementById('flashDebugManualPath').value.trim();
+            },
+
+            getProbeValue(prefix) {
+                const manualValue = document.getElementById(`${prefix}ProbeInput`).value.trim();
+                if (manualValue) return manualValue;
+                return document.getElementById(`${prefix}ProbeSelect`).value;
+            },
+
+            shouldRequestElevation(action) {
+                const checkbox = this.getElevationCheckbox(action);
+                return Boolean(checkbox && checkbox.checked);
+            },
+
+            collectFlashOptions() {
+                const tool = this.currentTool;
+                const options = {
+                    probeSelection: this.getProbeValue('flash'),
+                    speed: document.getElementById('flashSpeedInput').value.trim(),
+                    firmwarePath: document.getElementById('flashFirmwarePath').value.trim(),
+                    verify: document.getElementById('flashVerify').checked,
+                    resetAfterFlash: document.getElementById('flashReset').checked,
+                    extraArgs: document.getElementById('flashExtraArgs').value.trim()
+                };
+
+                if (tool === 'openocd') {
+                    options.targetConfig = document.getElementById('flashTargetInput').value.trim();
+                    options.interfaceConfig = document.getElementById('flashInterfaceConfigInput').value.trim();
+                } else {
+                    options.target = document.getElementById('flashTargetInput').value.trim();
+                }
+
+                return options;
+            },
+
+            collectDebugOptions() {
+                const tool = this.currentTool;
+                const options = {
+                    probeSelection: this.getProbeValue('debug'),
+                    speed: document.getElementById('debugSpeedInput').value.trim(),
+                    gdbPort: document.getElementById('debugPortInput').value.trim(),
+                    telnetPort: document.getElementById('debugTelnetPortInput').value.trim(),
+                    elfPath: document.getElementById('debugElfPath').value.trim(),
+                    extraArgs: document.getElementById('debugExtraArgs').value.trim()
+                };
+
+                if (tool === 'openocd') {
+                    options.targetConfig = document.getElementById('debugTargetInput').value.trim();
+                    options.interfaceConfig = document.getElementById('debugInterfaceConfigInput').value.trim();
+                } else {
+                    options.target = document.getElementById('debugTargetInput').value.trim();
+                }
+
+                return options;
+            },
+
+            async ensureSocket() {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    return;
+                }
+                if (this.wsReadyPromise) {
+                    return this.wsReadyPromise;
+                }
+
+                this.wsReadyPromise = new Promise((resolve, reject) => {
+                    let settled = false;
+                    this.ws = new WebSocket(buildWsUrl('/flashdebug'));
+
+                    this.ws.onopen = () => {
+                        settled = true;
+                        this.wsReadyPromise = null;
+                        resolve();
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        this.handleSocketMessage(event);
+                    };
+
+                    this.ws.onerror = () => {
+                        if (!settled) {
+                            settled = true;
+                            this.wsReadyPromise = null;
+                            reject(new Error('烧录调试 WebSocket 连接失败'));
+                        }
+                        Toast.error('烧录调试 WebSocket 连接失败');
+                    };
+
+                    this.ws.onclose = () => {
+                        this.ws = null;
+                        this.running.flash = false;
+                        this.running.debug = false;
+                        this.updateStatusBadge('flash');
+                        this.updateStatusBadge('debug');
+                        this.syncControls();
+                        if (!settled) {
+                            settled = true;
+                            this.wsReadyPromise = null;
+                            reject(new Error('烧录调试连接已关闭'));
+                        }
+                    };
+                });
+
+                return this.wsReadyPromise;
+            },
+
+            handleSocketMessage(event) {
+                try {
+                    const msg = JSON.parse(event.data);
+                    switch (msg.type) {
+                        case 'started':
+                            this.running.flash = false;
+                            this.running.debug = false;
+                            this.running[msg.action] = true;
+                            this.updateStatusBadge(msg.action);
+                            this.syncControls();
+                            this.appendLog(msg.action, `\n[gui] ${msg.command}\n`);
+                            Toast.success(msg.action === 'flash' ? '烧录任务已启动' : '调试任务已启动');
+                            break;
+                        case 'output':
+                            this.appendLog(msg.action || this.currentMode, msg.data || '');
+                            break;
+                        case 'exit':
+                            this.running[msg.action] = false;
+                            this.updateStatusBadge(msg.action);
+                            this.syncControls();
+                            this.appendLog(
+                                msg.action,
+                                `\n[exit] code=${msg.exitCode}${msg.signal ? ` signal=${msg.signal}` : ''}\n`
+                            );
+                            Toast.info(msg.action === 'flash' ? '烧录任务已结束' : '调试任务已结束');
+                            break;
+                        case 'error':
+                            if (msg.action) {
+                                this.running[msg.action] = false;
+                                this.updateStatusBadge(msg.action);
+                            }
+                            this.syncControls();
+                            this.appendLog(msg.action || this.currentMode, `[error] ${msg.message}\n`);
+                            Toast.error(msg.message);
+                            break;
+                    }
+                } catch (err) {
+                    console.error('[FlashDebug] 消息解析错误:', err);
+                }
+            },
+
+            updateStatusBadge(action) {
+                const badge = document.getElementById(action === 'flash' ? 'flashStatusBadge' : 'debugStatusBadge');
+                const running = this.running[action];
+                badge.classList.toggle('running', running);
+                badge.innerHTML = running
+                    ? '<i class="fas fa-circle-notch fa-spin"></i> 运行中'
+                    : '<i class="fas fa-circle"></i> 空闲';
+            },
+
+            appendLog(action, text) {
+                const output = document.getElementById(action === 'flash' ? 'flashLogOutput' : 'debugLogOutput');
+                const nextText = output.textContent + String(text || '');
+                output.textContent = nextText.length > 200000 ? nextText.slice(-180000) : nextText;
+                output.scrollTop = output.scrollHeight;
+            },
+
+            clearLog(action) {
+                document.getElementById(action === 'flash' ? 'flashLogOutput' : 'debugLogOutput').textContent = '';
+            },
+
+            async startAction(action) {
+                if (!State.isAdmin) {
+                    Toast.error('仅管理员可使用烧录调试功能');
+                    return;
+                }
+                if (this.isBusy()) {
+                    Toast.info('请先停止当前任务');
+                    return;
+                }
+
+                try {
+                    await this.refreshTooling(true);
+                    const elevationInfo = this.getElevationInfo();
+                    if (this.shouldRequestElevation(action) && (!elevationInfo || !elevationInfo.available)) {
+                        throw new Error((elevationInfo && elevationInfo.note) || '当前主机未检测到可用的管理员/root 提权方式');
+                    }
+
+                    const options = action === 'flash' ? this.collectFlashOptions() : this.collectDebugOptions();
+                    const payload = {
+                        type: 'start',
+                        action,
+                        tool: this.currentTool,
+                        executablePath: this.getExecutablePathForRequest(),
+                        requestElevation: this.shouldRequestElevation(action),
+                        options
+                    };
+                    await this.ensureSocket();
+                    this.appendLog(action, `\n[gui] ${action === 'flash' ? '开始烧录' : '启动调试'}\n`);
+                    this.ws.send(JSON.stringify(payload));
+                } catch (err) {
+                    this.appendLog(action, `[error] ${err.message}\n`);
+                    Toast.error(err.message);
+                }
+            },
+
+            stopAction(action) {
+                if (!this.running[action] || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+                    return;
+                }
+                this.ws.send(JSON.stringify({ type: 'stop' }));
+                this.appendLog(action, '[gui] 停止请求已发送\n');
+            }
+        };
+
         // 本地 Shell
         const LocalShell = {
             term: null,
@@ -6220,7 +7440,11 @@
                     this.started = true;
                     Terminal_.init();
                     Serial.init();
+                    FlashDebug.init();
                     VNCModule.init();
+                }
+                if (FlashDebug.initialized) {
+                    FlashDebug.applyAccessState();
                 }
                 if (State.isAdmin) {
                     LocalShell.init();

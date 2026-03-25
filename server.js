@@ -18,6 +18,7 @@ const argon2 = require('argon2');
 const archiver = require('archiver');
 const vncProxy = require('./vnc');
 const localShell = require('./local-shell');
+const flashDebug = require('./flash-debug');
 const { version: APP_VERSION } = require('./package.json');
 
 const app = express();
@@ -2029,6 +2030,11 @@ if (localShellService.available) {
     console.log(`[Server] 本地 Shell 服务不可用 (当前平台: ${localShell.getPlatform()})`);
 }
 
+const flashDebugService = flashDebug.init(server, '/flashdebug');
+if (flashDebugService.available) {
+    console.log('[Server] 烧录调试服务已启用');
+}
+
 // 添加本地 shell 状态检查 API
 app.get('/api/localshell/status', requireAdmin, (req, res) => {
     const platform = localShell.getPlatform();
@@ -2047,6 +2053,32 @@ app.get('/api/localshell/status', requireAdmin, (req, res) => {
                 note: 'Windows 下通过 OpenSSH Server 为 Web 终端提供 PTY/ConPTY 语义。'
             }
             : null
+    });
+});
+
+app.get('/api/flashdebug/tooling', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const info = await flashDebug.getToolingInfo({
+            tool: req.query.tool,
+            executablePath: req.query.path || ''
+        });
+        res.json(info);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.post('/api/flashdebug/upload', requireAuth, requireAdmin, upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: '未选择文件' });
+    }
+
+    res.json({
+        success: true,
+        path: path.resolve(req.file.path),
+        originalName: req.file.originalname,
+        filename: req.file.filename,
+        size: req.file.size
     });
 });
 
@@ -2075,6 +2107,16 @@ server.on('upgrade', (request, socket, head) => {
         }
         request.auth = auth;
         localShell.handleUpgrade(request, socket, head);
+    } else if (pathname === '/flashdebug') {
+        const auth = authenticateUpgrade(request);
+        if (!auth) {
+            return rejectUpgrade(socket, 401, 'Unauthorized');
+        }
+        if (auth.role !== 'admin') {
+            return rejectUpgrade(socket, 403, 'Forbidden');
+        }
+        request.auth = auth;
+        flashDebug.handleUpgrade(request, socket, head);
     }
     // /vnc 由 vncProxy 自己处理
 });
@@ -2121,6 +2163,8 @@ process.on('SIGINT', () => {
     vncProxy.closeAll();
     // 关闭本地 Shell 会话
     localShell.closeAll();
+    // 关闭烧录调试会话
+    flashDebug.closeAll();
     if (fs.existsSync(UPLOAD_DIR)) {
         fs.rmSync(UPLOAD_DIR, { recursive: true, force: true });
     }

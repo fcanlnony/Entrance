@@ -1,6 +1,6 @@
 # Entrance Tools
 
-基于 Web 的服务器管理工具，支持 SSH 终端、本地 Shell 终端、VNC 远程桌面、WebSerial 串口终端和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题。
+基于 Web 的服务器管理工具，支持 SSH 终端、本地 Shell 终端、VNC 远程桌面、WebSerial 串口终端、烧录调试和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题。
 ![Screenshot](doc/screenshot.png)
 
 ## 功能特性
@@ -69,6 +69,17 @@
   - 支持多变量同时显示
 - **演示模式** - 无需真实串口即可测试波形和统计图功能
 - 适用于硬件调试、嵌入式开发、ADC 数据可视化
+
+### 烧录调试
+- 支持 `OpenOCD`、`pyOCD`、`probe-rs` 三类本机烧录/调试工具
+- 支持 GUI 选择烧录器、目标芯片/配置、速率、附加参数，并实时展示最终 CLI 与输出日志
+- 支持本地固件文件上传到当前 Entrance 主机临时目录后再执行烧录
+- `OpenOCD` 支持 target/interface 配置自动发现，`pyOCD` / `probe-rs` 支持自动枚举 probe
+- **管理员/root 权限请求** - 可在启动烧录或调试前请求系统级提权
+  - Linux 优先使用 `pkexec`，否则回退到 `sudo + zenity/kdialog`
+  - macOS 使用 `sudo + osascript`
+  - Windows 优先使用 `gsudo`，否则使用系统 `sudo`
+- 仅管理员可启动本机烧录或调试任务
 
 ### SFTP 文件管理
 - 远程文件浏览与导航
@@ -206,6 +217,7 @@ podman run -d --name entrance-tools \
 │   └── vnc-client.js
 ├── server.js            # 后端服务器
 ├── local-shell.js       # 本地 Shell 模块（跨平台）
+├── flash-debug.js       # 本机烧录/调试模块（OpenOCD / pyOCD / probe-rs）
 ├── vnc.js               # VNC 代理模块
 ├── nginx/               # 反向代理示例配置
 ├── package.json         # 依赖配置
@@ -232,6 +244,7 @@ podman run -d --name entrance-tools \
 - [ws](https://github.com/websockets/ws) - WebSocket
 - [ssh2](https://github.com/mscdex/ssh2) - SSH 客户端
 - script + child_process / localhost SSH - 本地终端（Linux/macOS/Windows，无需编译）
+- OpenOCD / pyOCD / probe-rs - 本机烧录与调试工具链
 - [argon2](https://github.com/ranisalt/node-argon2) - 用户密码 Argon2id 哈希
 - [multer](https://github.com/expressjs/multer) - 文件上传
 - [archiver](https://github.com/archiverjs/node-archiver) - ZIP 打包
@@ -434,6 +447,60 @@ Linux/macOS 下通过 `ws://host:port/localshell` 访问服务器本地终端；
 状态检查 API：
 - `GET /api/localshell/status` - 获取本地 shell 服务状态
 
+### 烧录调试
+
+- `GET /api/flashdebug/tooling?tool=openocd|pyocd|probe-rs[&path=/abs/path]` - 检测工具路径、probe 列表、OpenOCD 配置目录，以及当前平台的提权能力
+- `POST /api/flashdebug/upload` - 上传固件文件到当前 Entrance 主机临时目录
+
+WebSocket 连接到 `ws://host:port/flashdebug?token=...`，消息格式：
+
+```javascript
+// 启动烧录
+{
+  "type": "start",
+  "action": "flash",
+  "tool": "openocd",
+  "requestElevation": true,
+  "executablePath": "",
+  "options": {
+    "probeSelection": "cmsis-dap",
+    "targetConfig": "target/stm32f4x.cfg",
+    "interfaceConfig": "",
+    "speed": "4000",
+    "firmwarePath": "/tmp/app.bin",
+    "verify": true,
+    "resetAfterFlash": true,
+    "extraArgs": ""
+  }
+}
+
+// 启动实时调试
+{
+  "type": "start",
+  "action": "debug",
+  "tool": "pyocd",
+  "requestElevation": false,
+  "options": {
+    "probeSelection": "",
+    "target": "stm32f103rc",
+    "speed": "1000000",
+    "gdbPort": 3333,
+    "telnetPort": 4444,
+    "elfPath": "/tmp/app.elf",
+    "extraArgs": ""
+  }
+}
+
+// 停止当前任务
+{ "type": "stop" }
+```
+
+服务器会返回：
+- `started` - 任务已启动，包含最终执行命令预览
+- `output` - stdout/stderr/system 输出流
+- `exit` - 进程退出状态
+- `error` - 启动失败或运行时错误
+
 ### 串口数据格式 (WebSerial)
 
 串口终端支持两种数据格式的自动解析，两种格式互斥，不会相互干扰：
@@ -495,6 +562,11 @@ memory:[used:8192, free:4096, cached:2048]
   - 限制访问权限给授权管理员
   - Windows 场景仅启用本机 `OpenSSH Server`，并限制允许登录的本地账号
   - 生产环境中考虑禁用此功能或在反向代理层增加额外认证
+- **烧录调试安全提示**（仅管理员可用）：烧录/调试功能可直接调用本机工具链，并且可选请求系统级管理员/root 权限，请确保：
+  - 仅在受信任的开发机或实验环境中启用
+  - 将 `OpenOCD`、`pyOCD`、`probe-rs`、`pkexec`、`sudo`、`gsudo` 等可执行文件来源控制在可信范围
+  - 仅在确有设备访问或驱动权限需求时启用“请求管理员/root 权限”
+  - 若使用 Linux 图形密码对话框模式，请确认 `zenity` 或 `kdialog` 来自系统包管理器
 
 ## 许可证
 

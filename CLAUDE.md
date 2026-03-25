@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, SFTP file management, and Docker container monitoring.
+Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, local flashing/debugging workflows, SFTP file management, and Docker container monitoring.
 
 ## Build and Development Commands
 
@@ -53,6 +53,7 @@ docker compose up -d --build
 │   └── vnc-client.js   # VNC browser client
 ├── server.js           # Express backend server (HTTP + WebSocket + auth + SSH/SFTP/Docker)
 ├── local-shell.js      # Local shell module (Linux/macOS via script, Windows via direct shell spawn)
+├── flash-debug.js      # Admin-only local flash/debug module (OpenOCD / pyOCD / probe-rs + optional elevation)
 ├── vnc.js              # VNC WebSocket proxy
 ├── package.json        # Dependency manifest
 ├── users.json          # User account data (generated at runtime, Argon2 hashes)
@@ -64,17 +65,18 @@ docker compose up -d --build
 
 ### Frontend Architecture
 - Single-file HTML app with no build step
-- Modular JavaScript objects: `State`, `Storage`, `Theme`, `Settings`, `Toast`, `Users`, `Terminal_`, `SFTP`, `Hosts`, `UI`
+- Modular JavaScript objects: `State`, `Storage`, `Theme`, `Settings`, `Toast`, `Users`, `Terminal_`, `FlashDebug`, `SFTP`, `Hosts`, `UI`
 - CSS variables for theme switching and Material You color scheme support (`data-color-scheme` attribute)
 - Microsoft Fluent Design style
 
 ### Backend Architecture
 - Express.js HTTP/REST API server
-- WebSocket upgrade handling for SSH, VNC, and admin-only local shell sessions
+- WebSocket upgrade handling for SSH, VNC, admin-only local shell sessions, and admin-only flash/debug sessions
 - ssh2 library for SSH/SFTP functionality
 - Auth/token system in `server.js` (signed bearer tokens, login throttling, optional no-login mode)
 - Private target validation via allowlists, private-network CIDR management, and known-host verification
 - File storage for user data, known hosts, and encrypted secrets
+- `flash-debug.js` wraps OpenOCD, pyOCD, and probe-rs, including optional OS-level privilege elevation requests
 - Container deployment support via `Dockerfile` and `compose.yml`
 
 ### Core Modules
@@ -85,8 +87,9 @@ docker compose up -d --build
 5. **Known Hosts Cache** - SSH host key pinning and strict host key checking support
 6. **SFTP Sessions** - In-memory SFTP session management
 7. **Local Shell Service** - Cross-platform local shell WebSocket endpoint
-8. **Docker Stats** - Docker container resource monitoring via `docker stats --no-stream`
-9. **Settings** - In-app settings view for password change (disabled in `ENTRANCE_DESKTOP_NOLOGIN` mode) and Material You color scheme selection (default, sakura, ocean, forest, twilight, amber)
+8. **Flash Debug Service** - Admin-only local flashing/debugging WebSocket + REST endpoints, tool discovery, uploads, and privilege-elevation wrapping
+9. **Docker Stats** - Docker container resource monitoring via `docker stats --no-stream`
+10. **Settings** - In-app settings view for password change (disabled in `ENTRANCE_DESKTOP_NOLOGIN` mode) and Material You color scheme selection (default, sakura, ocean, forest, twilight, amber)
 
 ### SSH Monitoring Panels
 The SSH view includes three collapsible monitoring panels below the terminal:
@@ -142,5 +145,9 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 - SFTP sessions are stored in memory (Map).
 - User data is isolated per user in separate JSON files under `ENTRANCE_DATA_DIR`.
 - Local shell access is admin-only and supported on Linux, macOS, and Windows.
+- Flash/debug access is admin-only. The UI can optionally request elevated privileges before launching OpenOCD/pyOCD/probe-rs:
+  - Linux: `pkexec`, or `sudo` with `zenity` / `kdialog` askpass
+  - macOS: `sudo` with `osascript`
+  - Windows: `gsudo` or `sudo`
 - The Settings view allows users to change their own password via `PUT /api/users/:username/password` (Argon2id hashed). When `ENTRANCE_DESKTOP_NOLOGIN=1`, the password form is hidden and a notice is shown instead.
 - Color schemes are stored in `localStorage` (`colorScheme` key) and applied via the `data-color-scheme` attribute on `<html>`. Available schemes: default, sakura, ocean, forest, twilight, amber.
