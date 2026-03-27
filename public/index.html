@@ -2583,7 +2583,11 @@
                                 </div>
                                 <div class="input-group wide">
                                     <label>ELF / 符号文件</label>
-                                    <input type="text" class="form-input" id="cliElfPath" placeholder="启动 CLI 会话时可自动执行 file 或 symbol-file">
+                                    <div class="flashdebug-inline-actions">
+                                        <input type="text" class="form-input" id="cliElfPath" placeholder="启动 CLI 会话时可自动执行 file 或 symbol-file">
+                                        <button class="btn btn-sm btn-secondary" id="cliElfSelectBtn"><i class="fas fa-file-arrow-up"></i> 选择文件</button>
+                                    </div>
+                                    <div class="flashdebug-field-note" id="cliElfHint">若烧录任务已选择文件，CLI ELF 默认会优先沿用该路径；也可在这里单独上传 ELF / 符号文件。</div>
                                 </div>
                                 <div class="input-group wide">
                                     <div class="flashdebug-checkbox-row">
@@ -2778,6 +2782,7 @@
                         <datalist id="flashDebugTargetConfigOptions"></datalist>
                         <datalist id="flashDebugInterfaceConfigOptions"></datalist>
                         <input type="file" class="hidden-input" id="flashFirmwareFilePicker">
+                        <input type="file" class="hidden-input" id="cliElfFilePicker">
                     </section>
                 </div>
             </div>
@@ -6528,11 +6533,32 @@
                     document.getElementById('debugProbeInput').value = document.getElementById('debugProbeSelect').value;
                 });
                 document.getElementById('flashFirmwareSelectBtn').addEventListener('click', () => this.pickFirmwareFile());
-                document.getElementById('flashFirmwarePath').addEventListener('input', () => this.syncFirmwareUploadHint());
+                document.getElementById('cliElfSelectBtn').addEventListener('click', () => this.pickCliElfFile());
+                document.getElementById('flashFirmwarePath').addEventListener('input', () => {
+                    this.syncFirmwareUploadHint();
+                    this.syncCliDefaults();
+                });
+                document.getElementById('flashFirmwarePath').addEventListener('change', () => this.syncCliDefaults());
                 document.getElementById('flashFirmwareFilePicker').addEventListener('change', (e) => {
                     const file = e.target.files && e.target.files[0];
                     if (file) {
                         this.uploadFirmwareFile(file);
+                    }
+                    e.target.value = '';
+                });
+                document.getElementById('cliElfFilePicker').addEventListener('change', (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (file) {
+                        this.uploadFileToPathInput(file, {
+                            pathInputId: 'cliElfPath',
+                            placeholder: '启动 CLI 会话时可自动执行 file 或 symbol-file',
+                            onPending: (meta) => this.syncCliElfHint(meta),
+                            onSuccess: (data) => {
+                                this.setCliElfManualState(true);
+                                this.syncCliElfHint(data);
+                            },
+                            onError: () => this.syncCliElfHint()
+                        });
                     }
                     e.target.value = '';
                 });
@@ -6561,6 +6587,22 @@
                 document.getElementById('debugPortInput').addEventListener('change', () => this.syncCliDefaults());
                 document.getElementById('debugElfPath').addEventListener('change', () => this.syncCliDefaults());
                 document.getElementById('debugElfPath').addEventListener('input', () => this.syncCliDefaults());
+                document.getElementById('cliElfPath').addEventListener('input', (e) => {
+                    if (e.isTrusted) {
+                        this.setCliElfManualState(Boolean(e.target.value.trim()));
+                    }
+                    this.syncCliElfHint();
+                });
+                document.getElementById('cliElfPath').addEventListener('change', (e) => {
+                    if (e.isTrusted) {
+                        this.setCliElfManualState(Boolean(e.target.value.trim()));
+                        if (!e.target.value.trim()) {
+                            this.syncCliDefaults();
+                            return;
+                        }
+                    }
+                    this.syncCliElfHint();
+                });
 
                 document.querySelectorAll('[data-gdb-command]').forEach((btn) => {
                     btn.addEventListener('click', () => this.executeCliCommand(btn.dataset.gdbCommand));
@@ -6672,18 +6714,51 @@
                 }
             },
 
+            getPreferredCliElfPath() {
+                const flashFirmwarePath = document.getElementById('flashFirmwarePath').value.trim();
+                const debugElfPath = document.getElementById('debugElfPath').value.trim();
+                return flashFirmwarePath || debugElfPath || '';
+            },
+
+            getResolvedCliElfPath() {
+                return document.getElementById('cliElfPath').value.trim() || this.getPreferredCliElfPath();
+            },
+
+            setCliElfAutoValue(value) {
+                const cliElfPath = document.getElementById('cliElfPath');
+                if (!cliElfPath) return;
+                cliElfPath.value = value || '';
+                cliElfPath.dataset.userEdited = 'false';
+                cliElfPath.dataset.autoValue = value || '';
+            },
+
+            setCliElfManualState(isManual) {
+                const cliElfPath = document.getElementById('cliElfPath');
+                if (!cliElfPath) return;
+                cliElfPath.dataset.userEdited = isManual ? 'true' : 'false';
+                if (!isManual) {
+                    cliElfPath.dataset.autoValue = cliElfPath.value.trim();
+                }
+            },
+
             syncCliDefaults(force = false) {
                 const cliPortInput = document.getElementById('cliPortInput');
                 const cliElfPath = document.getElementById('cliElfPath');
                 const debugPortInput = document.getElementById('debugPortInput');
-                const debugElfPath = document.getElementById('debugElfPath');
+                const preferredCliElfPath = this.getPreferredCliElfPath();
+                const currentCliElfPath = cliElfPath.value.trim();
+                const autoCliElfPath = cliElfPath.dataset.autoValue || '';
+                const cliElfManuallyEdited = cliElfPath.dataset.userEdited === 'true';
 
                 if (force || !cliPortInput.value.trim()) {
                     cliPortInput.value = debugPortInput.value || cliPortInput.value;
                 }
-                if (force || !cliElfPath.value.trim()) {
-                    cliElfPath.value = debugElfPath.value.trim() || cliElfPath.value;
+                if ((force || !currentCliElfPath || (!cliElfManuallyEdited && currentCliElfPath === autoCliElfPath))
+                    && preferredCliElfPath
+                    && currentCliElfPath !== preferredCliElfPath) {
+                    this.setCliElfAutoValue(preferredCliElfPath);
                 }
+                this.syncCliElfHint();
             },
 
             applyMode(mode) {
@@ -6753,6 +6828,7 @@
                     'cliHostInput',
                     'cliPortInput',
                     'cliElfPath',
+                    'cliElfSelectBtn',
                     'cliAutoFile',
                     'cliUseSymbolFile',
                     'cliAutoConnect'
@@ -7130,6 +7206,11 @@
                 document.getElementById('flashFirmwareFilePicker').click();
             },
 
+            pickCliElfFile() {
+                if (!State.isAdmin || this.running.flash || this.running.cli || this.running.native) return;
+                document.getElementById('cliElfFilePicker').click();
+            },
+
             formatUploadSize(bytes) {
                 const size = Number(bytes || 0);
                 if (!size) return '-';
@@ -7163,20 +7244,49 @@
                 hint.textContent = '选择本地文件后会上传到当前 Entrance 主机的临时目录，并自动回填路径。';
             },
 
-            async uploadFirmwareFile(file) {
+            syncCliElfHint(meta = null) {
+                const hint = document.getElementById('cliElfHint');
+                const cliPath = document.getElementById('cliElfPath').value.trim();
+                const flashPath = document.getElementById('flashFirmwarePath').value.trim();
+
+                if (meta && meta.uploading) {
+                    const sizeText = this.formatUploadSize(meta.size);
+                    hint.textContent = `正在上传 ${meta.originalName || 'ELF 文件'} (${sizeText})...`;
+                    return;
+                }
+                if (meta && cliPath) {
+                    const sizeText = this.formatUploadSize(meta.size);
+                    hint.textContent = `已上传 ${meta.originalName || 'ELF 文件'} (${sizeText})，当前路径：${cliPath}`;
+                    return;
+                }
+                if (cliPath) {
+                    hint.textContent = `当前 CLI ELF / 符号文件路径：${cliPath}`;
+                    return;
+                }
+                if (flashPath) {
+                    hint.textContent = `当前未单独设置 CLI ELF，默认将沿用烧录文件路径：${flashPath}`;
+                    return;
+                }
+                hint.textContent = '若烧录任务已选择文件，CLI ELF 默认会优先沿用该路径；也可在这里单独上传 ELF / 符号文件。';
+            },
+
+            async uploadFileToPathInput(file, config = {}) {
                 if (!file) return;
 
                 const form = new FormData();
                 form.append('file', file);
-                const pathInput = document.getElementById('flashFirmwarePath');
+                const pathInput = document.getElementById(config.pathInputId);
+                if (!pathInput) return;
 
                 try {
                     pathInput.placeholder = '正在上传文件...';
-                    this.syncFirmwareUploadHint({
-                        originalName: file.name,
-                        size: file.size,
-                        uploading: true
-                    });
+                    if (typeof config.onPending === 'function') {
+                        config.onPending({
+                            originalName: file.name,
+                            size: file.size,
+                            uploading: true
+                        });
+                    }
                     const res = await apiFetch(`${Config.API}/api/flashdebug/upload`, {
                         method: 'POST',
                         body: form
@@ -7188,14 +7298,28 @@
                     pathInput.value = data.path || '';
                     pathInput.dispatchEvent(new Event('input', { bubbles: true }));
                     pathInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    this.syncFirmwareUploadHint(data);
+                    if (typeof config.onSuccess === 'function') {
+                        config.onSuccess(data);
+                    }
                     Toast.success(`已上传 ${data.originalName || file.name}`);
                 } catch (err) {
-                    this.syncFirmwareUploadHint();
+                    if (typeof config.onError === 'function') {
+                        config.onError();
+                    }
                     Toast.error(err.message);
                 } finally {
-                    pathInput.placeholder = '输入固件在当前主机上的绝对路径';
+                    pathInput.placeholder = config.placeholder || '';
                 }
+            },
+
+            async uploadFirmwareFile(file) {
+                return this.uploadFileToPathInput(file, {
+                    pathInputId: 'flashFirmwarePath',
+                    placeholder: '输入固件在当前主机上的绝对路径',
+                    onPending: (meta) => this.syncFirmwareUploadHint(meta),
+                    onSuccess: (data) => this.syncFirmwareUploadHint(data),
+                    onError: () => this.syncFirmwareUploadHint()
+                });
             },
 
             getExecutablePathForRequest() {
@@ -7260,7 +7384,7 @@
                     gdbPath: document.getElementById('cliGdbPath').value.trim(),
                     host: document.getElementById('cliHostInput').value.trim() || '127.0.0.1',
                     port: document.getElementById('cliPortInput').value.trim(),
-                    elfPath: document.getElementById('cliElfPath').value.trim(),
+                    elfPath: this.getResolvedCliElfPath(),
                     autoFile: document.getElementById('cliAutoFile').checked,
                     useSymbolFile: document.getElementById('cliUseSymbolFile').checked,
                     autoConnect: document.getElementById('cliAutoConnect').checked
@@ -7279,7 +7403,7 @@
             getDefaultCliValues(commandId) {
                 const defaults = {};
                 if (commandId === 'file' || commandId === 'symbol-file') {
-                    defaults.arg1 = document.getElementById('cliElfPath').value.trim();
+                    defaults.arg1 = this.getResolvedCliElfPath();
                 } else if (commandId === 'target-extended-remote') {
                     defaults.arg1 = document.getElementById('cliHostInput').value.trim() || '127.0.0.1';
                     defaults.arg2 = document.getElementById('cliPortInput').value.trim();
