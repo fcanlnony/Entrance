@@ -80,6 +80,7 @@ let flashDebugWss = null;
 let flashDebugPath = '/flashdebug';
 const activeSessions = new Map();
 const askpassHelperCache = new Map();
+const targetCatalogCache = new Map();
 
 function normalizeToolName(tool) {
     const normalized = String(tool || '').trim().toLowerCase();
@@ -728,6 +729,28 @@ function uniqueOptions(items) {
     return result;
 }
 
+function uniqueTargetCatalogOptions(items) {
+    const seen = new Set();
+    const result = [];
+
+    for (const item of items) {
+        const value = normalizeString(item && item.value, '目标名称', 256);
+        const label = normalizeString(item && item.label, '目标标签', 256);
+        const meta = normalizeString(item && item.meta, '目标元信息', 512);
+        const keywords = normalizeString(item && item.keywords, '目标关键字', 1024);
+        if (!value || seen.has(value)) continue;
+        seen.add(value);
+        result.push({
+            value,
+            label: label || value,
+            meta,
+            keywords
+        });
+    }
+
+    return result;
+}
+
 function runCommandCapture(command, args, options = {}) {
     return new Promise((resolve, reject) => {
         let stdout = '';
@@ -882,6 +905,103 @@ function parseProbeRsListOptions(output) {
     }
 
     return uniqueOptions(options);
+}
+
+function parseProbeRsChipList(output) {
+    const chips = [];
+    let currentFamily = '';
+    let inVariants = false;
+
+    for (const rawLine of output.split(/\r?\n/)) {
+        const line = String(rawLine || '');
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (/^(warn|error)\b/i.test(trimmed)) continue;
+        if (/^available chips:?$/i.test(trimmed)) continue;
+
+        const indent = line.match(/^\s*/)?.[0].length || 0;
+        if (indent === 0) {
+            currentFamily = trimmed;
+            inVariants = false;
+            continue;
+        }
+
+        if (/^variants:?$/i.test(trimmed)) {
+            inVariants = true;
+            continue;
+        }
+
+        if (!inVariants || indent <= 4) {
+            continue;
+        }
+
+        chips.push({
+            value: trimmed,
+            label: trimmed,
+            meta: currentFamily,
+            keywords: currentFamily
+        });
+    }
+
+    return uniqueTargetCatalogOptions(chips);
+}
+
+function parsePyOcdTargetList(output) {
+    const targets = [];
+    const knownSources = new Set(['builtin', 'pack', 'cbuild-run']);
+
+    for (const rawLine of output.split(/\r?\n/)) {
+        const trimmed = rawLine.trim();
+        if (!trimmed) continue;
+        if (/^(name|vendor|part number|families|source)\b/i.test(trimmed)) continue;
+        if (/^-{3,}$/.test(trimmed)) continue;
+        if (/^(warn|error)\b/i.test(trimmed)) continue;
+
+        const parts = trimmed.split(/\s{2,}/).map((part) => part.trim()).filter(Boolean);
+        if (!parts.length) continue;
+
+        const value = parts[0];
+        const vendor = parts[1] || '';
+        const partNumber = parts[2] || '';
+        let families = '';
+        let source = '';
+
+        if (parts.length >= 5) {
+            families = parts[3] || '';
+            source = parts[4] || '';
+        } else if (parts.length === 4) {
+            if (knownSources.has(parts[3])) {
+                source = parts[3];
+            } else {
+                families = parts[3];
+            }
+        }
+
+        const metaParts = [vendor, partNumber, families].filter(Boolean);
+        const keywordParts = [value, vendor, partNumber, families, source].filter(Boolean);
+
+        targets.push({
+            value,
+            label: value,
+            meta: metaParts.join(' | ') || source,
+            keywords: keywordParts.join(' ')
+        });
+    }
+
+    return uniqueTargetCatalogOptions(targets);
+}
+
+function getExecutableCacheKey(executablePath = '') {
+    if (!executablePath) {
+        return '';
+    }
+
+    try {
+        const stats = fs.statSync(executablePath);
+        return `${executablePath}:${stats.size}:${stats.mtimeMs}`;
+    } catch {
+        return executablePath;
+    }
 }
 
 function isExistingDirectory(dirPath) {
@@ -1157,10 +1277,93 @@ async function listProgrammers(tool, executablePath) {
     }
 }
 
+async function listTargetCatalog(tool, executablePath) {
+    if (!executablePath || (tool !== 'probe-rs' && tool !== 'pyocd')) {
+        return {
+            targetCatalog: [],
+            targetCatalogCount: 0,
+            targetCatalogError: '',
+            targetCatalogSource: 'none'
+        };
+    }
+
+    const cacheKey = `${tool}:${getExecutableCacheKey(executablePath)}`;
+    if (cacheKey && targetCatalogCache.has(cacheKey)) {
+        const cached = targetCatalogCache.get(cacheKey);
+        return {
+            targetCatalog: cached.targetCatalog.map((item) => ({ ...item })),
+            targetCatalogCount: cached.targetCatalogCount,
+            targetCatalogError: '',
+            targetCatalogSource: 'cache'
+        };
+    }
+
+    try {
+        const commandArgs = tool === 'probe-rs'
+            ? ['chip', 'list']
+            : ['list', '--targets', '--no-header'];
+        const result = await runCommandCapture(executablePath, commandArgs, { timeoutMs: 5000 });
+        if (result.timedOut) {
+            return {
+                targetCatalog: [],
+                targetCatalogCount: 0,
+                targetCatalogError: tool === 'probe-rs'
+                    ? '读取 probe-rs 芯片目录超时'
+                    : '读取 pyOCD 目标目录超时',
+                targetCatalogSource: 'error'
+            };
+        }
+
+        const combined = `${result.stdout}\n${result.stderr}`;
+        const targetCatalog = tool === 'probe-rs'
+            ? parseProbeRsChipList(result.stdout || combined)
+            : parsePyOcdTargetList(result.stdout || combined);
+        const warnings = parseWarningLines(combined);
+
+        if (targetCatalog.length === 0) {
+            return {
+                targetCatalog: [],
+                targetCatalogCount: 0,
+                targetCatalogError: warnings[0]
+                    || (result.code !== 0
+                        ? (tool === 'probe-rs' ? '读取 probe-rs 芯片目录失败' : '读取 pyOCD 目标目录失败')
+                        : (tool === 'probe-rs'
+                            ? '未能从 probe-rs 输出中解析芯片目录'
+                            : '未能从 pyOCD 输出中解析目标目录')),
+                targetCatalogSource: result.code !== 0 ? 'error' : 'empty'
+            };
+        }
+
+        const payload = {
+            targetCatalog,
+            targetCatalogCount: targetCatalog.length
+        };
+        if (cacheKey) {
+            targetCatalogCache.set(cacheKey, payload);
+        }
+
+        return {
+            ...payload,
+            targetCatalogError: '',
+            targetCatalogSource: 'catalog'
+        };
+    } catch (err) {
+        return {
+            targetCatalog: [],
+            targetCatalogCount: 0,
+            targetCatalogError: err.message,
+            targetCatalogSource: 'error'
+        };
+    }
+}
+
 async function getToolingInfo(options = {}) {
     const tool = normalizeToolName(options.tool);
     const executable = inspectExecutable(tool, options.executablePath || '');
-    const listing = await listProgrammers(tool, executable.executablePath);
+    const [listing, targetCatalogListing] = await Promise.all([
+        listProgrammers(tool, executable.executablePath),
+        listTargetCatalog(tool, executable.executablePath)
+    ]);
     const configs = tool === 'openocd'
         ? getOpenOcdConfigOptions(executable.executablePath)
         : null;
@@ -1176,6 +1379,14 @@ async function getToolingInfo(options = {}) {
         programmers: listing.programmers,
         listError: listing.listError,
         programmerSource: listing.programmerSource,
+        targetCatalog: targetCatalogListing.targetCatalog,
+        targetCatalogCount: targetCatalogListing.targetCatalogCount,
+        targetCatalogError: targetCatalogListing.targetCatalogError,
+        targetCatalogSource: targetCatalogListing.targetCatalogSource,
+        chips: tool === 'probe-rs' ? targetCatalogListing.targetCatalog : [],
+        chipCount: tool === 'probe-rs' ? targetCatalogListing.targetCatalogCount : 0,
+        chipListError: tool === 'probe-rs' ? targetCatalogListing.targetCatalogError : '',
+        chipSource: tool === 'probe-rs' ? targetCatalogListing.targetCatalogSource : 'none',
         configs,
         notes: TOOL_DEFS[tool].notes,
         elevation: getPublicElevationInfo()

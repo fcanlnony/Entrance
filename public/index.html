@@ -614,6 +614,59 @@
             color: var(--color-text-3);
             line-height: 1.45;
         }
+        .flashdebug-autocomplete {
+            position: relative;
+        }
+        .flashdebug-suggestions {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 6px;
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            background: var(--color-bg-1);
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.16);
+        }
+        .flashdebug-suggestion {
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--color-text);
+            text-align: left;
+            cursor: pointer;
+            transition: background .16s, color .16s;
+        }
+        .flashdebug-suggestion:hover,
+        .flashdebug-suggestion.active {
+            background: var(--color-accent-light);
+            color: var(--color-accent);
+        }
+        .flashdebug-suggestion-primary {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: Consolas, Monaco, monospace;
+        }
+        .flashdebug-suggestion-meta {
+            display: block;
+            margin-top: 3px;
+            font-size: 11px;
+            color: var(--color-text-3);
+        }
+        .flashdebug-suggestion-empty {
+            padding: 10px 12px;
+            font-size: 12px;
+            color: var(--color-text-2);
+            line-height: 1.5;
+        }
         .flashdebug-checkbox-row {
             display: flex;
             gap: 16px;
@@ -1339,6 +1392,11 @@
             grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
             gap: 20px; align-items: start;
         }
+        .settings-stack {
+            display: grid;
+            gap: 20px;
+            align-content: start;
+        }
         .settings-card {
             background: var(--color-bg-1); border: 1px solid var(--color-border);
             border-radius: 24px; padding: 24px;
@@ -1448,9 +1506,50 @@
             background: var(--color-accent-light); color: var(--color-accent);
             font-size: 11px; font-weight: 600;
         }
+        .language-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 14px;
+        }
+        .language-card {
+            width: 100%;
+            border: 1px solid var(--color-border);
+            border-radius: 22px;
+            padding: 16px;
+            background: linear-gradient(160deg, var(--color-bg-2) 0%, var(--color-bg-1) 100%);
+            color: var(--color-text);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            text-align: left;
+            transition: transform .16s, border-color .2s, box-shadow .2s, background .3s;
+        }
+        .language-card:hover { transform: translateY(-1px); border-color: var(--color-accent-outline); }
+        .language-card.active {
+            border-color: var(--color-accent);
+            background: linear-gradient(160deg, var(--color-accent-soft) 0%, var(--color-bg-1) 100%);
+            box-shadow: 0 0 0 1px var(--color-accent-outline), 0 18px 32px rgba(15, 23, 42, 0.1);
+        }
+        .language-card:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-accent-light); }
+        .language-code {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 52px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: var(--color-bg-3);
+            color: var(--color-text-2);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
         @media (max-width: 960px) {
             .settings-layout { grid-template-columns: 1fr; }
             .scheme-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+            .language-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
             .settings-link-panel { align-items: flex-start; flex-direction: column; }
             .settings-link-action { margin-left: 32px; }
         }
@@ -2442,12 +2541,18 @@
                                 </div>
                                 <div class="input-group">
                                     <label id="flashTargetLabel">目标芯片 / 目标配置</label>
-                                    <input type="text" class="form-input" id="flashTargetInput" placeholder="例如 target/stm32f4x.cfg 或 stm32f103rc">
+                                    <div class="flashdebug-autocomplete">
+                                        <input type="text" class="form-input" id="flashTargetInput" placeholder="例如 target/stm32f4x.cfg 或 stm32f103rc" autocomplete="off" spellcheck="false">
+                                        <div class="flashdebug-suggestions flashdebug-hidden" id="flashTargetInputSuggestions"></div>
+                                    </div>
                                     <div class="flashdebug-field-note" id="flashTargetConfigHint"></div>
                                 </div>
                                 <div class="input-group" id="flashInterfaceGroup">
                                     <label>接口配置</label>
-                                    <input type="text" class="form-input" id="flashInterfaceConfigInput" placeholder="可选，留空时使用 interface/<烧录器>.cfg">
+                                    <div class="flashdebug-autocomplete">
+                                        <input type="text" class="form-input" id="flashInterfaceConfigInput" placeholder="可选，留空时使用 interface/<烧录器>.cfg" autocomplete="off" spellcheck="false">
+                                        <div class="flashdebug-suggestions flashdebug-hidden" id="flashInterfaceConfigInputSuggestions"></div>
+                                    </div>
                                     <div class="flashdebug-field-note" id="flashInterfaceConfigHint"></div>
                                 </div>
                                 <div class="input-group">
@@ -2511,12 +2616,18 @@
                                 </div>
                                 <div class="input-group">
                                     <label id="debugTargetLabel">目标芯片 / 目标配置</label>
-                                    <input type="text" class="form-input" id="debugTargetInput" placeholder="例如 target/stm32f4x.cfg 或 stm32f103rc">
+                                    <div class="flashdebug-autocomplete">
+                                        <input type="text" class="form-input" id="debugTargetInput" placeholder="例如 target/stm32f4x.cfg 或 stm32f103rc" autocomplete="off" spellcheck="false">
+                                        <div class="flashdebug-suggestions flashdebug-hidden" id="debugTargetInputSuggestions"></div>
+                                    </div>
                                     <div class="flashdebug-field-note" id="debugTargetConfigHint"></div>
                                 </div>
                                 <div class="input-group" id="debugInterfaceGroup">
                                     <label>接口配置</label>
-                                    <input type="text" class="form-input" id="debugInterfaceConfigInput" placeholder="可选，留空时使用 interface/<烧录器>.cfg">
+                                    <div class="flashdebug-autocomplete">
+                                        <input type="text" class="form-input" id="debugInterfaceConfigInput" placeholder="可选，留空时使用 interface/<烧录器>.cfg" autocomplete="off" spellcheck="false">
+                                        <div class="flashdebug-suggestions flashdebug-hidden" id="debugInterfaceConfigInputSuggestions"></div>
+                                    </div>
                                     <div class="flashdebug-field-note" id="debugInterfaceConfigHint"></div>
                                 </div>
                                 <div class="input-group">
@@ -2825,11 +2936,18 @@
                                 </button>
                             </div>
                         </section>
-                        <section class="settings-card">
-                            <h3><i class="fas fa-palette"></i> 配色方案</h3>
-                            <p class="settings-desc">选择 Material You Design 风格的强调色方案</p>
-                            <div class="scheme-grid" id="colorSchemeGrid"></div>
-                        </section>
+                        <div class="settings-stack">
+                            <section class="settings-card">
+                                <h3><i class="fas fa-palette"></i> 配色方案</h3>
+                                <p class="settings-desc">选择 Material You Design 风格的强调色方案</p>
+                                <div class="scheme-grid" id="colorSchemeGrid"></div>
+                            </section>
+                            <section class="settings-card">
+                                <h3><i class="fas fa-language"></i> 语言</h3>
+                                <p class="settings-desc">选择界面语言，默认简体中文</p>
+                                <div class="language-grid" id="languageGrid"></div>
+                            </section>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2974,6 +3092,7 @@
             isNologin: false,
             username: '',
             token: '',
+            language: 'zh',
             appVersion: '0.1.9-beta',
             projectHomepage: 'https://github.com/fcanlnony/Entrance',
             desktopVersion: '',
@@ -2999,9 +3118,759 @@
             setTheme(t) { localStorage.setItem('theme', t); },
             getColorScheme() { return localStorage.getItem('colorScheme') || 'default'; },
             setColorScheme(s) { localStorage.setItem('colorScheme', s); },
+            getLanguage() { return localStorage.getItem('language') || 'zh'; },
+            setLanguage(language) { localStorage.setItem('language', language); },
             getToken() { return localStorage.getItem('authToken') || ''; },
             setToken(t) { localStorage.setItem('authToken', t); },
             clearToken() { localStorage.removeItem('authToken'); }
+        };
+
+        const I18n = {
+            observer: null,
+            observing: false,
+            applying: false,
+            nativeConfirm: window.confirm.bind(window),
+            nativeAlert: window.alert.bind(window),
+            EXACT: {
+                zh: {},
+                en: {
+                    '切换主题': 'Toggle theme',
+                    '请使用账户登录': 'Please sign in with your account',
+                    '用户名': 'Username',
+                    '密码': 'Password',
+                    '登录': 'Sign in',
+                    '关于': 'About',
+                    'SSH 终端': 'SSH Terminal',
+                    'SFTP 管理': 'SFTP Manager',
+                    'VNC 远程': 'VNC Remote',
+                    'Web 终端': 'Web Terminal',
+                    '串口终端': 'Serial Terminal',
+                    '烧录调试': 'Flash & Debug',
+                    '设置': 'Settings',
+                    '收起': 'Collapse',
+                    '退出': 'Log out',
+                    '主机地址': 'Host',
+                    '端口': 'Port',
+                    '认证方式': 'Authentication',
+                    '私钥': 'Private key',
+                    '私钥口令（可选）': 'Key passphrase (optional)',
+                    '私钥口令': 'Key passphrase',
+                    '取消编辑': 'Cancel edit',
+                    '保存主机': 'Save host',
+                    '更新主机': 'Update host',
+                    '已保存的主机': 'Saved Hosts',
+                    '终端 - 未连接': 'Terminal - Disconnected',
+                    '未连接': 'Disconnected',
+                    '内存:': 'Memory:',
+                    '展开图表': 'Expand charts',
+                    '清除数据': 'Clear data',
+                    '进程:': 'Processes:',
+                    '运行:': 'Running:',
+                    '负载:': 'Load:',
+                    '展开进程': 'Expand processes',
+                    '进程列表 (TOP)': 'Process List (TOP)',
+                    '排序:': 'Sort:',
+                    '内存%': 'Memory%',
+                    '时间': 'Time',
+                    '显示:': 'Show:',
+                    '刷新': 'Refresh',
+                    '运行时间': 'Uptime',
+                    '用户数': 'Users',
+                    '负载均值': 'Load Avg',
+                    '任务': 'Tasks',
+                    'CPU使用': 'CPU Usage',
+                    '内存': 'Memory',
+                    '操作': 'Action',
+                    '连接SSH后自动获取进程信息': 'Process information loads automatically after SSH connects',
+                    '容器:': 'Containers:',
+                    '展开 Docker': 'Expand Docker',
+                    '总计': 'Total',
+                    '详细': 'Details',
+                    '连接 SSH 后自动获取容器信息': 'Container information loads automatically after SSH connects',
+                    '连接 SSH 后自动获取 Docker Stats': 'Docker stats load automatically after SSH connects',
+                    '终端服务不可用': 'Terminal service unavailable',
+                    '当前服务器平台暂不支持终端功能': 'The current server platform does not support terminal mode yet',
+                    '目标主机': 'Target host',
+                    'Windows 用户名': 'Windows username',
+                    'Windows 登录密码': 'Windows sign-in password',
+                    '未启动': 'Stopped',
+                    '启动': 'Start',
+                    '停止': 'Stop',
+                    'Web 终端 - 未启动': 'Web Terminal - Stopped',
+                    '清屏': 'Clear',
+                    '连接': 'Connect',
+                    '断开': 'Disconnect',
+                    '远程文件': 'Remote Files',
+                    '新建': 'New Folder',
+                    '下载': 'Download',
+                    '后退': 'Back',
+                    '前进': 'Forward',
+                    '上级目录': 'Up',
+                    '跳转': 'Go',
+                    '名称': 'Name',
+                    '(Ctrl+点击多选)': '(Ctrl+Click for multi-select)',
+                    '大小': 'Size',
+                    '修改时间': 'Modified',
+                    '请先连接服务器': 'Connect to a server first',
+                    '拖拽文件到此处，或点击下方按钮上传': 'Drag files here, or use the buttons below to upload',
+                    '上传文件': 'Upload Files',
+                    '上传文件夹': 'Upload Folder',
+                    '上传中...': 'Uploading...',
+                    'VNC 远程桌面': 'VNC Remote Desktop',
+                    'VNC 主机': 'VNC Host',
+                    'VNC 密码（可选）': 'VNC password (optional)',
+                    '只读模式': 'View-only mode',
+                    '缩放适应': 'Scale to fit',
+                    '请连接到 VNC 服务器': 'Connect to a VNC server',
+                    '内网白名单': 'Private Network Allowlist',
+                    '返回设置': 'Back to Settings',
+                    '仅允许私有网段（如 10.0.0.0/8、192.168.0.0/16）用于 SSH/SFTP/VNC 连接。修改后立即生效。': 'Only private CIDR ranges such as 10.0.0.0/8 or 192.168.0.0/16 are allowed for SSH/SFTP/VNC. Changes take effect immediately.',
+                    '新增网段 (CIDR)': 'Add Network (CIDR)',
+                    '添加': 'Add',
+                    '当前白名单': 'Current Allowlist',
+                    '波特率': 'Baud Rate',
+                    '数据位': 'Data Bits',
+                    '停止位': 'Stop Bits',
+                    '校验位': 'Parity',
+                    '无': 'None',
+                    '偶校验': 'Even',
+                    '奇校验': 'Odd',
+                    '流控制': 'Flow Control',
+                    '硬件': 'Hardware',
+                    '连接串口': 'Connect Serial',
+                    '模拟数据演示': 'Demo Data',
+                    '演示': 'Demo',
+                    '波形显示': 'Waveform',
+                    '波形': 'Waveform',
+                    '统计图': 'Statistics',
+                    '全屏': 'Fullscreen',
+                    '浏览器不支持 Web Serial API': 'This browser does not support the Web Serial API',
+                    '请使用 Chrome 89+ 或 Edge 89+ 浏览器，并确保使用 HTTPS 或 localhost 访问。': 'Use Chrome 89+ or Edge 89+, and access the app over HTTPS or localhost.',
+                    '串口终端 - 未连接': 'Serial Terminal - Disconnected',
+                    '自动滚动': 'Auto scroll',
+                    'HEX显示': 'HEX view',
+                    '发送数据': 'Send Data',
+                    '输入要发送的数据...': 'Enter data to send...',
+                    '文本': 'Text',
+                    '发送': 'Send',
+                    'GUI 封装 OpenOCD、pyOCD、probe-rs，复用串口页统一风格与工作流。': 'A GUI wrapper for OpenOCD, pyOCD, and probe-rs, using the same visual language and workflow as the serial page.',
+                    '烧录': 'Flash',
+                    '实时调试': 'Live Debug',
+                    '正在检测 PATH...': 'Checking PATH...',
+                    '检测': 'Detect',
+                    '路径': 'Path',
+                    '手动路径': 'Manual Path',
+                    '当 PATH 未命中时，在这里填写工具绝对路径': 'When PATH detection fails, enter the absolute executable path here',
+                    '仅允许填写与当前工具同名的可执行文件，例如 `openocd`、`pyocd`、`probe-rs`。': 'Only executables matching the selected tool are allowed, for example `openocd`, `pyocd`, or `probe-rs`.',
+                    '该功能需要管理员权限，当前账户只能查看界面，不能启动本机烧录或调试会话。': 'This feature requires admin permissions. The current account can view the UI but cannot start local flash or debug sessions.',
+                    '烧录任务': 'Flash Job',
+                    '选择烧录器、固件路径、速率和验证选项，然后由 GUI 生成对应 CLI。': 'Choose a probe, firmware path, speed, and verification options, then let the GUI generate the CLI command.',
+                    '空闲': 'Idle',
+                    '烧录器': 'Probe',
+                    '自动检测 / 留空手填': 'Auto-detect / leave blank to type manually',
+                    '优先从所选工具列举可用烧录器；无结果时可直接在右侧输入。': 'Available probes are listed from the selected tool first. If none are found, type one manually on the right.',
+                    '烧录器标识 / 配置': 'Probe Identifier / Config',
+                    '例如 cmsis-dap、st-link、UID 或 probe 选择串': 'For example: cmsis-dap, st-link, a UID, or a probe selector',
+                    '目标芯片 / 目标配置': 'Target Chip / Target Config',
+                    '例如 target/stm32f4x.cfg 或 stm32f103rc': 'For example: target/stm32f4x.cfg or stm32f103rc',
+                    '接口配置': 'Interface Config',
+                    '可选，留空时使用 interface/<烧录器>.cfg': 'Optional. Leave empty to use interface/<probe>.cfg',
+                    '波特率 / 速率': 'Baud Rate / Speed',
+                    '例如 4000、1000000、10m': 'For example: 4000, 1000000, or 10m',
+                    '固件路径': 'Firmware Path',
+                    '输入固件在当前主机上的绝对路径': 'Enter the firmware absolute path on the current host',
+                    '选择文件': 'Choose File',
+                    '选择本地文件后会上传到当前 Entrance 主机的临时目录，并自动回填路径。': 'Selecting a local file uploads it to a temporary path on the current Entrance host and fills the path automatically.',
+                    '附加参数': 'Extra Arguments',
+                    '可选，补充板卡专用 CLI 参数': 'Optional extra CLI parameters for the target board',
+                    '请求管理员/root 权限': 'Request admin/root privileges',
+                    '写后校验': 'Verify after write',
+                    '烧录后复位': 'Reset after flash',
+                    '正在检测管理员/root 提权方式...': 'Checking admin/root elevation options...',
+                    '不同工具的校验参数并不完全一致；未显式支持时会沿用各自默认策略。': 'Verification arguments differ between tools. When no explicit option is supported, each tool falls back to its default behavior.',
+                    '清空日志': 'Clear Log',
+                    '开始烧录': 'Start Flash',
+                    '烧录消息框': 'Flash Log',
+                    'CLI 命令与实时输出': 'CLI commands and live output',
+                    '启动 GDB 或 DAP 调试后端，并持续输出 GUI 封装后的命令与日志。': 'Start a GDB or DAP backend and continuously stream the wrapped GUI commands and logs.',
+                    '烧录器 / 调试器': 'Probe / Debugger',
+                    '支持自动列举的工具会填充下拉；否则请手动输入 UID 或适配器名。': 'Tools that support enumeration populate the dropdown; otherwise enter a UID or adapter name manually.',
+                    '调试端口': 'Debug Port',
+                    'Telnet 端口': 'Telnet Port',
+                    'ELF / 符号文件': 'ELF / Symbols',
+                    '可选，为 pyOCD 传入 ELF 文件': 'Optional. Pass an ELF file to pyOCD',
+                    '启动调试': 'Start Debug',
+                    '调试消息框': 'Debug Log',
+                    'CLI 操作': 'CLI Actions',
+                    '在调试服务启动后，通过 GDB CLI 与 tool-specific CLI 执行调试命令，并保留原始输出。': 'After the debug service starts, run commands through GDB CLI and tool-specific CLI while keeping the raw output.',
+                    'GDB 路径': 'GDB Path',
+                    '留空自动探测 arm-none-eabi-gdb / gdb-multiarch / gdb': 'Leave empty to auto-detect arm-none-eabi-gdb / gdb-multiarch / gdb',
+                    'CLI 会话会优先自动探测常见 GDB；若你使用交叉 GDB，可手动填写绝对路径。': 'CLI sessions auto-detect common GDB binaries first. If you use a cross GDB, enter its absolute path manually.',
+                    '远端主机': 'Remote Host',
+                    '远端端口': 'Remote Port',
+                    '启动 CLI 会话时可自动执行 file 或 symbol-file': 'Automatically run file or symbol-file when the CLI session starts',
+                    '若烧录任务已选择文件，CLI ELF 默认会优先沿用该路径；也可在这里单独上传 ELF / 符号文件。': 'If a file is already selected for flashing, the CLI ELF path defaults to it. You can also upload a separate ELF / symbols file here.',
+                    '启动后自动载入 file': 'Auto-run file on start',
+                    '改用 symbol-file': 'Use symbol-file instead',
+                    '启动后自动连接 target extended-remote': 'Auto-connect target extended-remote on start',
+                    '该卡片会把发送的 CLI 命令和 stdout/stderr 原样写入下方消息框；OpenOCD / pyOCD 独占 monitor 区只在对应 debugger 下显示。': 'This card writes the CLI commands and stdout/stderr to the log below. OpenOCD / pyOCD monitor panels only appear for their matching debugger.',
+                    '停止 CLI': 'Stop CLI',
+                    '启动 CLI': 'Start CLI',
+                    'GDB 常用快捷命令': 'Common GDB Shortcuts',
+                    '第一版优先覆盖会话、运行控制、断点、调用栈、寄存器和常用反汇编命令。': 'The first version covers session control, execution control, breakpoints, call stacks, registers, and common disassembly commands.',
+                    'GDB 命令构造器': 'GDB Command Builder',
+                    '按命令模板填写参数，生成并执行 GDB CLI；支持 run to cursor、monitor 透传、断点/观察点、内存、寄存器等命令。': 'Fill in command templates to generate and execute GDB CLI commands, including run to cursor, monitor passthrough, breakpoints/watchpoints, memory, and register commands.',
+                    '命令模板': 'Command Template',
+                    '参数 1': 'Argument 1',
+                    '参数 2': 'Argument 2',
+                    '参数 3': 'Argument 3',
+                    '参数 4': 'Argument 4',
+                    '执行 GDB 命令': 'Run GDB Command',
+                    '以下命令会通过 `monitor ...` 透传到当前 OpenOCD 调试后端。': 'These commands are passed through to the current OpenOCD backend via `monitor ...`.',
+                    'monitor 原始命令': 'Raw monitor command',
+                    '例如 mdw 0x08000000 或 mww 0x20000000 0x12345678': 'For example: mdw 0x08000000 or mww 0x20000000 0x12345678',
+                    '执行 monitor': 'Run monitor',
+                    '以下命令会通过 `monitor ...` 透传到当前 pyOCD GDB server。': 'These commands are passed through to the current pyOCD GDB server via `monitor ...`.',
+                    '例如 status 或 reg': 'For example: status or reg',
+                    'probe-rs 原生命令': 'Native probe-rs Commands',
+                    '这里只执行 `probe-rs` 自身的 CLI 子命令；适合 probe 枚举、info/reset、download/verify/erase、read/write/trace/attach RTT。执行时会把原始 stdout/stderr 写入消息框。': 'This section runs native `probe-rs` CLI subcommands only. It is suitable for probe listing, info/reset, download/verify/erase, read/write/trace/attach RTT, and writes raw stdout/stderr to the log.',
+                    'probe-rs 命令模板': 'probe-rs Command Template',
+                    '协议': 'Protocol',
+                    '自动 / 默认': 'Auto / Default',
+                    '命令参数 1': 'Command Arg 1',
+                    '命令参数 2': 'Command Arg 2',
+                    '命令参数 3': 'Command Arg 3',
+                    '命令参数 4': 'Command Arg 4',
+                    '停止 probe-rs': 'Stop probe-rs',
+                    '执行 probe-rs': 'Run probe-rs',
+                    'CLI 消息框': 'CLI Log',
+                    'GDB / probe-rs 原始输出': 'Raw GDB / probe-rs output',
+                    '修改密码': 'Change Password',
+                    '当前账户：': 'Current account:',
+                    '桌面应用不允许修改密码': 'Password changes are disabled in the desktop app',
+                    '新密码': 'New password',
+                    '输入新密码': 'Enter a new password',
+                    '确认密码': 'Confirm password',
+                    '再次输入新密码': 'Re-enter the new password',
+                    '管理 SSH、SFTP、VNC 可访问的内网网段。点击后进入白名单页进行新增或删除。': 'Manage private CIDR ranges allowed for SSH, SFTP, and VNC. Click to open the allowlist page and add or remove entries.',
+                    '进入管理': 'Manage',
+                    '配色方案': 'Color Scheme',
+                    '选择 Material You Design 风格的强调色方案': 'Choose a Material You inspired accent color scheme',
+                    '语言': 'Language',
+                    '选择界面语言，默认简体中文': 'Choose the interface language. Simplified Chinese is the default.',
+                    '新建文件夹': 'New Folder',
+                    '文件夹名称': 'Folder name',
+                    '新文件夹': 'New folder',
+                    '取消': 'Cancel',
+                    '创建': 'Create',
+                    '终止进程': 'Terminate Process',
+                    '进程信息': 'Process Info',
+                    '用户:': 'User:',
+                    '命令:': 'Command:',
+                    '选择信号': 'Choose Signal',
+                    '优雅终止，允许进程清理': 'Gracefully terminate and allow cleanup',
+                    '强制终止，立即杀死进程': 'Force kill immediately',
+                    '中断信号，类似 Ctrl+C': 'Interrupt, similar to Ctrl+C',
+                    '挂起信号，常用于重载配置': 'Hangup, often used to reload configuration',
+                    '暂停进程': 'Pause process',
+                    '继续已暂停的进程': 'Resume paused process',
+                    '发送信号': 'Send Signal',
+                    '版本号': 'Version',
+                    '项目信息': 'Project',
+                    '桌面客户端版本': 'Desktop Version',
+                    '未设置': 'Not set',
+                    '桌面客户端项目主页': 'Desktop Project Homepage',
+                    '欢迎提交issue和pr': 'Issues and PRs are welcome',
+                    '关闭': 'Close',
+                    '默认方案': 'Default',
+                    '中性石墨': 'Neutral Graphite',
+                    '樱花粉': 'Sakura Pink',
+                    '柔和花瓣': 'Soft Petals',
+                    '海洋蓝': 'Ocean Blue',
+                    '清澈潮汐': 'Clear Tide',
+                    '森林绿': 'Forest Green',
+                    '苔藓林地': 'Moss Grove',
+                    '暮光紫': 'Twilight Violet',
+                    '柔雾暮色': 'Soft Dusk',
+                    '琥珀橙': 'Amber Orange',
+                    '温暖日落': 'Warm Sunset',
+                    '当前': 'Current',
+                    '简体中文': 'Simplified Chinese',
+                    '默认界面语言': 'Default UI language',
+                    '英文界面翻译': 'Translate the interface to English',
+                    '密码登录需要提供密码': 'Password authentication requires a password',
+                    '密钥登录需要提供私钥': 'Key authentication requires a private key',
+                    '私钥格式无效，仅支持 PEM/OpenSSH 私钥': 'Invalid private key format. Only PEM/OpenSSH private keys are supported.',
+                    '主机未保存私钥，请先补充': 'No private key is saved for this host. Add one first.',
+                    '主机未保存密码，请先补充': 'No password is saved for this host. Add one first.',
+                    '目标地址校验失败': 'Target validation failed',
+                    '仅管理员可管理内网白名单': 'Only administrators can manage the private network allowlist',
+                    '当前用户不可用': 'Current user is unavailable',
+                    '请输入新密码': 'Enter a new password',
+                    '两次输入的密码不一致': 'The two passwords do not match',
+                    '密码修改成功': 'Password updated successfully',
+                    '密码修改失败': 'Password update failed',
+                    '请输入用户名和密码': 'Enter both username and password',
+                    '登录失败': 'Sign-in failed',
+                    '已退出登录': 'Signed out',
+                    '登录已过期，请重新登录': 'The session expired. Please sign in again.',
+                    '请先连接 SSH': 'Connect SSH first',
+                    'WebSocket 连接失败': 'WebSocket connection failed',
+                    '已连接': 'Connected',
+                    '无进程数据': 'No process data',
+                    '未连接到SSH': 'SSH is not connected',
+                    '进程信号已发送': 'Process signal sent',
+                    '操作失败': 'Operation failed',
+                    'Docker 不可用': 'Docker unavailable',
+                    '暂无运行中的容器': 'No running containers',
+                    '未检测到正在运行的容器': 'No running containers detected',
+                    '请选择一个容器': 'Select a container',
+                    '请从左侧选择容器': 'Select a container from the left',
+                    '已用': 'used',
+                    '无限制': 'unlimited',
+                    '总流量': 'total traffic',
+                    '容器叠加': 'containers combined',
+                    '列表错误': 'List error',
+                    '文件夹创建成功': 'Folder created successfully',
+                    '删除成功': 'Deleted successfully',
+                    '请先选择要下载的文件': 'Select files to download first',
+                    '请选择有效的文件': 'Select valid files',
+                    '下载失败': 'Download failed',
+                    '下载完成': 'Download complete',
+                    '空目录': 'Empty directory',
+                    '暂无保存的主机': 'No saved hosts',
+                    '密钥登录': 'Key authentication',
+                    '密码登录': 'Password authentication',
+                    '编辑': 'Edit',
+                    '加载主机列表失败': 'Failed to load host list',
+                    '主机已保存': 'Host saved',
+                    '保存失败': 'Save failed',
+                    '主机已更新': 'Host updated',
+                    '更新失败': 'Update failed',
+                    '主机已删除': 'Host deleted',
+                    '删除失败': 'Delete failed',
+                    '加载白名单失败': 'Failed to load allowlist',
+                    '白名单已更新': 'Allowlist updated',
+                    '请输入网段': 'Enter a network',
+                    '暂无白名单': 'Allowlist is empty',
+                    '私有网段': 'Private network',
+                    '内存 %': 'Memory %',
+                    '磁盘读 KB/s': 'Disk Read KB/s',
+                    '磁盘写 KB/s': 'Disk Write KB/s',
+                    '当前环境不支持 Web Serial': 'The current environment does not support Web Serial',
+                    '请使用支持 Web Serial 的桌面应用或 Chromium 内核浏览器': 'Use the desktop app or a Chromium-based browser with Web Serial support',
+                    '请先断开当前连接': 'Disconnect the current connection first',
+                    '演示模式已启动': 'Demo mode started',
+                    '串口已连接': 'Serial connected',
+                    '未选择串口设备': 'No serial device selected',
+                    '未知错误': 'Unknown error',
+                    '串口权限被拒绝，请在权限弹窗中允许串口访问。': 'Serial access was denied. Allow the port in the permission dialog.',
+                    '当前用户可能没有串口设备权限，请将用户加入 dialout/uucp 组并重新登录。': 'The current user may not have permission to access serial devices. Add the user to the dialout/uucp group and sign in again.',
+                    '串口被占用或无权限访问，请检查设备占用和用户组权限。': 'The serial port is busy or access is denied. Check whether the device is in use and verify group permissions.',
+                    '演示模式已停止': 'Demo mode stopped',
+                    '串口已断开': 'Serial disconnected',
+                    '演示模式': 'Demo Mode',
+                    '串口终端 - 演示模式': 'Serial Terminal - Demo Mode',
+                    '烧录器 Adapter': 'Adapter',
+                    '来自 OpenOCD 的 adapter list，通常映射到 interface/<adapter>.cfg。': 'Taken from the OpenOCD adapter list, usually mapped to interface/<adapter>.cfg.',
+                    '目标配置': 'Target Config',
+                    '支持从 OpenOCD 的 target 目录中搜索并选择 .cfg。': 'Supports searching and selecting .cfg files from the OpenOCD target directory.',
+                    '适配器速率 (kHz)': 'Adapter Speed (kHz)',
+                    '支持从 OpenOCD 的 interface 目录中搜索并选择 .cfg。': 'Supports searching and selecting .cfg files from the OpenOCD interface directory.',
+                    'OpenOCD 会按 GUI 选项追加 verify/reset/exit 指令。': 'OpenOCD appends verify/reset/exit commands according to the GUI options.',
+                    '优先自动列出已连接 probe，也可手动填写 UID 或部分 UID。': 'Connected probes are listed automatically first, or you can enter a UID or partial UID manually.',
+                    '目标芯片': 'Target Chip',
+                    '请输入 pyOCD 支持的目标芯片名称。': 'Enter a pyOCD target name.',
+                    '调试频率 (Hz)': 'Debug Frequency (Hz)',
+                    'pyOCD 的写后校验沿用自身默认烧录策略。': 'pyOCD uses its default verification behavior after flashing.',
+                    'Probe 选择': 'Probe Selector',
+                    '优先自动列出当前 probe，也可手动填写 probe 选择串。': 'The current probe is listed automatically first, or you can enter a probe selector manually.',
+                    '请输入 probe-rs 支持的芯片名称。': 'Enter a chip name supported by probe-rs.',
+                    '调试速率 (kHz)': 'Debug Speed (kHz)',
+                    'probe-rs 的写后校验沿用当前 CLI 默认行为。': 'probe-rs uses the current CLI default verification behavior.',
+                    '载入 ELF，适合在启动 GDB CLI 后绑定当前目标程序。': 'Load an ELF file, typically after starting the GDB CLI for the current target program.',
+                    'ELF 路径': 'ELF path',
+                    '例如 /tmp/app.elf': 'For example: /tmp/app.elf',
+                    '只载入符号文件，不替换当前 executable。': 'Load symbol information only without replacing the current executable.',
+                    '符号文件路径': 'Symbol file path',
+                    '连接到当前实时调试服务暴露的 GDB Remote 端口。': 'Connect to the GDB remote port exposed by the current live debug service.',
+                    '主机': 'Host',
+                    '例如 3333 或 1337': 'For example: 3333 or 1337',
+                    '断开当前 remote target 连接。': 'Disconnect the current remote target.',
+                    '向目标装载当前 file/symbol-file 关联的 ELF。': 'Load the ELF referenced by the current file/symbol-file into the target.',
+                    '对比 ELF 与目标端的 section 内容。': 'Compare section contents between the ELF and the target.',
+                    '退出当前 GDB CLI 会话。': 'Exit the current GDB CLI session.',
+                    '继续运行目标程序。': 'Continue the target program.',
+                    '中断当前程序执行。': 'Interrupt the current program.',
+                    '单步进入。': 'Step into.',
+                    '单步越过。': 'Step over.',
+                    '运行到当前函数返回。': 'Run until the current function returns.',
+                    '运行到指定位置后停止。': 'Run until the specified location, then stop.',
+                    '位置': 'Location',
+                    '例如 main.c:128 或 func': 'For example: main.c:128 or func',
+                    '跳转到指定源码位置或 `*0x...` 地址。': 'Jump to a source location or a `*0x...` address.',
+                    '跳转位置': 'Jump location',
+                    '例如 main.c:256 或 *0x08000100': 'For example: main.c:256 or *0x08000100',
+                    '支持函数名或 文件:行号。': 'Supports function names or file:line syntax.',
+                    '断点位置': 'Breakpoint location',
+                    '例如 foo 或 main.c:42': 'For example: foo or main.c:42',
+                    '一次性断点，命中后自动删除。': 'One-shot breakpoint, automatically removed after it is hit.',
+                    '临时断点位置': 'Temporary breakpoint location',
+                    '例如 main.c:88': 'For example: main.c:88',
+                    '硬件断点；受硬件资源数量限制。': 'Hardware breakpoint; limited by available hardware resources.',
+                    '硬件断点位置': 'Hardware breakpoint location',
+                    '列出当前全部断点/观察点。': 'List all current breakpoints and watchpoints.',
+                    '留空等价于 `delete`，会删除全部断点。': 'Leave empty to run `delete` and remove all breakpoints.',
+                    '断点 ID': 'Breakpoint ID',
+                    '留空则删除全部断点': 'Leave empty to delete all breakpoints',
+                    '禁用指定断点。': 'Disable a breakpoint.',
+                    '启用指定断点。': 'Enable a breakpoint.',
+                    '为断点附加条件表达式。': 'Attach a conditional expression to a breakpoint.',
+                    '条件表达式': 'Conditional expression',
+                    '例如 counter > 10': 'For example: counter > 10',
+                    '让指定断点先忽略前 N 次命中。': 'Ignore the first N hits for a breakpoint.',
+                    '忽略次数': 'Ignore count',
+                    '例如 5': 'For example: 5',
+                    '写观察点。': 'Write watchpoint.',
+                    '表达式': 'Expression',
+                    '例如 some_var': 'For example: some_var',
+                    '读观察点。': 'Read watchpoint.',
+                    '读写观察点。': 'Read/write watchpoint.',
+                    '输出当前调用栈。': 'Print the current call stack.',
+                    '切换到指定栈帧。': 'Switch to a stack frame.',
+                    '栈帧号': 'Frame number',
+                    '例如 0': 'For example: 0',
+                    '移动到上一个栈帧。': 'Move to the previous stack frame.',
+                    '移动到下一个栈帧。': 'Move to the next stack frame.',
+                    '显示当前栈帧详细信息。': 'Show details for the current stack frame.',
+                    '显示当前函数参数。': 'Show current function arguments.',
+                    '显示当前函数局部变量。': 'Show current local variables.',
+                    '按默认格式打印表达式。': 'Print an expression with the default format.',
+                    '例如 var': 'For example: var',
+                    '按十六进制打印表达式。': 'Print an expression in hexadecimal.',
+                    '按十进制打印表达式。': 'Print an expression in decimal.',
+                    '按二进制打印表达式。': 'Print an expression in binary.',
+                    '例如 flags': 'For example: flags',
+                    '持续显示表达式。': 'Continuously display an expression.',
+                    '取消指定 display 项。': 'Remove a display entry.',
+                    '变量名': 'Variable name',
+                    '值': 'Value',
+                    '直接修改变量值。': 'Modify a variable value directly.',
+                    '例如 123': 'For example: 123',
+                    '查看表达式的类型名。': 'Show an expression type name.',
+                    '显示表达式/类型的完整类型定义。': 'Show the full type definition for an expression or type.',
+                    '表达式或类型': 'Expression or type',
+                    '例如 foo': 'For example: foo',
+                    '显示核心寄存器。': 'Show core registers.',
+                    '显示全部寄存器。': 'Show all registers.',
+                    '快速打印单个寄存器值。': 'Print a single register value quickly.',
+                    '寄存器名': 'Register name',
+                    '例如 pc、sp、lr、xpsr': 'For example: pc, sp, lr, xpsr',
+                    '修改 PC / SP 等寄存器。': 'Modify registers such as PC or SP.',
+                    '例如 pc 或 sp': 'For example: pc or sp',
+                    '例如 0x08000000': 'For example: 0x08000000',
+                    '格式填写 b/h/w/i；例如 32 + b + 0x20000000 对应 x/32bx。': 'Use b/h/w/i for the format. For example, 32 + b + 0x20000000 becomes x/32bx.',
+                    '数量': 'Count',
+                    '例如 32': 'For example: 32',
+                    '格式': 'Format',
+                    'b / h / w / i': 'b / h / w / i',
+                    '地址': 'Address',
+                    '例如 0x20000000': 'For example: 0x20000000',
+                    '可用于向 RAM 或寄存器映射地址写值。': 'Useful for writing values to RAM or memory-mapped registers.',
+                    '类型': 'Type',
+                    '例如 uint32_t': 'For example: uint32_t',
+                    '例如 0x12345678': 'For example: 0x12345678',
+                    '把目标内存导出为 binary。': 'Export target memory to a binary file.',
+                    '导出文件': 'Output file',
+                    '例如 /tmp/ram.bin': 'For example: /tmp/ram.bin',
+                    '起始地址': 'Start address',
+                    '结束地址': 'End address',
+                    '例如 0x20000100': 'For example: 0x20000100',
+                    '从 binary 文件恢复到目标内存。': 'Restore target memory from a binary file.',
+                    '导入文件': 'Input file',
+                    '装载地址': 'Load address',
+                    '留空时反汇编当前上下文。': 'Disassemble the current context when left empty.',
+                    '可选，例如 main': 'Optional, for example: main',
+                    '混合源码与汇编。': 'Mix source and assembly.',
+                    '附带原始机器码。': 'Include raw machine code.',
+                    '留空时显示当前位置源码。': 'Show source at the current location when left empty.',
+                    '可选，例如 main.c:128': 'Optional, for example: main.c:128',
+                    'OpenOCD / pyOCD 专用透传；probe-rs 下不会显示独占快捷区。': 'OpenOCD / pyOCD passthrough only; the dedicated shortcut area is hidden when probe-rs is selected.',
+                    'monitor 命令': 'Monitor command',
+                    '例如 reset halt': 'For example: reset halt',
+                    '查看当前 PC 附近 8 条指令。': 'Show the 8 instructions near the current PC.',
+                    '内部会执行 `tbreak <file>:<line>` 再 `continue`。': 'Internally runs `tbreak <file>:<line>` and then `continue`.',
+                    '文件:行号': 'File:line',
+                    '例如 main.c:200': 'For example: main.c:200',
+                    '枚举当前已连接 probe。': 'List currently connected probes.',
+                    '查询 probe 与 target 状态，等价 session state query / target info。': 'Query probe and target state, similar to session state query / target info.',
+                    '复位目标，可配合 Under Reset 连接。': 'Reset the target and optionally combine it with Under Reset attach.',
+                    '整片擦除。': 'Erase the entire chip.',
+                    '下载 ELF / BIN / HEX；可结合 Verify Flash 与 Chip Erase。': 'Download ELF / BIN / HEX, optionally using Verify Flash and Chip Erase.',
+                    '文件路径': 'File path',
+                    '例如 /tmp/app.elf 或 /tmp/app.bin': 'For example: /tmp/app.elf or /tmp/app.bin',
+                    'Binary 格式': 'Binary format',
+                    '可选，例如 bin / elf / hex': 'Optional, for example: bin / elf / hex',
+                    '基地址': 'Base address',
+                    'bin 时可填，例如 0x08000000': 'Optional for bin, for example: 0x08000000',
+                    '跳过字节': 'Skip bytes',
+                    '可选，例如 0': 'Optional, for example: 0',
+                    '对比文件与目标 flash 内容。': 'Compare the file with flash contents on the target.',
+                    '读取 RAM / 外设内存；宽度支持 b8 / b16 / b32 / b64。': 'Read RAM or peripheral memory; widths include b8 / b16 / b32 / b64.',
+                    '宽度': 'Width',
+                    '例如 b32': 'For example: b32',
+                    '写 RAM / 外设内存；多个值用空格分隔。': 'Write RAM or peripheral memory; separate multiple values with spaces.',
+                    '写入值': 'Values to write',
+                    '例如 0x1 0x2 0x3': 'For example: 0x1 0x2 0x3',
+                    '持续 trace 指定内存位置。': 'Continuously trace the specified memory location.',
+                    'Trace 地址': 'Trace address',
+                    'RTT / defmt 日志 attach；需要 ELF 路径。': 'Attach RTT / defmt logging; requires an ELF path.',
+                    'pyOCD 目标目录': 'pyOCD Target Catalog',
+                    'probe-rs 芯片目录': 'probe-rs Chip Catalog',
+                    'OpenOCD target 配置': 'OpenOCD target config',
+                    'OpenOCD interface 配置': 'OpenOCD interface config',
+                    '输入关键字搜索 OpenOCD target 配置。': 'Type keywords to search OpenOCD target configs.',
+                    '未找到匹配的 OpenOCD target 配置，可继续手动输入。': 'No matching OpenOCD target config found. You can keep typing manually.',
+                    '输入关键字搜索 OpenOCD interface 配置。': 'Type keywords to search OpenOCD interface configs.',
+                    '未找到匹配的 OpenOCD interface 配置，可继续手动输入。': 'No matching OpenOCD interface config found. You can keep typing manually.',
+                    '未找到匹配项，可继续手动输入 pyOCD 目标名。': 'No match found. You can keep typing a pyOCD target name manually.',
+                    '未找到匹配项，可继续手动输入芯片名。': 'No match found. You can keep typing a chip name manually.',
+                    '当前值': 'current value',
+                    '当前显示 probe-rs 选择模板，可按帮助格式手动补全。': 'Showing probe-rs selector templates. Complete them manually using the documented format.',
+                    '当前未检测到候选项，可直接手动输入。': 'No candidates detected right now. You can type manually.',
+                    '当前平台暂未检测到可用的管理员/root 提权方式。': 'No available admin/root elevation method was detected on the current platform.',
+                    '自动列出 adapter / 留空手填': 'List adapters automatically / leave blank to type manually',
+                    '自动列出 probe / 留空手填': 'List probes automatically / leave blank to type manually',
+                    '仅管理员可启动本机烧录调试': 'Only administrators can start local flash/debug sessions',
+                    '检测失败': 'Detection failed',
+                    '系统默认目录': 'System default directory',
+                    'OpenOCD 安装目录': 'OpenOCD installation directory',
+                    '固件文件': 'firmware file',
+                    'ELF 文件': 'ELF file',
+                    '当前固件路径：': 'Current firmware path:',
+                    '仅管理员可使用烧录调试功能': 'Only administrators can use flash/debug features',
+                    '请先停止当前烧录 / CLI / probe-rs 原生命令任务': 'Stop the current flash / CLI / native probe-rs task first',
+                    '请先启动 GDB CLI 会话': 'Start a GDB CLI session first',
+                    '请选择 probe-rs 调试器后再执行原生命令': 'Select a probe-rs debugger before running native commands',
+                    'probe-rs 原生命令执行前，请先停止当前烧录 / 调试 / CLI 会话': 'Stop the current flash / debug / CLI session before running native probe-rs commands',
+                    '烧录调试 WebSocket 连接失败': 'Flash/debug WebSocket connection failed',
+                    'GDB CLI 会话已启动': 'GDB CLI session started',
+                    'probe-rs 原生命令已启动': 'Native probe-rs command started',
+                    '烧录任务已启动': 'Flash task started',
+                    '调试任务已启动': 'Debug task started',
+                    'GDB CLI 会话已结束': 'GDB CLI session ended',
+                    'probe-rs 原生命令已结束': 'Native probe-rs command ended',
+                    '烧录任务已结束': 'Flash task ended',
+                    '调试任务已结束': 'Debug task ended',
+                    'CLI / probe-rs 运行中': 'CLI / probe-rs running',
+                    'GDB CLI 运行中': 'GDB CLI running',
+                    'probe-rs 运行中': 'probe-rs running',
+                    '请先停止当前任务': 'Stop the current task first',
+                    '当前主机未检测到可用的管理员/root 提权方式': 'No available admin/root elevation method was detected on the current host',
+                    '当前平台无可选 Shell': 'No shell is available on the current platform',
+                    'SSH 到': 'SSH to',
+                    'Windows 下通过 SSH 连接本机，借助 OpenSSH Server 获取真正的终端语义。': 'On Windows, the local terminal connects back to the same machine over SSH so OpenSSH Server can provide real terminal semantics.',
+                    '请先在系统中启用 OpenSSH Server，再使用本机账号登录。': 'Enable OpenSSH Server on the system first, then sign in with a local account.',
+                    '无法检查终端服务状态': 'Unable to check terminal service status',
+                    '权限不足': 'Permission denied',
+                    '终端已启动': 'Terminal started',
+                    '终端已退出': 'Terminal exited',
+                    'SSH 端口范围必须是 1-65535': 'SSH port must be within 1-65535',
+                    '请输入 Windows 用户名': 'Enter a Windows username',
+                    '本机 SSH 终端已断开': 'Local SSH terminal disconnected',
+                    '本机 SSH 连接失败': 'Local SSH connection failed',
+                    '终端已停止': 'Terminal stopped',
+                    '运行中': 'Running',
+                    'VNC 连接意外断开': 'VNC connection closed unexpectedly',
+                    'VNC 已断开': 'VNC disconnected',
+                    '请输入 VNC 主机地址': 'Enter a VNC host address',
+                    'VNC 模块未加载，请刷新页面': 'The VNC module is not loaded. Refresh the page.',
+                    '请输入主机地址和用户名': 'Enter both host and username',
+                    '删除': 'Delete'
+                }
+            },
+            PATTERNS: {
+                zh: [],
+                en: [
+                    [/^已连接到 (.+)$/u, 'Connected to $1'],
+                    [/^已连接: (.+)$/u, 'Connected: $1'],
+                    [/^SFTP 已连接到 (.+)$/u, 'SFTP connected to $1'],
+                    [/^VNC 已连接到 (.+)$/u, 'VNC connected to $1'],
+                    [/^容器: (.+)$/u, 'Container: $1'],
+                    [/^总计 · (\d+) 个容器$/u, 'Total · $1 containers'],
+                    [/^已选 (\d+) 项$/u, '$1 selected'],
+                    [/^失败: (.+)$/u, 'Failed: $1'],
+                    [/^下载失败: (.+)$/u, 'Download failed: $1'],
+                    [/^保存失败: (.+)$/u, 'Save failed: $1'],
+                    [/^更新失败: (.+)$/u, 'Update failed: $1'],
+                    [/^加载白名单失败: (.+)$/u, 'Failed to load allowlist: $1'],
+                    [/^密码修改失败: (.+)$/u, 'Password update failed: $1'],
+                    [/^登录失败: (.+)$/u, 'Sign-in failed: $1'],
+                    [/^连接失败: (.+)$/u, 'Connection failed: $1'],
+                    [/^列表错误: (.+)$/u, 'List error: $1'],
+                    [/^正在下载: (.+)$/u, 'Downloading: $1'],
+                    [/^正在打包 (\d+) 个项目\.\.\.$/u, 'Packaging $1 items...'],
+                    [/^正在发送 (.+) 到 PID (\d+)\.\.\.$/u, 'Sending $1 to PID $2...'],
+                    [/^(.+) 连接失败$/u, '$1 connection failed'],
+                    [/^(.+) 连接被拦截：(.+)$/u, '$1 connection blocked: $2'],
+                    [/^(.+) 目标地址校验失败: (.+)$/u, '$1 target validation failed: $2'],
+                    [/^(.+) 目标地址校验失败$/u, '$1 target validation failed'],
+                    [/^已上传 (.+)$/u, 'Uploaded $1'],
+                    [/^正在上传 (.+) \((.+)\)\.\.\.$/u, 'Uploading $1 ($2)...'],
+                    [/^已上传 (.+) \((.+)\)，当前路径：(.+)$/u, 'Uploaded $1 ($2), current path: $3'],
+                    [/^当前固件路径：(.+)$/u, 'Current firmware path: $1'],
+                    [/^当前 CLI ELF \/ 符号文件路径：(.+)$/u, 'Current CLI ELF / symbols path: $1'],
+                    [/^当前未单独设置 CLI ELF，默认将沿用烧录文件路径：(.+)$/u, 'No separate CLI ELF is set. The flash file path will be used by default: $1'],
+                    [/^当前显示 (\d+) 个 pyOCD 插件前缀，选择后可在右侧继续补充 UID。$/u, 'Showing $1 pyOCD probe prefixes. After selecting one, you can continue entering the UID on the right.'],
+                    [/^当前检测到 (\d+) 个候选项。$/u, '$1 candidates detected.'],
+                    [/^正在检测 (.+) \.\.\.$/u, 'Checking $1...'],
+                    [/^SSH 到 (.+)$/u, 'SSH to $1'],
+                    [/^当前服务器: (.+)$/u, 'Current server: $1'],
+                    [/^PATH: (.+)$/u, 'PATH: $1'],
+                    [/^自定义: (.+)$/u, 'Custom: $1'],
+                    [/^(.+) 未在 PATH 中找到，请填写手动路径$/u, '$1 was not found in PATH. Enter the path manually.'],
+                    [/^未载入 (.+)：(.+)$/u, '$1 not loaded: $2'],
+                    [/^正在等待 (.+)，期间仍可直接手动输入。$/u, 'Waiting for $1. You can still type it manually.'],
+                    [/^输入关键字搜索 (.+)。$/u, 'Type keywords to search $1.'],
+                    [/^未找到匹配项，可继续手动输入 (.+)。$/u, 'No match found. You can keep entering $1 manually.'],
+                    [/^已载入 (\d+) 个(.+)，输入时支持前缀、片段和模糊搜索。$/u, 'Loaded $1$2. Prefix, substring, and fuzzy search are supported when typing.'],
+                    [/^已载入 (\d+) 个 target 配置，来源：(.+) (.+)；输入时支持前缀、片段和模糊搜索。$/u, 'Loaded $1 target configs from $2 $3. Prefix, substring, and fuzzy search are supported when typing.'],
+                    [/^已载入 (\d+) 个 interface 配置，来源：(.+) (.+)；输入时支持前缀、片段和模糊搜索。$/u, 'Loaded $1 interface configs from $2 $3. Prefix, substring, and fuzzy search are supported when typing.'],
+                    [/^删除 "(.+)"\?$/u, 'Delete "$1"?']
+                ]
+            },
+            init() {
+                State.language = Storage.getLanguage() === 'en' ? 'en' : 'zh';
+                window.confirm = (message) => this.nativeConfirm(this.auto(message));
+                window.alert = (message) => this.nativeAlert(this.auto(message));
+                if (!this.observer) {
+                    this.observer = new MutationObserver((mutations) => {
+                        if (this.applying) return;
+                        mutations.forEach((mutation) => {
+                            if (mutation.type === 'childList') {
+                                mutation.addedNodes.forEach((node) => this.applyTree(node, true));
+                            } else if (mutation.type === 'characterData') {
+                                this.applyTextNode(mutation.target, true);
+                            } else if (mutation.type === 'attributes') {
+                                this.applyElementAttributes(mutation.target, true, [mutation.attributeName]);
+                            }
+                        });
+                    });
+                }
+                this.refresh();
+            },
+            setLanguage(language) {
+                const next = language === 'en' ? 'en' : 'zh';
+                if (State.language === next) return;
+                State.language = next;
+                Storage.setLanguage(next);
+                this.refresh();
+            },
+            startObserver() {
+                if (!this.observer || this.observing) return;
+                this.observer.observe(document.body, {
+                    subtree: true,
+                    childList: true,
+                    characterData: true,
+                    attributes: true,
+                    attributeFilter: ['placeholder', 'title', 'aria-label']
+                });
+                this.observing = true;
+            },
+            stopObserver() {
+                if (!this.observer || !this.observing) return;
+                this.observer.disconnect();
+                this.observing = false;
+            },
+            refresh(root = document.body) {
+                const shouldResumeObserver = Boolean(this.observer);
+                this.stopObserver();
+                try {
+                    document.documentElement.lang = State.language === 'en' ? 'en' : 'zh-CN';
+                    this.applyTree(root, false);
+                    if (typeof Theme !== 'undefined' && document.getElementById('colorSchemeGrid')) {
+                        Theme.renderSchemeGrid();
+                    }
+                    if (typeof Settings !== 'undefined' && document.getElementById('languageGrid')) {
+                        Settings.renderLanguageGrid();
+                    }
+                } finally {
+                    if (shouldResumeObserver) {
+                        this.startObserver();
+                    }
+                }
+            },
+            apply(root = document.body) {
+                document.documentElement.lang = State.language === 'en' ? 'en' : 'zh-CN';
+                this.applyTree(root, false);
+            },
+            applyTree(node, refreshSource = false) {
+                if (!node) return;
+                this.applying = true;
+                try {
+                    this._applyTree(node, refreshSource);
+                } finally {
+                    this.applying = false;
+                }
+            },
+            _applyTree(node, refreshSource = false) {
+                if (!node) return;
+                if (node.nodeType === Node.TEXT_NODE) {
+                    this.applyTextNode(node, refreshSource);
+                    return;
+                }
+                if (node.nodeType !== Node.ELEMENT_NODE) return;
+                if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(node.tagName)) return;
+                this.applyElementAttributes(node, refreshSource);
+                node.childNodes.forEach((child) => this._applyTree(child, refreshSource));
+            },
+            applyTextNode(node, refreshSource = false) {
+                if (!node || node.nodeType !== Node.TEXT_NODE || !node.parentElement) return;
+                if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(node.parentElement.tagName)) return;
+                const raw = node.textContent || '';
+                if (!raw.trim()) return;
+                if (refreshSource || !Object.prototype.hasOwnProperty.call(node, '__i18nSource')) {
+                    node.__i18nSource = raw;
+                }
+                const source = node.__i18nSource || raw;
+                const leading = source.match(/^\s*/u)?.[0] || '';
+                const trailing = source.match(/\s*$/u)?.[0] || '';
+                const core = source.trim();
+                const translated = this.auto(core);
+                if (translated === core && raw === `${leading}${translated}${trailing}`) return;
+                node.textContent = `${leading}${translated}${trailing}`;
+            },
+            applyElementAttributes(element, refreshSource = false, attrs = ['placeholder', 'title', 'aria-label']) {
+                if (!element || element.nodeType !== Node.ELEMENT_NODE) return;
+                attrs.forEach((attr) => {
+                    if (!element.hasAttribute(attr)) return;
+                    const sourceKey = this.getSourceKey(attr);
+                    const current = element.getAttribute(attr) || '';
+                    if (refreshSource || !element.dataset[sourceKey]) {
+                        element.dataset[sourceKey] = current;
+                    }
+                    const source = element.dataset[sourceKey] || current;
+                    const translated = this.auto(source);
+                    if (current !== translated) {
+                        element.setAttribute(attr, translated);
+                    }
+                });
+            },
+            getSourceKey(attr) {
+                return `i18n${attr.replace(/(^|-)([a-z])/g, (_, _dash, letter) => letter.toUpperCase())}Source`;
+            },
+            auto(value) {
+                const text = String(value ?? '');
+                if (State.language !== 'en' || !text) return text;
+                const exact = this.EXACT.en[text];
+                if (exact) return exact;
+                for (const [pattern, replacement] of this.PATTERNS.en) {
+                    if (pattern.test(text)) {
+                        return text.replace(pattern, replacement);
+                    }
+                }
+                return text;
+            }
         };
 
         function buildWsUrl(path) {
@@ -3301,6 +4170,7 @@
                 grid.querySelectorAll('.scheme-card').forEach(card => {
                     card.addEventListener('click', () => this.applyColorScheme(card.dataset.scheme, true));
                 });
+                I18n.applyTree(grid, true);
             },
             syncSchemeSelection() {
                 const grid = document.getElementById('colorSchemeGrid');
@@ -3352,6 +4222,10 @@
         };
 
         const Settings = {
+            LANGUAGE_OPTIONS: [
+                { key: 'zh', code: 'ZH', label: '简体中文', tone: '默认界面语言' },
+                { key: 'en', code: 'EN', label: 'English', tone: '英文界面翻译' }
+            ],
             init() {
                 document.getElementById('settingsChangePasswordBtn').addEventListener('click', () => this.changePassword());
                 document.getElementById('settingsOpenPrivateNetworksBtn').addEventListener('click', () => this.openPrivateNetworks());
@@ -3362,12 +4236,34 @@
                     });
                 });
             },
+            renderLanguageGrid() {
+                const grid = document.getElementById('languageGrid');
+                if (!grid) return;
+                grid.innerHTML = this.LANGUAGE_OPTIONS.map((option) => {
+                    const active = option.key === State.language;
+                    return `<button type="button" class="language-card${active ? ' active' : ''}" data-language="${escapeHtml(option.key)}" aria-pressed="${active}">
+                        <div class="scheme-meta">
+                            <span class="language-code">${escapeHtml(option.code)}</span>
+                            ${active ? '<span class="scheme-badge">当前</span>' : ''}
+                        </div>
+                        <div>
+                            <div class="scheme-name">${escapeHtml(option.label)}</div>
+                            <div class="scheme-tone">${escapeHtml(option.tone)}</div>
+                        </div>
+                    </button>`;
+                }).join('');
+                grid.querySelectorAll('.language-card').forEach((card) => {
+                    card.addEventListener('click', () => I18n.setLanguage(card.dataset.language));
+                });
+                I18n.applyTree(grid, true);
+            },
             render() {
                 document.getElementById('settingsCurrentUser').textContent = State.username || '--';
                 document.getElementById('settingsNologinNotice').style.display = State.isNologin ? 'flex' : 'none';
                 document.getElementById('settingsPasswordForm').style.display = State.isNologin ? 'none' : '';
                 document.getElementById('settingsPrivateNetworkSection').style.display = State.isAdmin ? '' : 'none';
                 Theme.renderSchemeGrid();
+                this.renderLanguageGrid();
             },
             reset() {
                 document.getElementById('settingsNewPassword').value = '';
@@ -3419,9 +4315,10 @@
 
         const Toast = {
             show(msg, type = 'info') {
+                const translated = I18n.auto(msg);
                 const el = document.createElement('div');
                 el.className = `toast ${type}`;
-                el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i><span>${escapeHtml(msg)}</span>`;
+                el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i><span>${escapeHtml(translated)}</span>`;
                 document.getElementById('toasts').appendChild(el);
                 setTimeout(() => { el.style.animation = 'slideIn .3s reverse'; setTimeout(() => el.remove(), 300); }, 3500);
             },
@@ -6206,6 +7103,14 @@
             currentMode: 'flash',
             manualPathForced: false,
             tooling: null,
+            autocompleteCatalogs: {},
+            autocompleteUi: {
+                activeInputId: '',
+                activeIndex: -1,
+                results: [],
+                closeTimer: null,
+                lastQuery: ''
+            },
             running: {
                 flash: false,
                 debug: false,
@@ -6510,6 +7415,7 @@
                     this.currentTool = document.getElementById('flashDebugToolSelector').value;
                     this.manualPathForced = false;
                     document.getElementById('flashDebugManualPath').value = '';
+                    this.closeAutocompleteSuggestions();
                     this.updateManualPathVisibility();
                     this.applyToolPreset();
                     this.refreshTooling(true);
@@ -6532,6 +7438,7 @@
                 document.getElementById('debugProbeSelect').addEventListener('change', () => {
                     document.getElementById('debugProbeInput').value = document.getElementById('debugProbeSelect').value;
                 });
+                this.getAutocompleteInputIds().forEach((inputId) => this.bindAutocompleteInput(inputId));
                 document.getElementById('flashFirmwareSelectBtn').addEventListener('click', () => this.pickFirmwareFile());
                 document.getElementById('cliElfSelectBtn').addEventListener('click', () => this.pickCliElfFile());
                 document.getElementById('flashFirmwarePath').addEventListener('input', () => {
@@ -6633,6 +7540,473 @@
 
             isBusy() {
                 return this.running.flash || this.running.debug || this.running.cli || this.running.native;
+            },
+
+            getAutocompleteInputIds() {
+                return [
+                    'flashTargetInput',
+                    'debugTargetInput',
+                    'flashInterfaceConfigInput',
+                    'debugInterfaceConfigInput'
+                ];
+            },
+
+            supportsTargetAutocomplete() {
+                return this.currentTool === 'probe-rs' || this.currentTool === 'pyocd';
+            },
+
+            getTargetCatalogLabel() {
+                return this.currentTool === 'pyocd' ? 'pyOCD 目标目录' : 'probe-rs 芯片目录';
+            },
+
+            getAutocompleteSuggestionPanel(inputId) {
+                return document.getElementById(`${inputId}Suggestions`);
+            },
+
+            getAutocompleteConfig(inputId) {
+                return this.autocompleteCatalogs[inputId] || null;
+            },
+
+            isAutocompleteEnabledForInput(inputId) {
+                const config = this.getAutocompleteConfig(inputId);
+                return Boolean(config && config.enabled);
+            },
+
+            hasEnabledAutocomplete() {
+                return this.getAutocompleteInputIds().some((inputId) => this.isAutocompleteEnabledForInput(inputId));
+            },
+
+            clearAutocompleteCloseTimer() {
+                if (this.autocompleteUi.closeTimer) {
+                    clearTimeout(this.autocompleteUi.closeTimer);
+                    this.autocompleteUi.closeTimer = null;
+                }
+            },
+
+            scheduleAutocompleteSuggestionsClose() {
+                this.clearAutocompleteCloseTimer();
+                this.autocompleteUi.closeTimer = setTimeout(() => {
+                    this.closeAutocompleteSuggestions();
+                }, 120);
+            },
+
+            closeAutocompleteSuggestions() {
+                this.clearAutocompleteCloseTimer();
+                this.autocompleteUi.activeInputId = '';
+                this.autocompleteUi.activeIndex = -1;
+                this.autocompleteUi.results = [];
+                this.autocompleteUi.lastQuery = '';
+                this.getAutocompleteInputIds().forEach((inputId) => {
+                    const panel = this.getAutocompleteSuggestionPanel(inputId);
+                    if (!panel) return;
+                    panel.innerHTML = '';
+                    panel.classList.add('flashdebug-hidden');
+                });
+            },
+
+            bindAutocompleteInput(inputId) {
+                const input = document.getElementById(inputId);
+                const panel = this.getAutocompleteSuggestionPanel(inputId);
+                if (!input || !panel) return;
+
+                input.addEventListener('input', () => this.updateAutocompleteSuggestions(inputId));
+                input.addEventListener('focus', () => this.updateAutocompleteSuggestions(inputId));
+                input.addEventListener('keydown', (event) => this.handleAutocompleteKeydown(inputId, event));
+                input.addEventListener('blur', () => this.scheduleAutocompleteSuggestionsClose());
+                panel.addEventListener('mousedown', (event) => event.preventDefault());
+            },
+
+            normalizeAutocompleteItems(items = []) {
+                return (Array.isArray(items) ? items : [])
+                    .map((item) => {
+                        const value = String(item && item.value ? item.value : '').trim();
+                        const label = String(item && item.label ? item.label : value).trim();
+                        const meta = String(item && (item.meta || item.family) ? (item.meta || item.family) : '').trim();
+                        const keywords = String(item && item.keywords ? item.keywords : '').trim();
+                        if (!value) return null;
+                        return {
+                            value,
+                            label: label || value,
+                            meta,
+                            keywords,
+                            normalizedValue: value.toLowerCase(),
+                            normalizedLabel: label.toLowerCase(),
+                            normalizedMeta: meta.toLowerCase(),
+                            normalizedKeywords: keywords.toLowerCase()
+                        };
+                    })
+                    .filter(Boolean);
+            },
+
+            buildConfigAutocompleteItems(values = [], kindLabel) {
+                return (Array.isArray(values) ? values : [])
+                    .map((value) => String(value || '').trim())
+                    .filter(Boolean)
+                    .map((value) => {
+                        const basename = value.split('/').pop() || value;
+                        const stem = basename.replace(/\.cfg$/i, '');
+                        return {
+                            value,
+                            label: value,
+                            meta: kindLabel,
+                            keywords: [value, basename, stem].filter(Boolean).join(' ')
+                        };
+                    });
+            },
+
+            setAutocompleteCatalog(inputId, items = [], options = {}) {
+                this.autocompleteCatalogs[inputId] = {
+                    enabled: options.enabled !== false,
+                    label: String(options.label || '').trim(),
+                    emptyQueryMessage: String(options.emptyQueryMessage || '').trim(),
+                    emptyCatalogMessage: String(options.emptyCatalogMessage || '').trim(),
+                    noResultsMessage: String(options.noResultsMessage || '').trim(),
+                    items: this.normalizeAutocompleteItems(items)
+                };
+
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.id === inputId) {
+                    this.updateAutocompleteSuggestions(inputId);
+                } else if (this.autocompleteUi.activeInputId === inputId && !this.isAutocompleteEnabledForInput(inputId)) {
+                    this.closeAutocompleteSuggestions();
+                }
+            },
+
+            syncAutocompleteCatalogs(configs = null, targetCatalog = []) {
+                const targetInputs = ['flashTargetInput', 'debugTargetInput'];
+                const interfaceInputs = ['flashInterfaceConfigInput', 'debugInterfaceConfigInput'];
+
+                if (this.currentTool === 'openocd') {
+                    const targetItems = this.buildConfigAutocompleteItems(configs && configs.targetConfigs, 'OpenOCD target 配置');
+                    const interfaceItems = this.buildConfigAutocompleteItems(configs && configs.interfaceConfigs, 'OpenOCD interface 配置');
+                    const targetEmptyCatalogMessage = configs && configs.error
+                        ? `未载入 OpenOCD target 配置：${configs.error}`
+                        : '正在等待 OpenOCD target 配置目录，期间仍可直接手动输入。';
+                    const interfaceEmptyCatalogMessage = configs && configs.error
+                        ? `未载入 OpenOCD interface 配置：${configs.error}`
+                        : '正在等待 OpenOCD interface 配置目录，期间仍可直接手动输入。';
+
+                    targetInputs.forEach((inputId) => {
+                        this.setAutocompleteCatalog(inputId, targetItems, {
+                            enabled: true,
+                            label: 'OpenOCD target 配置',
+                            emptyQueryMessage: '输入关键字搜索 OpenOCD target 配置。',
+                            emptyCatalogMessage: targetEmptyCatalogMessage,
+                            noResultsMessage: '未找到匹配的 OpenOCD target 配置，可继续手动输入。'
+                        });
+                    });
+                    interfaceInputs.forEach((inputId) => {
+                        this.setAutocompleteCatalog(inputId, interfaceItems, {
+                            enabled: true,
+                            label: 'OpenOCD interface 配置',
+                            emptyQueryMessage: '输入关键字搜索 OpenOCD interface 配置。',
+                            emptyCatalogMessage: interfaceEmptyCatalogMessage,
+                            noResultsMessage: '未找到匹配的 OpenOCD interface 配置，可继续手动输入。'
+                        });
+                    });
+                    return;
+                }
+
+                if (this.supportsTargetAutocomplete()) {
+                    const label = this.getTargetCatalogLabel();
+                    const noResultsMessage = this.currentTool === 'pyocd'
+                        ? '未找到匹配项，可继续手动输入 pyOCD 目标名。'
+                        : '未找到匹配项，可继续手动输入芯片名。';
+                    const emptyCatalogMessage = this.tooling && (this.tooling.targetCatalogError || this.tooling.chipListError)
+                        ? `未载入 ${label}：${this.tooling.targetCatalogError || this.tooling.chipListError}`
+                        : `正在等待 ${label}，期间仍可直接手动输入。`;
+
+                    targetInputs.forEach((inputId) => {
+                        this.setAutocompleteCatalog(inputId, targetCatalog, {
+                            enabled: true,
+                            label,
+                            emptyQueryMessage: `输入关键字搜索 ${label}。`,
+                            emptyCatalogMessage,
+                            noResultsMessage
+                        });
+                    });
+                    interfaceInputs.forEach((inputId) => {
+                        this.setAutocompleteCatalog(inputId, [], {
+                            enabled: false,
+                            label: 'OpenOCD interface 配置'
+                        });
+                    });
+                    return;
+                }
+
+                this.getAutocompleteInputIds().forEach((inputId) => {
+                    this.setAutocompleteCatalog(inputId, [], { enabled: false });
+                });
+            },
+
+            normalizeAutocompleteSearch(value) {
+                return String(value || '').trim().toLowerCase();
+            },
+
+            fuzzyAutocompleteMatch(query, text) {
+                if (!query || !text) return null;
+
+                let queryIndex = 0;
+                let start = -1;
+                let previousMatch = -1;
+                let gaps = 0;
+
+                for (let index = 0; index < text.length && queryIndex < query.length; index += 1) {
+                    if (text[index] !== query[queryIndex]) continue;
+                    if (start === -1) {
+                        start = index;
+                    } else {
+                        gaps += index - previousMatch - 1;
+                    }
+                    previousMatch = index;
+                    queryIndex += 1;
+                }
+
+                if (queryIndex !== query.length) {
+                    return null;
+                }
+
+                return { start, gaps };
+            },
+
+            scoreAutocompleteItem(query, item) {
+                if (!query || !item) return -1;
+
+                const value = item.normalizedValue || '';
+                const label = item.normalizedLabel || value;
+                const meta = item.normalizedMeta || '';
+                const keywords = item.normalizedKeywords || '';
+
+                if (value === query) {
+                    return 10000 - value.length;
+                }
+                if (label === query) {
+                    return 9800 - label.length;
+                }
+                if (value.startsWith(query)) {
+                    return 9000 - value.length;
+                }
+                if (label.startsWith(query)) {
+                    return 8800 - label.length;
+                }
+
+                const valueIndex = value.indexOf(query);
+                if (valueIndex !== -1) {
+                    return 8000 - (valueIndex * 10) - value.length;
+                }
+                const labelIndex = label.indexOf(query);
+                if (labelIndex !== -1) {
+                    return 7800 - (labelIndex * 10) - label.length;
+                }
+
+                if (meta) {
+                    if (meta.startsWith(query)) {
+                        return 7000 - meta.length;
+                    }
+
+                    const metaIndex = meta.indexOf(query);
+                    if (metaIndex !== -1) {
+                        return 6500 - (metaIndex * 10) - meta.length;
+                    }
+                }
+                if (keywords) {
+                    const keywordIndex = keywords.indexOf(query);
+                    if (keywordIndex !== -1) {
+                        return 6200 - (keywordIndex * 10) - keywords.length;
+                    }
+                }
+
+                const fuzzyValue = this.fuzzyAutocompleteMatch(query, value);
+                if (fuzzyValue) {
+                    return 5000 - (fuzzyValue.gaps * 4) - fuzzyValue.start;
+                }
+
+                const fuzzyMeta = this.fuzzyAutocompleteMatch(query, meta);
+                if (fuzzyMeta) {
+                    return 4000 - (fuzzyMeta.gaps * 4) - fuzzyMeta.start;
+                }
+
+                return -1;
+            },
+
+            searchAutocompleteCatalog(inputId, query, limit = 24) {
+                const normalizedQuery = this.normalizeAutocompleteSearch(query);
+                const config = this.getAutocompleteConfig(inputId);
+                if (!normalizedQuery || !config) {
+                    return [];
+                }
+
+                const results = [];
+                config.items.forEach((item) => {
+                    const score = this.scoreAutocompleteItem(normalizedQuery, item);
+                    if (score < 0) return;
+                    results.push({ item, score });
+                });
+
+                results.sort((left, right) => {
+                    if (right.score !== left.score) {
+                        return right.score - left.score;
+                    }
+                    return left.item.label.localeCompare(right.item.label);
+                });
+
+                return results.slice(0, limit);
+            },
+
+            renderAutocompleteSuggestions(inputId, results = [], message = '') {
+                const panel = this.getAutocompleteSuggestionPanel(inputId);
+                const config = this.getAutocompleteConfig(inputId);
+                if (!panel || !config) return;
+
+                panel.innerHTML = '';
+                panel.classList.remove('flashdebug-hidden');
+
+                if (!results.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'flashdebug-suggestion-empty';
+                    empty.textContent = message || config.noResultsMessage || `未找到匹配项，可继续手动输入 ${config.label || '当前值'}。`;
+                    panel.appendChild(empty);
+                    return;
+                }
+
+                results.forEach((result, index) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'flashdebug-suggestion';
+                    if (index === this.autocompleteUi.activeIndex) {
+                        button.classList.add('active');
+                    }
+
+                    const primary = document.createElement('span');
+                    primary.className = 'flashdebug-suggestion-primary';
+                    primary.textContent = result.item.label;
+                    button.appendChild(primary);
+
+                    const meta = document.createElement('span');
+                    meta.className = 'flashdebug-suggestion-meta';
+                    meta.textContent = result.item.meta || config.label;
+                    button.appendChild(meta);
+
+                    button.addEventListener('mousedown', (event) => {
+                        event.preventDefault();
+                        this.acceptAutocompleteSuggestion(inputId, result.item.value);
+                    });
+                    panel.appendChild(button);
+                });
+
+                const activeButton = panel.querySelector('.flashdebug-suggestion.active');
+                if (activeButton) {
+                    activeButton.scrollIntoView({ block: 'nearest' });
+                }
+            },
+
+            updateAutocompleteSuggestions(inputId) {
+                const input = document.getElementById(inputId);
+                const config = this.getAutocompleteConfig(inputId);
+                if (!input || !config || !config.enabled) {
+                    this.closeAutocompleteSuggestions();
+                    return;
+                }
+
+                this.clearAutocompleteCloseTimer();
+
+                const query = input.value.trim();
+                if (!config.items.length) {
+                    this.autocompleteUi.activeInputId = inputId;
+                    this.autocompleteUi.activeIndex = -1;
+                    this.autocompleteUi.results = [];
+                    this.autocompleteUi.lastQuery = query;
+                    this.renderAutocompleteSuggestions(
+                        inputId,
+                        [],
+                        config.emptyCatalogMessage || config.emptyQueryMessage || `正在等待 ${config.label}，期间仍可直接手动输入。`
+                    );
+                    return;
+                }
+
+                if (!query) {
+                    this.autocompleteUi.activeInputId = inputId;
+                    this.autocompleteUi.activeIndex = -1;
+                    this.autocompleteUi.results = [];
+                    this.autocompleteUi.lastQuery = '';
+                    this.renderAutocompleteSuggestions(inputId, [], config.emptyQueryMessage || `输入关键字搜索 ${config.label}。`);
+                    return;
+                }
+
+                const results = this.searchAutocompleteCatalog(inputId, query);
+                const sameInput = this.autocompleteUi.activeInputId === inputId;
+                const sameQuery = this.autocompleteUi.lastQuery === query;
+                this.autocompleteUi.activeInputId = inputId;
+                this.autocompleteUi.results = results;
+                this.autocompleteUi.lastQuery = query;
+                if (results.length > 0) {
+                    this.autocompleteUi.activeIndex = sameInput && sameQuery
+                        ? Math.min(Math.max(this.autocompleteUi.activeIndex, 0), results.length - 1)
+                        : 0;
+                } else {
+                    this.autocompleteUi.activeIndex = -1;
+                }
+
+                this.renderAutocompleteSuggestions(inputId, results, config.noResultsMessage);
+            },
+
+            moveAutocompleteSelection(inputId, delta) {
+                if (this.autocompleteUi.activeInputId !== inputId || !this.autocompleteUi.results.length) {
+                    this.updateAutocompleteSuggestions(inputId);
+                }
+                if (!this.autocompleteUi.results.length) return;
+
+                const total = this.autocompleteUi.results.length;
+                const current = this.autocompleteUi.activeIndex;
+                const nextIndex = current < 0
+                    ? (delta > 0 ? 0 : total - 1)
+                    : (current + delta + total) % total;
+                this.autocompleteUi.activeIndex = nextIndex;
+                this.renderAutocompleteSuggestions(inputId, this.autocompleteUi.results);
+            },
+
+            acceptAutocompleteSuggestion(inputId, value) {
+                const input = document.getElementById(inputId);
+                if (!input) return;
+
+                input.value = value || '';
+                input.focus();
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                this.closeAutocompleteSuggestions();
+            },
+
+            handleAutocompleteKeydown(inputId, event) {
+                if (!this.isAutocompleteEnabledForInput(inputId)) return;
+
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    this.moveAutocompleteSelection(inputId, 1);
+                    return;
+                }
+
+                if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    this.moveAutocompleteSelection(inputId, -1);
+                    return;
+                }
+
+                if (event.key === 'Enter') {
+                    if (this.autocompleteUi.activeInputId === inputId
+                        && this.autocompleteUi.activeIndex >= 0
+                        && this.autocompleteUi.results[this.autocompleteUi.activeIndex]) {
+                        event.preventDefault();
+                        this.acceptAutocompleteSuggestion(
+                            inputId,
+                            this.autocompleteUi.results[this.autocompleteUi.activeIndex].item.value
+                        );
+                    }
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    this.closeAutocompleteSuggestions();
+                }
             },
 
             populateCliCommandSelectors() {
@@ -6769,6 +8143,7 @@
                 document.getElementById('flashDebugFlashCard').classList.toggle('active', this.currentMode === 'flash');
                 document.getElementById('flashDebugDebugCard').classList.toggle('active', this.currentMode === 'debug');
                 document.getElementById('flashDebugCliCard').classList.toggle('active', this.currentMode === 'debug');
+                this.closeAutocompleteSuggestions();
             },
 
             applyAccessState() {
@@ -6913,6 +8288,9 @@
                 document.querySelectorAll('[data-probe-rs-command]').forEach((btn) => {
                     btn.disabled = probeRsNativeLocked;
                 });
+                if (locked || anyActive || !this.hasEnabledAutocomplete()) {
+                    this.closeAutocompleteSuggestions();
+                }
                 this.syncElevationUi();
             },
 
@@ -6940,6 +8318,7 @@
                 document.getElementById('debugTelnetGroup').classList.toggle('flashdebug-hidden', !preset.showTelnet);
                 document.getElementById('debugElfGroup').classList.toggle('flashdebug-hidden', !preset.showElf);
                 this.setConfigInputMode(this.currentTool === 'openocd');
+                this.closeAutocompleteSuggestions();
 
                 document.getElementById('debugPortInput').value = String(preset.defaultDebugPort || 3333);
                 if (preset.showTelnet) {
@@ -7008,51 +8387,19 @@
             },
 
             setConfigInputMode(enabled) {
-                const targetListId = 'flashDebugTargetConfigOptions';
-                const interfaceListId = 'flashDebugInterfaceConfigOptions';
-                ['flashTargetInput', 'debugTargetInput'].forEach((id) => {
+                this.getAutocompleteInputIds().forEach((id) => {
                     const input = document.getElementById(id);
-                    if (!input) return;
-                    if (enabled) {
-                        input.setAttribute('list', targetListId);
-                    } else {
-                        input.removeAttribute('list');
-                    }
-                });
-                ['flashInterfaceConfigInput', 'debugInterfaceConfigInput'].forEach((id) => {
-                    const input = document.getElementById(id);
-                    if (!input) return;
-                    if (enabled) {
-                        input.setAttribute('list', interfaceListId);
-                    } else {
+                    if (input) {
                         input.removeAttribute('list');
                     }
                 });
             },
 
             populateConfigOptions(configs = null) {
-                const targetList = document.getElementById('flashDebugTargetConfigOptions');
-                const interfaceList = document.getElementById('flashDebugInterfaceConfigOptions');
-                targetList.innerHTML = '';
-                interfaceList.innerHTML = '';
-
-                if (!configs) {
-                    this.syncConfigHints();
-                    return;
-                }
-
-                (configs.targetConfigs || []).forEach((value) => {
-                    const option = document.createElement('option');
-                    option.value = value;
-                    targetList.appendChild(option);
-                });
-
-                (configs.interfaceConfigs || []).forEach((value) => {
-                    const option = document.createElement('option');
-                    option.value = value;
-                    interfaceList.appendChild(option);
-                });
-
+                const targetCatalog = this.tooling && Array.isArray(this.tooling.targetCatalog)
+                    ? this.tooling.targetCatalog
+                    : (this.tooling && Array.isArray(this.tooling.chips) ? this.tooling.chips : []);
+                this.syncAutocompleteCatalogs(configs, targetCatalog);
                 this.syncConfigHints();
             },
 
@@ -7065,11 +8412,24 @@
                 if (this.currentTool === 'openocd') {
                     if (configs && !configs.error && configs.scriptsDir) {
                         const sourceLabel = configs.source === 'system-default' ? '系统默认目录' : 'OpenOCD 安装目录';
-                        targetHint = `已载入 ${configs.targetConfigs.length || 0} 个 target 配置，来源：${sourceLabel} ${configs.scriptsDir}`;
-                        interfaceHint = `已载入 ${configs.interfaceConfigs.length || 0} 个 interface 配置，来源：${sourceLabel} ${configs.scriptsDir}`;
+                        targetHint = `已载入 ${configs.targetConfigs.length || 0} 个 target 配置，来源：${sourceLabel} ${configs.scriptsDir}；输入时支持前缀、片段和模糊搜索。`;
+                        interfaceHint = `已载入 ${configs.interfaceConfigs.length || 0} 个 interface 配置，来源：${sourceLabel} ${configs.scriptsDir}；输入时支持前缀、片段和模糊搜索。`;
                     } else if (configs && configs.error) {
                         targetHint = configs.error;
                         interfaceHint = configs.error;
+                    }
+                } else if (this.supportsTargetAutocomplete()) {
+                    const targetCatalogCount = this.tooling && typeof this.tooling.targetCatalogCount === 'number'
+                        ? this.tooling.targetCatalogCount
+                        : (this.tooling && Array.isArray(this.tooling.targetCatalog) ? this.tooling.targetCatalog.length : 0);
+                    const targetCatalogError = this.tooling && (this.tooling.targetCatalogError || this.tooling.chipListError);
+
+                    if (targetCatalogCount > 0) {
+                        targetHint = `已载入 ${targetCatalogCount} 个${this.currentTool === 'pyocd' ? ' pyOCD 目标' : ' probe-rs 芯片'}，输入时支持前缀、片段和模糊搜索。`;
+                    } else if (targetCatalogError) {
+                        targetHint = `未载入 ${this.getTargetCatalogLabel()}：${targetCatalogError}`;
+                    } else {
+                        targetHint = `${this.getTargetCatalogLabel()}尚未载入，可直接手动输入。`;
                     }
                 }
 
@@ -7143,6 +8503,7 @@
                 if (!State.isAdmin) {
                     this.setPathBadge('warn', '仅管理员可启动本机烧录调试');
                     this.tooling = null;
+                    this.syncAutocompleteCatalogs(null, []);
                     this.populateProgrammers([]);
                     this.populateConfigOptions(null);
                     this.syncHints();
@@ -7190,6 +8551,7 @@
                     }
                 } catch (err) {
                     this.tooling = null;
+                    this.syncAutocompleteCatalogs(null, []);
                     this.populateProgrammers([]);
                     this.populateConfigOptions(null);
                     this.setPathBadge('error', err.message);
@@ -8294,6 +9656,7 @@
         // UI
         const UI = {
             init() {
+                I18n.init();
                 About.init();
                 Theme.init();
                 Settings.init();

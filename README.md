@@ -1,138 +1,161 @@
 # Entrance Tools
 
-基于 Web 的服务器管理工具，支持 SSH 终端、本地 Shell 终端、VNC 远程桌面、WebSerial 串口终端、烧录调试和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题。
+[中文文档 / Chinese README](doc/README_CN.md)
+
+Web-based server management tools with SSH terminal access, local shell terminal access, VNC remote desktop, WebSerial terminal support, flashing/debugging workflows, and SFTP file management. The UI follows Microsoft Fluent Design, supports light/dark themes, and includes both Chinese and English interface modes.
 ![Screenshot](doc/screenshot.png)
 
-## 功能特性
+## Features
 
-### SSH 终端
-- 基于 WebSocket 的实时 SSH 连接
-- xterm.js 终端模拟器
-- 支持终端窗口大小自适应
-- 连接状态实时显示
-- **系统监控** - 实时性能监控功能
-  - 连接后自动开始采集，状态栏显示 CPU / 内存 / 磁盘 I/O
-  - 点击状态栏展开 Chart.js 折线图查看历史趋势
-  - 基于 /proc/stat、/proc/meminfo、/proc/diskstats
-  - 1秒采样间隔，最多显示60个数据点
-- **进程管理 (TOP)** - 实时进程监控面板
-  - 连接后自动采集进程信息，状态栏显示进程数 / 运行数 / 负载
-  - 点击状态栏展开查看完整进程列表
-  - 显示 PID、用户、CPU%、内存%、VSZ、RSS、状态、时间、命令
-  - 支持按 CPU / 内存 / PID / 时间排序
-  - 支持设置显示数量（15/30/50/100）
-  - **杀进程功能** - 支持发送多种信号
-    - SIGTERM (15) - 优雅终止
-    - SIGKILL (9) - 强制终止
-    - SIGINT (2) - 中断信号
-    - SIGHUP (1) - 挂起/重载配置
-    - SIGSTOP (19) - 暂停进程
-    - SIGCONT (18) - 继续进程
-- **Docker 监控** - 容器资源监控面板
-  - 连接后自动检测远程主机 Docker 环境，状态栏显示容器数 / CPU / 内存
-  - 点击状态栏展开查看详细指标
-  - SVG 圆环图展示 CPU、MEM、NET I/O、BLOCK I/O 四项指标
-  - **总计模式** - 叠加显示所有容器的资源占用
-  - **单个模式** - 左侧容器列表可选择，右侧显示选中容器的详细数据
-  - 基于 `docker stats --no-stream` 命令，每 3 秒采样一次
-  - 自动处理 Docker 未安装或权限不足等异常情况
+### SSH Terminal
+- Real-time SSH connections over WebSocket
+- xterm.js terminal emulator
+- Automatic terminal resize support
+- Real-time connection status display
+- **System Stats** - Real-time performance monitoring
+  - Starts collecting automatically after connection and shows CPU / memory / disk I/O in the status bar
+  - Click the status bar to expand a Chart.js line chart with historical trends
+  - Based on `/proc/stat`, `/proc/meminfo`, and `/proc/diskstats`
+  - 1-second sampling interval, up to 60 data points
+- **Process Management (TOP)** - Real-time process monitoring panel
+  - Collects process data automatically after connection and shows process count / running count / load
+  - Click the status bar to expand the full process list
+  - Displays PID, user, CPU%, memory%, VSZ, RSS, state, time, and command
+  - Sort by CPU / memory / PID / time
+  - Configurable row count (15/30/50/100)
+  - **Kill Process** - Supports multiple signals
+    - SIGTERM (15) - graceful termination
+    - SIGKILL (9) - force kill
+    - SIGINT (2) - interrupt signal
+    - SIGHUP (1) - hangup / reload configuration
+    - SIGSTOP (19) - pause process
+    - SIGCONT (18) - continue process
+- **Docker Monitoring** - Container resource panel
+  - Detects Docker automatically on the remote host and shows container count / CPU / memory in the status bar
+  - Click the status bar to expand detailed metrics
+  - SVG ring charts for CPU, MEM, NET I/O, and BLOCK I/O
+  - **Total mode** - aggregate resource usage across all containers
+  - **Single mode** - select a container on the left and show detailed metrics on the right
+  - Based on `docker stats --no-stream`, sampled every 3 seconds
+  - Handles missing Docker installations or permission issues automatically
 
-### 本地 Shell 终端
-- 在浏览器中访问服务器本地终端
-- Linux/macOS 使用 `script + child_process`
-- Windows 通过本机 `OpenSSH Server` + `127.0.0.1` SSH 会话获取 PTY/ConPTY 语义，无需 `node-pty`
-- 支持 Linux、macOS、Windows
-- 仅允许 PATH 内的 Shell（bash/zsh/fish/cmd/powershell 等）
-- 256 色彩支持
-- 终端大小自适应
+### Local Shell Terminal
+- Access the server's local terminal in the browser
+- Linux/macOS uses `script + child_process`
+- Windows uses local `OpenSSH Server` plus a `127.0.0.1` SSH session to get PTY/ConPTY semantics without `node-pty`
+- Supports Linux, macOS, and Windows
+- Only shells found in PATH are allowed (bash/zsh/fish/cmd/powershell, etc.)
+- 256-color support
+- Automatic terminal resize
 
-### VNC 远程桌面
-- 基于 noVNC 的远程桌面连接
-- 支持 WebSocket 代理连接
-- 全屏模式支持
-- 实时画面传输
+### VNC Remote Desktop
+- noVNC-based remote desktop connection
+- WebSocket proxy support
+- Fullscreen support
+- Real-time screen streaming
 
-### WebSerial 串口终端
-- 浏览器原生串口通信（Web Serial API）
-- 支持自定义波特率配置
-- xterm.js 终端显示
-- 支持 Linux `/dev/tty*`、macOS `/dev/cu.*`、Windows `COM*` 串口
-- **实时波形可视化** - 类示波器功能
-  - 自动检测 `Variable:Value` 格式数据
-  - 动态创建多变量曲线
-  - 滑动窗口显示（可调节 50-1000 采样点）
-  - 实时图例显示当前值
-  - 暂停/继续/清除功能
-- **统计图可视化** - 柱状图对比功能
-  - 支持 `var:[a:2, b:3, c:5, d:6]` 格式数据
-  - 不同子变量自动分配不同颜色
-  - 支持多变量同时显示
-- **演示模式** - 无需真实串口即可测试波形和统计图功能
-- 适用于硬件调试、嵌入式开发、ADC 数据可视化
+### WebSerial Terminal
+- Native browser serial communication via the Web Serial API
+- Custom baud rate configuration
+- xterm.js terminal output
+- Supports Linux `/dev/tty*`, macOS `/dev/cu.*`, and Windows `COM*` ports
+- **Real-time Waveform Visualization**
+  - Automatically detects `Variable:Value` format data
+  - Creates multi-variable curves dynamically
+  - Sliding window display (50-1000 samples configurable)
+  - Real-time legend values
+  - Pause / resume / clear support
+- **Stat Chart Visualization**
+  - Supports `var:[a:2, b:3, c:5, d:6]` format data
+  - Different subkeys get distinct colors automatically
+  - Supports multiple variables shown at once
+- **Demo Mode**
+  - Test waveform and stat chart features without a real serial device
+- Useful for hardware debugging, embedded development, and ADC data visualization
 
-### 烧录调试
-- 支持 `OpenOCD`、`pyOCD`、`probe-rs` 三类本机烧录/调试工具
-- 支持 GUI 选择烧录器、目标芯片/配置、速率、附加参数，并实时展示最终 CLI 与输出日志
-- 支持本地固件文件上传到当前 Entrance 主机临时目录后再执行烧录
-- `OpenOCD` 支持 target/interface 配置自动发现，`pyOCD` / `probe-rs` 支持自动枚举 probe
-- **管理员/root 权限请求** - 可在启动烧录或调试前请求系统级提权
-  - Linux 优先使用 `pkexec`，否则回退到 `sudo + zenity/kdialog`
-  - macOS 使用 `sudo + osascript`
-  - Windows 优先使用 `gsudo`，否则使用系统 `sudo`
-- 仅管理员可启动本机烧录或调试任务
+### Flash & Debug
+- Supports local `OpenOCD`, `pyOCD`, and `probe-rs` flashing/debugging tools
+- Select probe, target chip/config, speed, and extra arguments from the GUI, with live CLI preview and logs
+- Upload firmware files to a temporary directory on the current Entrance host before flashing
+- `OpenOCD` supports automatic target/interface config discovery; `pyOCD` and `probe-rs` support automatic probe enumeration
+- **Target Search Autocomplete**
+  - `OpenOCD` can search `target/*.cfg` and `interface/*.cfg`
+  - `pyOCD` can search its built-in target catalog
+  - `probe-rs` can search the chip catalog returned by `probe-rs chip list`
+  - Supports prefix matches, substring matches, and lightweight fuzzy matching while still allowing manual input
+- **Admin/root Elevation Request**
+  - Linux prefers `pkexec`, then falls back to `sudo + zenity/kdialog`
+  - macOS uses `sudo + osascript`
+  - Windows prefers `gsudo`, then falls back to system `sudo`
+- Only administrators can start local flashing or debugging tasks
 
-### SFTP 文件管理
-- 远程文件浏览与导航
-- 前进/后退/上级目录导航
-- 文件/文件夹上传（支持拖拽）
-- 单文件下载
-- 多文件/文件夹打包下载（ZIP）
-- 新建文件夹
-- 删除文件/文件夹
-- Ctrl+点击 多选文件
+### SFTP File Management
+- Remote file browsing and navigation
+- Back / forward / parent directory navigation
+- File and folder upload with drag-and-drop support
+- Single-file download
+- Multi-file or folder ZIP download
+- Create new folders
+- Delete files and folders
+- Ctrl+click multi-select
 
-### 界面特性
-- Microsoft Fluent Design 设计风格
-- 亮色/暗色主题切换
-- **Material You 配色方案** - 6 套可选强调色方案
-  - 默认方案（中性石墨）
-  - 樱花粉（柔和花瓣）
-  - 海洋蓝（清澈潮汐）
-  - 森林绿（苔藓林地）
-  - 暮光紫（柔雾暮色）
-  - 琥珀橙（温暖日落）
-- 亚克力效果（Acrylic）
-- Reveal 高亮效果
-- 响应式侧边栏
+### UI Features
+- Microsoft Fluent Design
+- Light / dark theme toggle
+- **Material You Color Schemes** - 6 optional accent themes
+  - Default (neutral graphite)
+  - Sakura (soft petals)
+  - Ocean (clear tide)
+  - Forest (moss grove)
+  - Twilight (soft dusk)
+  - Amber (warm sunset)
+- **UI Internationalization**
+  - Simplified Chinese by default, with instant switching between Chinese and English
+  - A dedicated language card is shown below the color scheme card in Settings
+  - Language choice is persisted in browser local storage
+- Acrylic effects
+- Reveal highlight effect
+- Responsive sidebar
 
-### 设置
-- **修改密码** - 用户可在设置页面修改自己的登录密码（Argon2id 加密）
-- 当 `ENTRANCE_DESKTOP_NOLOGIN=1` 时，密码修改功能禁用并显示提示
-- **配色方案切换** - 在设置页面选择 Material You Design 风格的配色方案，选择自动保存
+### Settings
+- **Change Password** - users can change their own login password in Settings (Argon2id hashed)
+- When `ENTRANCE_DESKTOP_NOLOGIN=1`, password changes are disabled and a notice is shown
+- **Color Scheme Switching** - choose a Material You style accent scheme in Settings, saved automatically
+- **Language Switching** - switch the UI language from a dedicated card below the color scheme card; default is Simplified Chinese, currently supports Chinese and English
 
-## 快速开始
+## Quick Start
 
-### 环境要求
+### Requirements
 - Node.js >= 16.0.0
 - npm
 
-### 本地运行
+### Run Locally
 
 ```bash
-# 克隆仓库
+# Clone the repository
 git clone git@github.com:fcanlnony/Entrance.git
 cd Entrance
 
-# 安装依赖
+# Install dependencies
 npm install
 
-# 启动服务
+# Start the service
 npm start
 ```
 
-访问 http://localhost:3000，使用账号登录后进入工具面板。
+Visit http://localhost:3000 and sign in to enter the dashboard.
 
-### 最小运行示例
+To use a different port, use an environment variable or CLI flag:
+
+```bash
+PORT=4000 npm start
+# or
+npm start -- --port 4000
+```
+
+Then open `http://localhost:4000`.
+
+### Minimal Run Example
 
 ```bash
 mkdir -p ./.data
@@ -143,21 +166,21 @@ export AUTH_SECRET="$(tr -d '\n' < ./.data/auth_secret)"
 npm start
 ```
 
-上面的示例会把运行时数据固定到 `./.data`，并让 Entrance 在 `./.data/.ssh_password_key` 中自动生成并复用 SSH 凭据加密密钥。不要在每次重启前重新生成 `SSH_PASSWORD_KEY`，否则历史白名单、密码和私钥将无法解密。
+This example pins runtime data to `./.data` and lets Entrance generate and reuse the SSH credential encryption key in `./.data/.ssh_password_key`. Do not regenerate `SSH_PASSWORD_KEY` before each restart, or existing allowlists, passwords, and private keys will become undecryptable.
 
-默认账号为 `admin/admin`（首次启动自动生成）。
+The default account is `admin/admin` on first boot.
 
-### Docker 启动示例
+### Docker Example
 
 ```bash
-# 构建镜像
+# Build the image
 docker build -t entrance-tools .
 
-# 仅首次创建一次运行环境
+# Create runtime resources once
 docker volume create entrance-tools-data
 [ -f ./.docker-auth_secret ] || openssl rand -base64 32 > ./.docker-auth_secret
 
-# 运行（端口映射 + 持久化数据）
+# Run with port mapping and persistent data
 docker run -d --name entrance-tools \
   -p 3000:3000 \
   -e AUTH_SECRET="$(tr -d '\n' < ./.docker-auth_secret)" \
@@ -166,11 +189,23 @@ docker run -d --name entrance-tools \
   entrance-tools:latest
 ```
 
-这里故意不传 `SSH_PASSWORD_KEY`。容器会在持久化卷 `/data/.ssh_password_key` 中自动生成并长期复用它；只要卷不丢，重建容器也不会导致历史加密数据失效。
+To expose a different port, for example `4000`, change both the internal listen port and the host port mapping:
 
-### Docker Compose 启动示例
+```bash
+docker run -d --name entrance-tools \
+  -p 4000:4000 \
+  -e PORT=4000 \
+  -e AUTH_SECRET="$(tr -d '\n' < ./.docker-auth_secret)" \
+  -e ENTRANCE_DATA_DIR=/data \
+  -v entrance-tools-data:/data \
+  entrance-tools:latest
+```
 
-项目已包含 `compose.yml`，默认将宿主机 `./data` 挂载到容器内 `/data`：
+`SSH_PASSWORD_KEY` is intentionally omitted here. The container generates it once in the persistent volume at `/data/.ssh_password_key` and keeps reusing it. As long as the volume remains, rebuilding the container will not break historical encrypted data.
+
+### Docker Compose Example
+
+The repository already includes `compose.yml`, which mounts host `./data` into container `/data` by default:
 
 ```bash
 mkdir -p ./data
@@ -180,11 +215,18 @@ export AUTH_SECRET="$(tr -d '\n' < ./.compose-auth_secret)"
 docker compose up -d --build
 ```
 
-同样建议不要在每次 `docker compose up` 前重新生成 `SSH_PASSWORD_KEY`。保留 `./data` 目录后，Entrance 会自动复用 `./data/.ssh_password_key`。
+To use a different port, set `PORT` before startup:
 
-### Podman 用户说明
+```bash
+export PORT=4000
+docker compose up -d --build
+```
 
-Podman 用户将上述示例中的 `docker` 替换为 `podman` 即可。如果需要 Host 网络和串口设备，可参考：
+Likewise, do not regenerate `SSH_PASSWORD_KEY` before every `docker compose up`. If you keep `./data`, Entrance will automatically reuse `./data/.ssh_password_key`.
+
+### Podman Notes
+
+Podman users can substitute `docker` with `podman`. If you need host networking and serial devices:
 
 ```bash
 [ -f ./.podman-auth_secret ] || openssl rand -base64 32 > ./.podman-auth_secret
@@ -199,97 +241,98 @@ podman run -d --name entrance-tools \
   entrance-tools:latest
 ```
 
-> 将 `--device /dev/ttyS*` 替换为你机器上实际存在的串口设备（例如 `/dev/ttyUSB0`、`/dev/ttyACM0`）。Host 网络模式下无需 `-p` 映射端口。
+> Replace `--device /dev/ttyS*` with the actual serial devices on your machine, such as `/dev/ttyUSB0` or `/dev/ttyACM0`. Host networking does not require `-p` port mapping.
 
-## 环境变量
+## Environment Variables
 
-| 变量 | 默认值 | 说明 |
+| Variable | Default | Description |
 | --- | --- | --- |
-| `PORT` | `3000` | HTTP 服务监听端口 |
-| `ENTRANCE_DATA_DIR` | 项目根目录 | 持久化数据目录，包含 `users.json`、`userdata/`、`known_hosts.json`、`private-networks.json`、`.ssh_password_key` |
-| `AUTH_SECRET` | 无，必填 | 登录 token 签名密钥，要求至少 32 字节（base64 或 64 字符十六进制） |
-| `SSH_PASSWORD_KEY` | 未设置时自动生成 `.ssh_password_key` | 用于加密 SSH/SFTP 凭据与私有网络白名单的 32 字节密钥；如果手动设置，必须在重启后保持不变 |
-| `AUTH_TOKEN_TTL` | `43200` | 登录 token 有效期（秒） |
-| `LOGIN_WINDOW_MS` | `900000` | 登录失败限流时间窗口（毫秒） |
-| `LOGIN_MAX_ATTEMPTS` | `5` | 时间窗口内允许的最大失败登录次数 |
-| `STRICT_HOST_KEY_CHECKING` | `false` | 设为 `true` 时拒绝未知 SSH 主机指纹 |
-| `ALLOWED_TARGETS` | 空 | 允许连接的目标主机白名单，逗号分隔，支持 `*.example.com` |
-| `ALLOW_PRIVATE_NETWORKS` | `false` | 设为 `true` 时允许直接访问私有地址；否则需通过管理员白名单放行 |
-| `ENTRANCE_DESKTOP_NOLOGIN` | `0` | 设为 `1` 时跳过登录，直接以 `admin` 身份访问，仅建议在受信任环境使用 |
+| `PORT` | `3000` | HTTP listening port; can also be overridden with `npm start -- --port 4000` |
+| `ENTRANCE_DATA_DIR` | repository root | Persistent data directory containing `users.json`, `userdata/`, `known_hosts.json`, `private-networks.json`, and `.ssh_password_key` |
+| `AUTH_SECRET` | none, required | Signing key for auth tokens; must be at least 32 bytes (base64 or 64 hex chars) |
+| `SSH_PASSWORD_KEY` | auto-generates `.ssh_password_key` when unset | 32-byte key used to encrypt SSH/SFTP credentials and the private network allowlist; if set manually, it must remain stable across restarts |
+| `AUTH_TOKEN_TTL` | `43200` | Auth token lifetime in seconds |
+| `LOGIN_WINDOW_MS` | `900000` | Rate-limit window for failed logins in milliseconds |
+| `LOGIN_MAX_ATTEMPTS` | `5` | Maximum failed logins allowed during the rate-limit window |
+| `STRICT_HOST_KEY_CHECKING` | `false` | When `true`, reject unknown SSH host keys |
+| `ALLOWED_TARGETS` | empty | Comma-separated allowlist of target hosts, supports `*.example.com` |
+| `ALLOW_PRIVATE_NETWORKS` | `false` | When `true`, allow direct private-address access; otherwise admin allowlisting is required |
+| `ENTRANCE_DESKTOP_NOLOGIN` | `0` | When `1`, skip login and access the app directly as `admin`; recommended only in trusted environments |
 
-## 项目结构
+## Project Structure
 
-```
+```text
 .
-├── compose.yml          # Docker Compose 配置
-├── Dockerfile           # Docker 镜像构建文件
-├── public/              # 前端静态资源
+├── compose.yml          # Docker Compose configuration
+├── Dockerfile           # Docker image build file
+├── public/              # Frontend static assets
 │   ├── index.html
 │   └── vnc-client.js
-├── server.js            # 后端服务器
-├── local-shell.js       # 本地 Shell 模块（跨平台）
-├── flash-debug.js       # 本机烧录/调试模块（OpenOCD / pyOCD / probe-rs）
-├── vnc.js               # VNC 代理模块
-├── nginx/               # 反向代理示例配置
-├── package.json         # 依赖配置
-├── users.json           # 用户数据（自动生成，可位于 ENTRANCE_DATA_DIR）
-├── .ssh_password_key    # SSH 凭据加密密钥（自动生成）
-├── known_hosts.json     # SSH 主机指纹（自动生成）
-├── private-networks.json  # 私有网络白名单（自动生成，已加密）
-└── userdata/            # 用户数据目录（自动生成）
-    ├── admin.json       # admin 的主机列表
-    └── user1.json       # user1 的主机列表
+├── server.js            # Backend server
+├── local-shell.js       # Cross-platform local shell module
+├── flash-debug.js       # Local flash/debug module (OpenOCD / pyOCD / probe-rs)
+├── vnc.js               # VNC proxy module
+├── nginx/               # Reverse proxy example config
+├── package.json         # Dependency manifest
+├── users.json           # User data (generated, may live under ENTRANCE_DATA_DIR)
+├── .ssh_password_key    # SSH credential encryption key (generated)
+├── known_hosts.json     # SSH host fingerprints (generated)
+├── private-networks.json  # Private network allowlist (generated, encrypted)
+└── userdata/            # User data directory (generated)
+    ├── admin.json       # Saved hosts for admin
+    └── user1.json       # Saved hosts for user1
 ```
 
-## 技术栈
+## Technology Stack
 
-### 前端
-- 原生 HTML/CSS/JavaScript
-- [xterm.js](https://xtermjs.org/) - 终端模拟器
-- [Chart.js](https://www.chartjs.org/) - 波形可视化图表
-- [noVNC](https://novnc.com/) - VNC 客户端
-- [Font Awesome](https://fontawesome.com/) - 图标库
+### Frontend
+- Plain HTML/CSS/JavaScript
+- Single-file frontend with built-in theme, color scheme, and UI language switching logic
+- [xterm.js](https://xtermjs.org/) - terminal emulator
+- [Chart.js](https://www.chartjs.org/) - waveform/stat visualization
+- [noVNC](https://novnc.com/) - VNC client
+- [Font Awesome](https://fontawesome.com/) - icon set
 
-### 后端
-- [Express](https://expressjs.com/) - Web 框架
+### Backend
+- [Express](https://expressjs.com/) - web framework
 - [ws](https://github.com/websockets/ws) - WebSocket
-- [ssh2](https://github.com/mscdex/ssh2) - SSH 客户端
-- script + child_process / localhost SSH - 本地终端（Linux/macOS/Windows，无需编译）
-- OpenOCD / pyOCD / probe-rs - 本机烧录与调试工具链
-- [argon2](https://github.com/ranisalt/node-argon2) - 用户密码 Argon2id 哈希
-- [multer](https://github.com/expressjs/multer) - 文件上传
-- [archiver](https://github.com/archiverjs/node-archiver) - ZIP 打包
+- [ssh2](https://github.com/mscdex/ssh2) - SSH client
+- script + child_process / localhost SSH - local terminal support (Linux/macOS/Windows, no native compilation)
+- OpenOCD / pyOCD / probe-rs - local flashing and debugging toolchain
+- [argon2](https://github.com/ranisalt/node-argon2) - Argon2id password hashing
+- [multer](https://github.com/expressjs/multer) - file uploads
+- [archiver](https://github.com/archiverjs/node-archiver) - ZIP packaging
 
-> **注意**：本地 Shell 功能支持 Linux、macOS 与 Windows。Linux/macOS 使用 `script` 创建 PTY；Windows 不再直接 `spawn` `COMSPEC`/PowerShell，而是通过本机 `OpenSSH Server` 连接 `127.0.0.1` 来获得正确的终端编辑行为。
+> **Note**: Local Shell supports Linux, macOS, and Windows. Linux/macOS uses `script` to create PTYs. Windows no longer spawns `COMSPEC`/PowerShell directly; instead it connects to local `OpenSSH Server` on `127.0.0.1` to get correct terminal editing semantics.
 
-## API 接口
+## API
 
-### 认证
-- `POST /api/auth/login` - 登录并返回 token
-- `POST /api/auth/verify` - 校验 token
+### Authentication
+- `POST /api/auth/login` - sign in and return a token
+- `POST /api/auth/verify` - verify a token
 
-所有 API 需在请求头携带 `Authorization: Bearer <token>`。
+All APIs require `Authorization: Bearer <token>` in the request header.
 
-### 用户数据
-- `GET /api/userdata/:userId/hosts` - 获取主机列表
-- `POST /api/userdata/:userId/hosts` - 添加主机
-- `DELETE /api/userdata/:userId/hosts/:index` - 删除主机
+### User Data
+- `GET /api/userdata/:userId/hosts` - get saved hosts
+- `POST /api/userdata/:userId/hosts` - add a host
+- `DELETE /api/userdata/:userId/hosts/:index` - delete a host
 
 ### SFTP
-- `POST /api/sftp/connect` - 建立连接
-- `POST /api/sftp/disconnect/:sessionId` - 断开连接
-- `GET /api/sftp/list/:sessionId` - 列出目录
-- `GET /api/sftp/home/:sessionId` - 获取家目录
-- `POST /api/sftp/mkdir/:sessionId` - 创建目录
-- `DELETE /api/sftp/delete/:sessionId` - 删除文件/目录
-- `POST /api/sftp/upload/:sessionId` - 上传文件
-- `GET /api/sftp/download/:sessionId` - 下载文件
-- `POST /api/sftp/download-zip/:sessionId` - 打包下载
+- `POST /api/sftp/connect` - open a connection
+- `POST /api/sftp/disconnect/:sessionId` - close a connection
+- `GET /api/sftp/list/:sessionId` - list a directory
+- `GET /api/sftp/home/:sessionId` - get the home directory
+- `POST /api/sftp/mkdir/:sessionId` - create a directory
+- `DELETE /api/sftp/delete/:sessionId` - delete a file or directory
+- `POST /api/sftp/upload/:sessionId` - upload files
+- `GET /api/sftp/download/:sessionId` - download a file
+- `POST /api/sftp/download-zip/:sessionId` - download a ZIP bundle
 
-SFTP 连接参数示例：
+Example SFTP connection payloads:
 
 ```javascript
-// 密码登录
+// Password auth
 {
   "host": "192.168.1.10",
   "port": 22,
@@ -298,7 +341,7 @@ SFTP 连接参数示例：
   "password": "xxx"
 }
 
-// 私钥登录
+// Private key auth
 {
   "host": "192.168.1.10",
   "port": 22,
@@ -309,19 +352,19 @@ SFTP 连接参数示例：
 }
 ```
 
-### 安全配置
-- `GET /api/security/private-networks` - 获取私有网段白名单（管理员）
-- `PUT /api/security/private-networks` - 更新私有网段白名单（管理员）
+### Security Configuration
+- `GET /api/security/private-networks` - get the private CIDR allowlist (admin)
+- `PUT /api/security/private-networks` - update the private CIDR allowlist (admin)
 
 ### SSH (WebSocket)
 
-WebSocket 连接到 `ws://host:port/ssh?token=...`，消息格式：
+Connect to `ws://host:port/ssh?token=...` with messages like:
 
 ```javascript
-// 连接
+// Connect
 { "type": "connect", "host": "192.168.1.1", "port": 22, "username": "root", "password": "xxx" }
 
-// 使用私钥连接
+// Connect with private key
 {
   "type": "connect",
   "host": "192.168.1.1",
@@ -332,74 +375,77 @@ WebSocket 连接到 `ws://host:port/ssh?token=...`，消息格式：
   "passphrase": "optional"
 }
 
-// 发送数据
+// Send data
 { "type": "data", "data": "ls -la\n" }
 
-// 调整窗口大小
+// Resize terminal
 { "type": "resize", "cols": 80, "rows": 24 }
 
-// 断开连接
+// Disconnect
 { "type": "disconnect" }
 
-// 开始系统监控（每秒采集 /proc/stat, /proc/meminfo, /proc/diskstats）
+// Start system stats (sample /proc/stat, /proc/meminfo, /proc/diskstats every second)
 { "type": "startStats" }
 
-// 停止系统监控
+// Stop system stats
 { "type": "stopStats" }
 
-// 开始进程监控（每2秒采集 uptime 和 ps aux）
+// Start process stats (sample uptime and ps aux every 2 seconds)
 { "type": "startTop" }
 
-// 停止进程监控
+// Stop process stats
 { "type": "stopTop" }
 
-// 手动刷新进程列表
+// Refresh process list manually
 { "type": "refreshTop" }
 
-// 发送信号给进程（杀进程）
+// Send a signal to a process
 { "type": "kill", "pid": 1234, "signal": 15 }
 
-// 开始 Docker 监控（每3秒采集 docker stats --no-stream）
+// Start Docker stats (sample docker stats --no-stream every 3 seconds)
 { "type": "startDockerStats" }
 
-// 停止 Docker 监控
+// Stop Docker stats
 { "type": "stopDockerStats" }
 
-// 手动刷新 Docker 数据
+// Refresh Docker stats manually
 { "type": "refreshDockerStats" }
 ```
 
-服务器返回的系统监控数据格式：
+System stats payload returned by the server:
+
 ```javascript
 {
   "type": "stats",
   "data": {
-    "stat": "cpu  12345 678 ...",      // /proc/stat 内容
-    "meminfo": "MemTotal: ...",         // /proc/meminfo 内容
-    "diskstats": "8 0 sda ..."          // /proc/diskstats 内容
+    "stat": "cpu  12345 678 ...",      // /proc/stat output
+    "meminfo": "MemTotal: ...",         // /proc/meminfo output
+    "diskstats": "8 0 sda ..."          // /proc/diskstats output
   }
 }
 ```
 
-服务器返回的进程监控数据格式：
+Process stats payload returned by the server:
+
 ```javascript
 {
   "type": "top",
   "data": {
-    "uptime": "10:15:03 up 5 days...",  // uptime 命令输出
-    "ps": "USER PID %CPU %MEM ..."       // ps aux 命令输出
+    "uptime": "10:15:03 up 5 days...",  // uptime output
+    "ps": "USER PID %CPU %MEM ..."       // ps aux output
   }
 }
 ```
 
-服务器返回的 Docker 监控数据格式：
+Docker stats payload returned by the server:
+
 ```javascript
 {
   "type": "dockerStats",
   "data": {
-    "available": true,                // Docker 是否可用
-    "error": null,                    // 错误信息（不可用时）
-    "containers": [                   // 容器列表（docker stats --format json 输出）
+    "available": true,                // whether Docker is available
+    "error": null,                    // error message when unavailable
+    "containers": [                   // container list from docker stats --format json
       {
         "ID": "abc123...",
         "Name": "my-container",
@@ -415,58 +461,61 @@ WebSocket 连接到 `ws://host:port/ssh?token=...`，消息格式：
 }
 ```
 
-服务器返回的杀进程结果：
+Kill-process result returned by the server:
+
 ```javascript
 {
   "type": "killResult",
   "data": {
     "success": true,
-    "message": "已发送 SIGTERM 到 PID 1234"
+    "message": "SIGTERM sent to PID 1234"
   }
 }
 ```
 
 ### VNC (WebSocket)
 
-WebSocket 连接到 `ws://host:port/vnc`，代理转发到目标 VNC 服务器。
+Connect to `ws://host:port/vnc`; the server proxies traffic to the target VNC server.
 
-消息格式：
+Message format:
+
 ```javascript
-// 初始连接时发送目标信息
+// Initial target info
 { "type": "connect", "host": "192.168.1.1", "port": 5900 }
 ```
 
-### 本地 Shell (WebSocket)
+### Local Shell (WebSocket)
 
-Linux/macOS 下通过 `ws://host:port/localshell` 访问服务器本地终端；Windows Web 终端页面内部会改走 `ws://host:port/ssh` 并连接到 `127.0.0.1`。
+Linux/macOS uses `ws://host:port/localshell` for the server-local terminal. On Windows, the Web Terminal page switches internally to `ws://host:port/ssh` and connects to `127.0.0.1`.
 
-消息格式：
+Message format:
+
 ```javascript
-// 启动 shell
+// Start shell
 { "type": "start", "cols": 80, "rows": 24, "cwd": "/home/user" }
 
-// 发送输入
+// Send input
 { "type": "data", "data": "ls -la\n" }
 
-// 调整窗口大小
+// Resize
 { "type": "resize", "cols": 120, "rows": 40 }
 
-// 停止 shell
+// Stop shell
 { "type": "stop" }
 ```
 
-状态检查 API：
-- `GET /api/localshell/status` - 获取本地 shell 服务状态
+Status API:
+- `GET /api/localshell/status` - get local shell service status
 
-### 烧录调试
+### Flash & Debug
 
-- `GET /api/flashdebug/tooling?tool=openocd|pyocd|probe-rs[&path=/abs/path]` - 检测工具路径、probe 列表、OpenOCD 配置目录，以及当前平台的提权能力
-- `POST /api/flashdebug/upload` - 上传固件文件到当前 Entrance 主机临时目录
+- `GET /api/flashdebug/tooling?tool=openocd|pyocd|probe-rs[&path=/abs/path]` - detect executable paths, probe lists, OpenOCD config catalogs, and available elevation methods on the current platform
+- `POST /api/flashdebug/upload` - upload firmware files to a temporary directory on the current Entrance host
 
-WebSocket 连接到 `ws://host:port/flashdebug?token=...`，消息格式：
+Connect to `ws://host:port/flashdebug?token=...` with messages like:
 
 ```javascript
-// 启动烧录
+// Start flashing
 {
   "type": "start",
   "action": "flash",
@@ -485,7 +534,7 @@ WebSocket 连接到 `ws://host:port/flashdebug?token=...`，消息格式：
   }
 }
 
-// 启动实时调试
+// Start live debugging
 {
   "type": "start",
   "action": "debug",
@@ -502,23 +551,23 @@ WebSocket 连接到 `ws://host:port/flashdebug?token=...`，消息格式：
   }
 }
 
-// 停止当前任务
+// Stop current task
 { "type": "stop" }
 ```
 
-服务器会返回：
-- `started` - 任务已启动，包含最终执行命令预览
-- `output` - stdout/stderr/system 输出流
-- `exit` - 进程退出状态
-- `error` - 启动失败或运行时错误
+The server returns:
+- `started` - task started, includes the final command preview
+- `output` - stdout/stderr/system output stream
+- `exit` - process exit status
+- `error` - startup failure or runtime error
 
-### 串口数据格式 (WebSerial)
+### Serial Data Formats (WebSerial)
 
-串口终端支持两种数据格式的自动解析，两种格式互斥，不会相互干扰：
+The serial terminal automatically parses two mutually exclusive formats without interference:
 
-#### 波形数据格式
+#### Waveform Data Format
 
-用于实时波形显示，格式为 `VariableName:NumericValue`：
+Used for real-time waveform rendering in the format `VariableName:NumericValue`:
 
 ```
 ADC1:1024
@@ -527,62 +576,65 @@ Sin:-0.866
 Voltage:3.3
 ```
 
-也支持单行多变量（逗号分隔）：
+Single-line multi-variable input is also supported:
+
 ```
 a:2, b:4, temp:25.5
 ```
 
-- 变量名：字母或下划线开头，可包含字母、数字、下划线
-- 数值：整数或浮点数，支持负数
-- 每行一个或多个数据点，以换行符分隔
-- 自动为每个变量分配不同颜色
+- Variable name: starts with a letter or underscore; may contain letters, numbers, and underscores
+- Value: integer or float, supports negatives
+- One or more data points per line, separated by newlines
+- Each variable gets a distinct color automatically
 
-#### 统计图数据格式
+#### Stat Chart Data Format
 
-用于柱状图对比显示，格式为 `varName:[key1:value1, key2:value2, ...]`：
+Used for bar-chart comparisons in the format `varName:[key1:value1, key2:value2, ...]`:
 
 ```
 stats:[a:2, b:3, c:5, d:6]
 ```
 
-支持单行多变量：
+Single-line multiple variables are also supported:
+
 ```
 var1:[a:4, b:6], var2:[a:6, b:3, c:2]
 ```
 
-支持多行解析（每行独立解析）：
+Multi-line parsing is supported as well:
+
 ```
 cpu:[user:45, system:12, idle:43]
 memory:[used:8192, free:4096, cached:2048]
 ```
 
-- 变量名（如 `stats`、`var1`）：作为 X 轴标签
-- 子变量名（如 `a`、`b`、`c`）：每个子变量使用不同颜色
-- 数值：整数或浮点数，支持负数
-- 相同子变量名在不同变量中会使用相同颜色，方便对比
+- Variable name such as `stats` or `var1`: used as the X-axis label
+- Subkeys such as `a`, `b`, `c`: each subkey uses a distinct color
+- Value: integer or float, supports negatives
+- Matching subkey names reuse the same color across variables for easier comparison
 
-## 安全说明
+## Security Notes
 
-- 登录默认启用，登录 token 使用 `AUTH_SECRET` 进行签名；仅在 `ENTRANCE_DESKTOP_NOLOGIN=1` 时跳过登录流程。
-- `users.json` 中的密码使用 `Argon2id` 哈希存储；旧版明文密码会在用户成功登录后自动迁移。
-- SSH/SFTP 凭据（密码、私钥、私钥口令）仅保存在用户浏览器本地或服务端用户数据中，服务端落盘会使用 `SSH_PASSWORD_KEY` 进行 AES-256-GCM 加密。
-- 私有网络白名单存储在 `private-networks.json` 中，服务端落盘同样使用 `SSH_PASSWORD_KEY` 进行 AES-256-GCM 加密。
-- `SSH_PASSWORD_KEY` 变更后，历史已加密凭据和白名单将无法解密；需要恢复原密钥或重新录入数据。
-- **本地 Shell 安全提示**（Linux/macOS/Windows，仅管理员可用）：本地 Shell 功能允许直接访问服务器终端，请确保：
-  - 仅在受信任的网络环境中使用
-  - 限制访问权限给授权管理员
-  - Windows 场景仅启用本机 `OpenSSH Server`，并限制允许登录的本地账号
-  - 生产环境中考虑禁用此功能或在反向代理层增加额外认证
-- **烧录调试安全提示**（仅管理员可用）：烧录/调试功能可直接调用本机工具链，并且可选请求系统级管理员/root 权限，请确保：
-  - 仅在受信任的开发机或实验环境中启用
-  - 将 `OpenOCD`、`pyOCD`、`probe-rs`、`pkexec`、`sudo`、`gsudo` 等可执行文件来源控制在可信范围
-  - 仅在确有设备访问或驱动权限需求时启用“请求管理员/root 权限”
-  - 若使用 Linux 图形密码对话框模式，请确认 `zenity` 或 `kdialog` 来自系统包管理器
+- Login is enabled by default. Auth tokens are signed with `AUTH_SECRET`; login is skipped only when `ENTRANCE_DESKTOP_NOLOGIN=1`.
+- Passwords in `users.json` are stored as `Argon2id` hashes. Legacy plaintext passwords are migrated automatically after a successful login.
+- SSH/SFTP credentials, including passwords, private keys, and passphrases, are stored only in the browser or in server-side user data; when persisted, they are encrypted with AES-256-GCM using `SSH_PASSWORD_KEY`.
+- The private network allowlist is stored in `private-networks.json` and encrypted with AES-256-GCM using `SSH_PASSWORD_KEY`.
+- If `SSH_PASSWORD_KEY` changes, historical encrypted credentials and allowlist entries become unreadable until the old key is restored or the data is re-entered.
+- **Local Shell Security** (Linux/macOS/Windows, admin only): local shell access gives direct terminal access to the server. Make sure to:
+  - use it only on trusted networks
+  - restrict access to authorized administrators
+  - on Windows, enable only the local `OpenSSH Server` and limit which local accounts may log in
+  - consider disabling this feature in production or adding extra authentication at the reverse proxy layer
+- **Flash/Debug Security** (admin only): flashing/debugging can invoke local toolchains directly and optionally request admin/root privileges. Make sure to:
+  - enable it only on trusted developer machines or lab environments
+  - keep executables such as `OpenOCD`, `pyOCD`, `probe-rs`, `pkexec`, `sudo`, and `gsudo` within a trusted supply chain
+  - enable "request admin/root privileges" only when device access or driver permissions actually require it
+  - when using Linux GUI password dialog mode, ensure `zenity` or `kdialog` comes from the system package manager
 
-## 许可证
+## License
 
 GPL-3.0 License
 
-## 贡献
+## Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and pull requests are welcome.

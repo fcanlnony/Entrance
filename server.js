@@ -26,8 +26,36 @@ const server = http.createServer(app);
 
 app.set('trust proxy', 1);
 
+function parseStartupPort(argv = [], envPort = process.env.PORT) {
+    const args = Array.isArray(argv) ? argv : [];
+    let cliPort = '';
+
+    for (let index = 0; index < args.length; index += 1) {
+        const arg = String(args[index] || '').trim();
+        if (!arg) continue;
+
+        if (arg === '--port' || arg === '-p') {
+            cliPort = String(args[index + 1] || '').trim();
+            break;
+        }
+
+        const match = arg.match(/^--port=(.+)$/);
+        if (match) {
+            cliPort = String(match[1] || '').trim();
+            break;
+        }
+    }
+
+    const rawPort = cliPort || String(envPort || '').trim() || '3000';
+    const parsedPort = parseInt(rawPort, 10);
+    if (!Number.isFinite(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+        throw new Error(`PORT/--port 无效: ${rawPort}，端口范围必须是 1-65535`);
+    }
+    return parsedPort;
+}
+
 // 配置
-const PORT = process.env.PORT || 3000;
+const PORT = parseStartupPort(process.argv.slice(2), process.env.PORT);
 const DATA_DIR = path.resolve(process.env.ENTRANCE_DATA_DIR || __dirname);
 const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
