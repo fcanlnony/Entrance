@@ -3,6 +3,11 @@
 基于 Web 的服务器管理工具，支持 SSH 终端、本地 Shell 终端、VNC 远程桌面、WebSerial 串口终端、烧录调试和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题，并提供中文/英文界面切换。
 ![Screenshot](screenshot_cn.png)
 
+## 友链
+
+- EK-OmniProbe https://github.com/EmbeddedKitOrg/EK-OmniProbe
+- Clion-Waveform-Plotter https://github.com/Szturin/Clion-Waveform-Plotter
+
 ## 功能特性
 
 ### SSH 终端

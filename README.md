@@ -5,6 +5,11 @@
 Web-based server management tools with SSH terminal access, local shell terminal access, VNC remote desktop, WebSerial terminal support, flashing/debugging workflows, and SFTP file management. The UI follows Microsoft Fluent Design, supports light/dark themes, and includes both Chinese and English interface modes.
 ![Screenshot](doc/screenshot.png)
 
+## Friend Links
+
+- EK-OmniProbe https://github.com/EmbeddedKitOrg/EK-OmniProbe
+- Clion-Waveform-Plotter https://github.com/Szturin/Clion-Waveform-Plotter
+
 ## Features
 
 ### SSH Terminal
