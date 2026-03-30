@@ -3042,7 +3042,7 @@
             <div class="about-modal-content">
                 <div class="about-item">
                     <span class="about-label">版本号</span>
-                    <strong id="aboutVersionValue">0.1.9-beta</strong>
+                    <strong id="aboutVersionValue">0.1.9-beta2</strong>
                 </div>
                 <div class="about-item">
                     <span class="about-label">项目信息</span>
@@ -3091,7 +3091,7 @@
             username: '',
             token: '',
             language: 'en',
-            appVersion: '0.1.9-beta',
+            appVersion: '0.1.9-beta2',
             projectHomepage: 'https://github.com/fcanlnony/Entrance',
             desktopVersion: '',
             desktopProjectHomepage: 'https://github.com/EntranceToolBox/Entrance-Desktop',
@@ -3415,6 +3415,24 @@
                     '登录已过期，请重新登录': 'The session expired. Please sign in again.',
                     '请先连接 SSH': 'Connect SSH first',
                     'WebSocket 连接失败': 'WebSocket connection failed',
+                    '输入连接信息后点击 SSH 按钮连接服务器': 'Enter the connection details, then click SSH to connect to the server',
+                    '连接已断开': 'Disconnected',
+                    'SSH 连接已断开': 'SSH disconnected',
+                    '串口终端 - 已连接': 'Serial Terminal - Connected',
+                    '填写本机 SSH 凭据后点击 "连接" 按钮开启终端': 'Enter local SSH credentials, then click "Connect" to start the terminal',
+                    '点击 "启动" 按钮开启终端': 'Click "Start" to launch the terminal',
+                    '点击 "连接串口" 按钮选择串口设备': 'Click "Connect Serial" to choose a serial device',
+                    '当前平台不允许访问串口': 'Serial access is not available on the current platform',
+                    '波形数据: Sin, Cos, Sin3Hz, ADC, Temp': 'Waveform data: Sin, Cos, Sin3Hz, ADC, Temp',
+                    '统计数据: stats:[a:x, b:x, c:x, d:x] 格式': 'Statistics data: stats:[a:x, b:x, c:x, d:x] format',
+                    '点击 "波形" 或 "统计" 按钮查看实时图表': 'Click "Waveform" or "Statistics" to view real-time charts',
+                    '数据过快，已丢弃部分内容': 'Data arrived too fast. Some content was dropped.',
+                    '正在上传文件...': 'Uploading file...',
+                    '文件上传失败': 'File upload failed',
+                    'Web 终端 - 本机 SSH': 'Web Terminal - Local SSH',
+                    '目标为本机 OpenSSH Server，用于提供 Windows 终端 PTY 语义': 'The target is the local OpenSSH Server, which provides PTY semantics for the Windows terminal',
+                    'SSH 连接失败，请确认 OpenSSH Server 已启用并允许本机登录': 'SSH connection failed. Make sure OpenSSH Server is enabled and allows local sign-in.',
+                    'Windows 下通过 OpenSSH Server 为 Web 终端提供 PTY/ConPTY 语义。': 'On Windows, OpenSSH Server provides PTY/ConPTY semantics for the web terminal.',
                     '已连接': 'Connected',
                     '无进程数据': 'No process data',
                     '未连接到SSH': 'SSH is not connected',
@@ -3490,6 +3508,126 @@
                     '载入 ELF，适合在启动 GDB CLI 后绑定当前目标程序。': 'Load an ELF file, typically after starting the GDB CLI for the current target program.',
                     'ELF 路径': 'ELF path',
                     '例如 /tmp/app.elf': 'For example: /tmp/app.elf',
+                    '当前 Entrance 进程已经具备 root 权限，烧录/调试命令会直接以 root 身份执行。': 'The current Entrance process already has root privileges, so flash/debug commands will run directly as root.',
+                    '启用后将通过 pkexec / Polkit 请求 root 权限。': 'When enabled, root privileges will be requested through pkexec / Polkit.',
+                    '当前 Linux 主机未检测到可用的提权方式。请安装 pkexec，或安装 zenity/kdialog 以配合 sudo 图形密码对话框。': 'No usable elevation method was detected on the current Linux host. Install pkexec, or install zenity/kdialog for a sudo graphical password dialog.',
+                    '启用后将通过 sudo + macOS 系统密码对话框请求管理员权限。': 'When enabled, administrator privileges will be requested through the macOS system password dialog with sudo.',
+                    '当前 macOS 主机缺少 sudo 或 osascript，无法弹出管理员权限请求。': 'The current macOS host is missing sudo or osascript, so it cannot show an administrator privilege prompt.',
+                    '启用后将通过 gsudo / UAC 请求管理员权限。': 'When enabled, administrator privileges will be requested through gsudo / UAC.',
+                    '启用后将通过 Windows sudo / UAC 请求管理员权限。': 'When enabled, administrator privileges will be requested through Windows sudo / UAC.',
+                    '当前 Windows 主机未检测到 gsudo 或 sudo，无法请求管理员权限。': 'The current Windows host did not detect gsudo or sudo, so it cannot request administrator privileges.',
+                    '当前平台暂不支持管理员/root 提权。': 'Admin/root elevation is not supported on the current platform.',
+                    '未找到 OpenOCD 配置目录，请检查系统默认目录或 OpenOCD 安装目录': 'OpenOCD config directory was not found. Check the system default directory or the OpenOCD installation directory.',
+                    'ESP32 使用 OpenOCD 烧录时，请选择 app.bin 或 flasher_args.json；不要直接选择 ELF': 'When flashing ESP32 with OpenOCD, choose app.bin or flasher_args.json instead of selecting an ELF directly.',
+                    '请填写烧录器或接口配置': 'Enter a probe or interface config',
+                    'CLI 会话已通过 script PTY 包装，以确保交互式 GDB 输出实时返回到消息框。': 'The CLI session is wrapped with a script PTY so interactive GDB output can stream back to the log in real time.',
+                    'OpenOCD 会优先匹配 interface/<adapter>.cfg；若不存在，则按 adapter driver 自动反查接口配置。': 'OpenOCD prefers matching interface/<adapter>.cfg first; if it does not exist, it falls back to resolving the interface config from the adapter driver.',
+                    '若板卡需要自定义接口文件或脚本目录，可在附加参数中补充。': 'If the board needs a custom interface file or script directory, add it in the extra arguments.',
+                    'pyOCD 会优先列出当前已连接的 probe；未检测到时可手动填写 UID。': 'pyOCD lists currently connected probes first. If none are detected, enter the UID manually.',
+                    '写后校验沿用 pyOCD 内置烧录策略。': 'Verification after flashing follows the built-in pyOCD behavior.',
+                    'probe-rs 的实时调试使用 GDB server 模式，请用支持 GDB Remote 的调试器连接。': 'probe-rs live debugging uses GDB server mode. Connect with a debugger that supports GDB Remote.',
+                    '若本机 CLI 版本参数存在差异，可在附加参数中补充。': 'If the local CLI version uses different arguments, add them in the extra arguments.',
+                    '模板: VID:PID': 'Template: VID:PID',
+                    '模板: VID:PID:Serial': 'Template: VID:PID:Serial',
+                    '不支持的工具类型': 'Unsupported tool type',
+                    '工具路径': 'Tool path',
+                    '手动路径不存在': 'Manual path does not exist',
+                    '手动路径不是可执行文件': 'Manual path is not an executable file',
+                    '手动路径不可执行': 'Manual path is not executable',
+                    '手动路径与所选工具不匹配': 'Manual path does not match the selected tool',
+                    'GDB 手动路径不存在': 'Manual GDB path does not exist',
+                    'GDB 手动路径不是可执行文件': 'Manual GDB path is not an executable file',
+                    'GDB 手动路径不可执行': 'Manual GDB path is not executable',
+                    'GDB 手动路径与 gdb / arm-none-eabi-gdb / gdb-multiarch 不匹配': 'Manual GDB path does not match gdb / arm-none-eabi-gdb / gdb-multiarch',
+                    '未找到可用的 GDB，请安装 gdb / arm-none-eabi-gdb / gdb-multiarch，或填写手动路径': 'No usable GDB was found. Install gdb / arm-none-eabi-gdb / gdb-multiarch, or enter a manual path.',
+                    '当前 Entrance 进程已经具备管理员/root 权限，已直接执行命令。': 'The current Entrance process already has admin/root privileges, so the command was executed directly.',
+                    '当前平台无法请求管理员/root 权限': 'The current platform cannot request admin/root privileges',
+                    '已启用 root 提权，请在系统认证对话框中确认。': 'Root elevation is enabled. Confirm it in the system authentication dialog.',
+                    '已启用 sudo 管理员/root 权限请求。': 'sudo admin/root privilege request is enabled.',
+                    '已启用管理员权限请求，请在系统对话框中确认。': 'Administrator privilege request is enabled. Confirm it in the system dialog.',
+                    '若系统 sudo 配置为新窗口模式，实时日志展示可能受限；如需更好的集成效果，建议优先安装 gsudo。': 'If sudo is configured to open a new window, real-time log streaming may be limited. For better integration, prefer installing gsudo.',
+                    '附加参数格式无效，请检查引号或转义符': 'Extra argument format is invalid. Check quotes or escape characters.',
+                    '寄存器名格式无效': 'Register name format is invalid',
+                    '选项值': 'Option value',
+                    '选项标签': 'Option label',
+                    '目标名称': 'Target name',
+                    '目标标签': 'Target label',
+                    '目标元信息': 'Target metadata',
+                    '目标关键字': 'Target keywords',
+                    '已切换到 ESP-IDF 多镜像烧录模式，将按 flasher_args.json 烧录 bootloader、partition table 和 app。': 'Switched to ESP-IDF multi-image flash mode. bootloader, partition table, and app will be flashed according to flasher_args.json.',
+                    '已切换到 ESP32 app bin 烧录模式，默认按应用分区偏移 0x10000 写入。若使用自定义分区，请改用 flasher_args.json。': 'Switched to ESP32 app bin flash mode. The file will be written to the default app partition offset 0x10000. If you use a custom partition layout, use flasher_args.json instead.',
+                    '未检测到已连接 probe，已回退显示 pyOCD debug-probe 插件前缀。': 'No connected probe was detected. Fell back to showing pyOCD debug-probe plugin prefixes.',
+                    '未检测到已连接 probe，可按 VID:PID 或 VID:PID:Serial 手动输入。': 'No connected probe was detected. You can enter VID:PID or VID:PID:Serial manually.',
+                    '读取 probe-rs 芯片目录超时': 'Timed out while reading the probe-rs chip catalog',
+                    '读取 pyOCD 目标目录超时': 'Timed out while reading the pyOCD target catalog',
+                    '读取 probe-rs 芯片目录失败': 'Failed to read the probe-rs chip catalog',
+                    '读取 pyOCD 目标目录失败': 'Failed to read the pyOCD target catalog',
+                    '未能从 probe-rs 输出中解析芯片目录': 'Could not parse the chip catalog from probe-rs output',
+                    '未能从 pyOCD 输出中解析目标目录': 'Could not parse the target catalog from pyOCD output',
+                    '速率': 'Speed',
+                    'GDB 端口': 'GDB port',
+                    '写后校验沿用 pyOCD 内置策略。': 'Post-write verification follows the built-in pyOCD strategy.',
+                    'probe-rs 的烧录使用 download 子命令，支持 bin/hex/elf 等文件。': 'probe-rs flashing uses the download subcommand and supports bin/hex/elf files.',
+                    'GDB 命令': 'GDB command',
+                    '主机或 host:port': 'Host or host:port',
+                    '忽略次数不能为空': 'Ignore count cannot be empty',
+                    '帧号': 'Frame index',
+                    '帧号不能为空': 'Frame index cannot be empty',
+                    '显示项 ID': 'Display item ID',
+                    '读取数量': 'Read count',
+                    '读取格式': 'Read format',
+                    '读取格式仅支持 b / h / w / i': 'Read format only supports b / h / w / i',
+                    '内存类型': 'Memory type',
+                    '不支持的 GDB 命令': 'Unsupported GDB command',
+                    'probe-rs 协议仅支持 swd 或 jtag': 'probe-rs protocol only supports swd or jtag',
+                    'probe-rs 原生命令仅在选择 probe-rs 调试器时可用': 'Native probe-rs commands are only available when the probe-rs debugger is selected',
+                    'probe-rs 命令': 'probe-rs command',
+                    '已执行 probe-rs list，用于探测当前已连接的 probe。': 'Executed probe-rs list to detect currently connected probes.',
+                    '已执行 probe-rs info，用于查询当前 session 状态与目标识别信息。': 'Executed probe-rs info to query current session state and target identification information.',
+                    '已执行 probe-rs reset。': 'Executed probe-rs reset.',
+                    '已执行 probe-rs erase（整片擦除）。': 'Executed probe-rs erase (full chip erase).',
+                    '下载文件路径': 'Download file path',
+                    '跳过字节数': 'Skip bytes',
+                    '已执行 probe-rs download。': 'Executed probe-rs download.',
+                    '校验文件路径': 'Verify file path',
+                    '已执行 probe-rs verify。': 'Executed probe-rs verify.',
+                    '读取宽度': 'Read width',
+                    '读取地址': 'Read address',
+                    '读取宽度仅支持 b8 / b16 / b32 / b64': 'Read width only supports b8 / b16 / b32 / b64',
+                    '已执行 probe-rs read。': 'Executed probe-rs read.',
+                    '写入宽度': 'Write width',
+                    '写入地址': 'Write address',
+                    '写入宽度仅支持 b8 / b16 / b32 / b64': 'Write width only supports b8 / b16 / b32 / b64',
+                    '至少需要一个写入值': 'At least one value to write is required',
+                    '已执行 probe-rs write。': 'Executed probe-rs write.',
+                    '已执行 probe-rs trace。': 'Executed probe-rs trace.',
+                    'RTT ELF 路径': 'RTT ELF path',
+                    '已执行 probe-rs attach（RTT/日志 attach）。': 'Executed probe-rs attach (RTT/log attach).',
+                    '不支持的 probe-rs 原生命令': 'Unsupported native probe-rs command',
+                    '操作类型': 'Action type',
+                    '仅支持烧录和实时调试': 'Only flash and live debug are supported',
+                    'CLI 会话未启动': 'CLI session is not started',
+                    'CLI 命令': 'CLI command',
+                    'CLI 命令发送失败': 'Failed to send the CLI command',
+                    '会话类型': 'Session type',
+                    'CLI 会话尚未启动': 'CLI session has not started yet',
+                    '不支持的操作类型': 'Unsupported action type',
+                    '服务正在关闭': 'Service is shutting down',
+                    '用户停止': 'Stopped by user',
+                    '连接已关闭': 'Connection closed',
+                    '新的操作已接管当前会话': 'A new action has taken over the current session',
+                    '新的调试服务已接管当前烧录会话': 'A new debug service has taken over the current flash session',
+                    '新的烧录会话已接管当前调试服务': 'A new flash session has taken over the current debug service',
+                    '新的 CLI 会话已接管当前会话': 'A new CLI session has taken over the current session',
+                    '新的 probe-rs 原生命令已接管当前会话': 'A new native probe-rs command has taken over the current session',
+                    '烧录调试连接已关闭': 'Flash/debug connection closed',
+                    'Shell 不在 PATH 中或不可执行': 'The shell is not in PATH or is not executable',
+                    '未找到可用的 PATH Shell': 'No usable shell was found in PATH',
+                    '仅管理员可使用本机 SSH 终端': 'Only administrators can use the local SSH terminal',
+                    '当前平台不支持本机 SSH 终端模式': 'The current platform does not support local SSH terminal mode',
+                    '本机 SSH 终端仅允许连接 localhost 或 127.0.0.1': 'The local SSH terminal only allows connections to localhost or 127.0.0.1',
+                    '远程主机未安装 Docker': 'Docker is not installed on the remote host',
+                    '无效的 PID': 'Invalid PID',
                     '只载入符号文件，不替换当前 executable。': 'Load symbol information only without replacing the current executable.',
                     '符号文件路径': 'Symbol file path',
                     '连接到当前实时调试服务暴露的 GDB Remote 端口。': 'Connect to the GDB remote port exposed by the current live debug service.',
@@ -3698,21 +3836,21 @@
                     [/^容器: (.+)$/u, 'Container: $1'],
                     [/^总计 · (\d+) 个容器$/u, 'Total · $1 containers'],
                     [/^已选 (\d+) 项$/u, '$1 selected'],
-                    [/^失败: (.+)$/u, 'Failed: $1'],
-                    [/^下载失败: (.+)$/u, 'Download failed: $1'],
-                    [/^保存失败: (.+)$/u, 'Save failed: $1'],
-                    [/^更新失败: (.+)$/u, 'Update failed: $1'],
-                    [/^加载白名单失败: (.+)$/u, 'Failed to load allowlist: $1'],
-                    [/^密码修改失败: (.+)$/u, 'Password update failed: $1'],
-                    [/^登录失败: (.+)$/u, 'Sign-in failed: $1'],
-                    [/^连接失败: (.+)$/u, 'Connection failed: $1'],
-                    [/^列表错误: (.+)$/u, 'List error: $1'],
+                    [/^失败: (.+)$/u, (_match, message) => `Failed: ${I18n.auto(message)}`],
+                    [/^下载失败: (.+)$/u, (_match, message) => `Download failed: ${I18n.auto(message)}`],
+                    [/^保存失败: (.+)$/u, (_match, message) => `Save failed: ${I18n.auto(message)}`],
+                    [/^更新失败: (.+)$/u, (_match, message) => `Update failed: ${I18n.auto(message)}`],
+                    [/^加载白名单失败: (.+)$/u, (_match, message) => `Failed to load allowlist: ${I18n.auto(message)}`],
+                    [/^密码修改失败: (.+)$/u, (_match, message) => `Password update failed: ${I18n.auto(message)}`],
+                    [/^登录失败: (.+)$/u, (_match, message) => `Sign-in failed: ${I18n.auto(message)}`],
+                    [/^连接失败: (.+)$/u, (_match, message) => `Connection failed: ${I18n.auto(message)}`],
+                    [/^列表错误: (.+)$/u, (_match, message) => `List error: ${I18n.auto(message)}`],
                     [/^正在下载: (.+)$/u, 'Downloading: $1'],
                     [/^正在打包 (\d+) 个项目\.\.\.$/u, 'Packaging $1 items...'],
                     [/^正在发送 (.+) 到 PID (\d+)\.\.\.$/u, 'Sending $1 to PID $2...'],
-                    [/^(.+) 连接失败$/u, '$1 connection failed'],
-                    [/^(.+) 连接被拦截：(.+)$/u, '$1 connection blocked: $2'],
-                    [/^(.+) 目标地址校验失败: (.+)$/u, '$1 target validation failed: $2'],
+                    [/^(.+) 连接失败$/u, (_match, label) => `${I18n.auto(label)} connection failed`],
+                    [/^(.+) 连接被拦截：(.+)$/u, (_match, label, message) => `${I18n.auto(label)} connection blocked: ${I18n.auto(message)}`],
+                    [/^(.+) 目标地址校验失败: (.+)$/u, (_match, label, message) => `${I18n.auto(label)} target validation failed: ${I18n.auto(message)}`],
                     [/^(.+) 目标地址校验失败$/u, '$1 target validation failed'],
                     [/^已上传 (.+)$/u, 'Uploaded $1'],
                     [/^正在上传 (.+) \((.+)\)\.\.\.$/u, 'Uploading $1 ($2)...'],
@@ -3728,14 +3866,38 @@
                     [/^PATH: (.+)$/u, 'PATH: $1'],
                     [/^自定义: (.+)$/u, 'Custom: $1'],
                     [/^(.+) 未在 PATH 中找到，请填写手动路径$/u, '$1 was not found in PATH. Enter the path manually.'],
-                    [/^未载入 (.+)：(.+)$/u, '$1 not loaded: $2'],
-                    [/^正在等待 (.+)，期间仍可直接手动输入。$/u, 'Waiting for $1. You can still type it manually.'],
-                    [/^输入关键字搜索 (.+)。$/u, 'Type keywords to search $1.'],
-                    [/^未找到匹配项，可继续手动输入 (.+)。$/u, 'No match found. You can keep entering $1 manually.'],
-                    [/^已载入 (\d+) 个(.+)，输入时支持前缀、片段和模糊搜索。$/u, 'Loaded $1$2. Prefix, substring, and fuzzy search are supported when typing.'],
-                    [/^已载入 (\d+) 个 target 配置，来源：(.+) (.+)；输入时支持前缀、片段和模糊搜索。$/u, 'Loaded $1 target configs from $2 $3. Prefix, substring, and fuzzy search are supported when typing.'],
-                    [/^已载入 (\d+) 个 interface 配置，来源：(.+) (.+)；输入时支持前缀、片段和模糊搜索。$/u, 'Loaded $1 interface configs from $2 $3. Prefix, substring, and fuzzy search are supported when typing.'],
-                    [/^删除 "(.+)"\?$/u, 'Delete "$1"?']
+                    [/^未载入 (.+)：(.+)$/u, (_match, label, message) => `${I18n.auto(label)} not loaded: ${I18n.auto(message)}`],
+                    [/^正在等待 (.+)，期间仍可直接手动输入。$/u, (_match, label) => `Waiting for ${I18n.auto(label)}. You can still type it manually.`],
+                    [/^输入关键字搜索 (.+)。$/u, (_match, label) => `Type keywords to search ${I18n.auto(label)}.`],
+                    [/^未找到匹配项，可继续手动输入 (.+)。$/u, (_match, label) => `No match found. You can keep entering ${I18n.auto(label)} manually.`],
+                    [/^已载入 (\d+) 个(.+)，输入时支持前缀、片段和模糊搜索。$/u, (_match, count, label) => `Loaded ${count}${I18n.auto(label)}. Prefix, substring, and fuzzy search are supported when typing.`],
+                    [/^已载入 (\d+) 个 target 配置，来源：(.+) (.+)；输入时支持前缀、片段和模糊搜索。$/u, (_match, count, sourceLabel, dir) => `Loaded ${count} target configs from ${I18n.auto(sourceLabel)} ${dir}. Prefix, substring, and fuzzy search are supported when typing.`],
+                    [/^已载入 (\d+) 个 interface 配置，来源：(.+) (.+)；输入时支持前缀、片段和模糊搜索。$/u, (_match, count, sourceLabel, dir) => `Loaded ${count} interface configs from ${I18n.auto(sourceLabel)} ${dir}. Prefix, substring, and fuzzy search are supported when typing.`],
+                    [/^删除 "(.+)"\?$/u, 'Delete "$1"?'],
+                    [/^正在连接 (.+)\.\.\.$/u, 'Connecting to $1...'],
+                    [/^错误: (.+)$/u, (_match, message) => `Error: ${I18n.auto(message)}`],
+                    [/^读取错误: (.+)$/u, (_match, message) => `Read error: ${I18n.auto(message)}`],
+                    [/^串口已连接 \((.+)\)$/u, 'Serial connected ($1)'],
+                    [/^建议: (.+)$/u, (_match, message) => `Suggestion: ${I18n.auto(message)}`],
+                    [/^终端已退出 \(code: (.+)\)$/u, 'Terminal exited (code: $1)'],
+                    [/^Shell 进程错误: (.+)$/u, (_match, message) => `Shell process error: ${I18n.auto(message)}`],
+                    [/^启动 shell 失败: (.+)$/u, (_match, message) => `Failed to start shell: ${I18n.auto(message)}`],
+                    [/^发送信号失败: (.+)$/u, (_match, message) => `Failed to send signal: ${I18n.auto(message)}`],
+                    [/^已发送 (.+) 到 PID (\d+)$/u, 'Sent $1 to PID $2'],
+                    [/^上传了 (\d+) 个文件$/u, 'Uploaded $1 files'],
+                    [/^(.+)格式无效$/u, (_match, field) => `Invalid ${I18n.auto(field)} format`],
+                    [/^(.+)长度超过限制$/u, (_match, field) => `${I18n.auto(field)} exceeds the length limit`],
+                    [/^(.+)不能为空$/u, (_match, field) => `${I18n.auto(field)} cannot be empty`],
+                    [/^(.+)必须是整数$/u, (_match, field) => `${I18n.auto(field)} must be an integer`],
+                    [/^(.+)范围无效$/u, (_match, field) => `Invalid range for ${I18n.auto(field)}`],
+                    [/^(.+)不能包含换行$/u, (_match, field) => `${I18n.auto(field)} cannot contain newlines`],
+                    [/^启用后将通过 sudo \+ (.+) 图形密码对话框请求 root 权限。$/u, 'When enabled, root privileges will be requested through sudo + $1 graphical password dialog.'],
+                    [/^已为 ESP USB Bridge 自动设置 chip_id=(.+)。$/u, 'Automatically set chip_id=$1 for ESP USB Bridge.'],
+                    [/^已将 (.+) 自动修正为 (.+)。$/u, 'Automatically normalized $1 to $2.'],
+                    [/^调试服务已准备，GDB 端口 (\d+)，Telnet 端口 (\d+)。$/u, 'Debug service is ready. GDB port $1, Telnet port $2.'],
+                    [/^GDB 调试服务已准备，监听端口 (\d+)。$/u, 'GDB debug service is ready and listening on port $1.'],
+                    [/^GDB CLI 已启动，并将自动连接目标 (.+):(\d+)。$/u, 'GDB CLI started and will automatically connect to target $1:$2.'],
+                    [/^GDB CLI 已启动，可稍后手动执行 target extended-remote。$/u, 'GDB CLI started. You can run target extended-remote manually later.']
                 ]
             },
             init() {
@@ -3858,14 +4020,34 @@
             getSourceKey(attr) {
                 return `i18n${attr.replace(/(^|-)([a-z])/g, (_, _dash, letter) => letter.toUpperCase())}Source`;
             },
+            autoLine(value) {
+                const text = String(value ?? '');
+                if (State.language !== 'en' || !text) return text;
+                const prefixed = text.match(/^(\s*\[[^\]]+\]\s*)(.*)$/u);
+                if (prefixed) {
+                    return `${prefixed[1]}${this.auto(prefixed[2])}`;
+                }
+                return this.auto(text);
+            },
+            autoMultiline(value) {
+                const text = String(value ?? '');
+                if (State.language !== 'en' || !text) return text;
+                return text
+                    .split(/(\r?\n)/u)
+                    .map((part) => (/^\r?\n$/u.test(part) ? part : this.autoLine(part)))
+                    .join('');
+            },
             auto(value) {
                 const text = String(value ?? '');
                 if (State.language !== 'en' || !text) return text;
                 const exact = this.EXACT.en[text];
                 if (exact) return exact;
                 for (const [pattern, replacement] of this.PATTERNS.en) {
-                    if (pattern.test(text)) {
-                        return text.replace(pattern, replacement);
+                    const match = text.match(pattern);
+                    if (match) {
+                        return typeof replacement === 'function'
+                            ? replacement(...match)
+                            : text.replace(pattern, replacement);
                     }
                 }
                 return text;
@@ -4564,16 +4746,16 @@
                 this.term.writeln(`\x1b[${colors.frame}m  ║\x1b[0m          \x1b[${colors.title}mEntrance Tools\x1b[0m                  \x1b[${colors.frame}m║\x1b[0m`);
                 this.term.writeln(`\x1b[${colors.frame}m  ╚══════════════════════════════════════════╝\x1b[0m`);
                 this.term.writeln('');
-                this.term.writeln('\x1b[90m  输入连接信息后点击 SSH 按钮连接服务器\x1b[0m');
+                this.term.writeln(`\x1b[90m  ${I18n.auto('输入连接信息后点击 SSH 按钮连接服务器')}\x1b[0m`);
                 this.term.writeln('');
             },
             async connect(host, port, user, authPayload = {}) {
                 if (this.ws) this.ws.close();
                 this.term.clear();
-                this.term.writeln(`\x1b[33m正在连接 ${user}@${host}:${port}...\x1b[0m\n`);
+                this.term.writeln(`\x1b[33m${I18n.auto(`正在连接 ${user}@${host}:${port}...`)}\x1b[0m\n`);
                 const targetCheck = await validateTargetForConnection('SSH', host);
                 if (!targetCheck.ok) {
-                    this.term.writeln(`\x1b[31m${targetCheck.error}\x1b[0m`);
+                    this.term.writeln(`\x1b[31m${I18n.auto(targetCheck.error)}\x1b[0m`);
                     Toast.error(targetCheck.error);
                     return;
                 }
@@ -4611,7 +4793,7 @@
                         case 'error':
                             {
                                 const message = formatConnectionError('SSH', msg.message, msg.code);
-                                this.term.writeln(`\x1b[31m错误: ${message}\x1b[0m`);
+                                this.term.writeln(`\x1b[31m${I18n.auto(`错误: ${message}`)}\x1b[0m`);
                                 Toast.error(message);
                             }
                             break;
@@ -4622,13 +4804,13 @@
                             this.stopTop();
                             this.stopDockerStats();
                             this.updateStatus(false);
-                            this.term.writeln('\n\x1b[33m连接已断开\x1b[0m');
+                            this.term.writeln(`\n\x1b[33m${I18n.auto('连接已断开')}\x1b[0m`);
                             Toast.info('SSH 连接已断开');
                             break;
                     }
                 };
                 this.ws.onerror = () => {
-                    this.term.writeln('\x1b[31m连接失败，请确保后端服务正在运行\x1b[0m');
+                    this.term.writeln(`\x1b[31m${I18n.auto('连接失败，请确保后端服务正在运行')}\x1b[0m`);
                     Toast.error('WebSocket 连接失败');
                 };
                 this.ws.onclose = () => {
@@ -6596,10 +6778,10 @@
                 this.demoTime = 0;
                 this.updateStatus(true, true);
                 this.term.clear();
-                this.term.writeln('\x1b[32m演示模式已启动 (模拟数据)\x1b[0m');
-                this.term.writeln('\x1b[90m波形数据: Sin, Cos, Sin3Hz, ADC, Temp\x1b[0m');
-                this.term.writeln('\x1b[90m统计数据: stats:[a:x, b:x, c:x, d:x] 格式\x1b[0m');
-                this.term.writeln('\x1b[90m点击 "波形" 或 "统计" 按钮查看实时图表\x1b[0m\n');
+                this.term.writeln(`\x1b[32m${I18n.auto('演示模式已启动')} (Demo data)\x1b[0m`);
+                this.term.writeln(`\x1b[90m${I18n.auto('波形数据: Sin, Cos, Sin3Hz, ADC, Temp')}\x1b[0m`);
+                this.term.writeln(`\x1b[90m${I18n.auto('统计数据: stats:[a:x, b:x, c:x, d:x] 格式')}\x1b[0m`);
+                this.term.writeln(`\x1b[90m${I18n.auto('点击 "波形" 或 "统计" 按钮查看实时图表')}\x1b[0m\n`);
 
                 // Auto-enable waveform view
                 if (!this.waveformActive) {
@@ -6754,7 +6936,7 @@
                 this.term.writeln(`\x1b[${colors.frame}m  ║\x1b[0m    \x1b[${colors.title}mSerial Terminal (WebSerial)\x1b[0m          \x1b[${colors.frame}m║\x1b[0m`);
                 this.term.writeln(`\x1b[${colors.frame}m  ╚══════════════════════════════════════════╝\x1b[0m`);
                 this.term.writeln('');
-                this.term.writeln('\x1b[90m  点击 "连接串口" 按钮选择串口设备\x1b[0m');
+                this.term.writeln(`\x1b[90m  ${I18n.auto('点击 "连接串口" 按钮选择串口设备')}\x1b[0m`);
                 this.term.writeln('');
             },
 
@@ -6791,7 +6973,7 @@
                     this.queueScheduled = false;
                     this.updateStatus(true);
                     this.term.clear();
-                    this.term.writeln(`\x1b[32m串口已连接 (${baudRate} bps)\x1b[0m\n`);
+                    this.term.writeln(`\x1b[32m${I18n.auto(`串口已连接 (${baudRate} bps)`)}\x1b[0m\n`);
 
                     // 设置读写
                     const textDecoder = new TextDecoderStream();
@@ -6811,7 +6993,7 @@
                 } catch (e) {
                     if (e.name === 'NotFoundError') {
                         Toast.info('未选择串口设备');
-                        this.term.writeln('\x1b[33m未选择串口设备\x1b[0m');
+                        this.term.writeln(`\x1b[33m${I18n.auto('未选择串口设备')}\x1b[0m`);
                         return;
                     }
 
@@ -6835,9 +7017,9 @@
                     }
 
                     Toast.error(hint ? `连接失败: ${hint}` : `连接失败: ${message}`);
-                    this.term.writeln(`\x1b[31m连接失败: ${e.name || 'Error'}: ${message}\x1b[0m`);
+                    this.term.writeln(`\x1b[31m${I18n.auto(`连接失败: ${e.name || 'Error'}: ${message}`)}\x1b[0m`);
                     if (hint) {
-                        this.term.writeln(`\x1b[33m建议: ${hint}\x1b[0m`);
+                        this.term.writeln(`\x1b[33m${I18n.auto(`建议: ${hint}`)}\x1b[0m`);
                     }
                 }
             },
@@ -6969,7 +7151,7 @@
                             if (this.queuedSize > 1024 * 1024) {
                                 const now = Date.now();
                                 if (now - this.lastDropNotice > 2000) {
-                                    this.term.writeln('\n\x1b[33m数据过快，已丢弃部分内容\x1b[0m');
+                                    this.term.writeln(`\n\x1b[33m${I18n.auto('数据过快，已丢弃部分内容')}\x1b[0m`);
                                     this.lastDropNotice = now;
                                 }
                                 this.chunkQueue = [];
@@ -6982,7 +7164,7 @@
                     }
                 } catch (e) {
                     if (this.connected) {
-                        this.term.writeln(`\n\x1b[31m读取错误: ${e.message}\x1b[0m`);
+                        this.term.writeln(`\n\x1b[31m${I18n.auto(`读取错误: ${e.message}`)}\x1b[0m`);
                         this.disconnect();
                     }
                 }
@@ -7036,7 +7218,7 @@
                     }
                     this.demoMode = false;
                     this.updateStatus(false);
-                    this.term.writeln('\n\x1b[33m演示模式已停止\x1b[0m');
+                    this.term.writeln(`\n\x1b[33m${I18n.auto('演示模式已停止')}\x1b[0m`);
                     Toast.info('演示模式已停止');
                     return;
                 }
@@ -7059,7 +7241,7 @@
                 }
 
                 this.updateStatus(false);
-                this.term.writeln('\n\x1b[33m串口已断开\x1b[0m');
+                this.term.writeln(`\n\x1b[33m${I18n.auto('串口已断开')}\x1b[0m`);
                 Toast.info('串口已断开');
             },
 
@@ -8347,9 +8529,9 @@
                     listExtra = ' 当前未检测到候选项，可直接手动输入。';
                 }
 
-                document.getElementById('flashProbeHint').textContent = `${preset.probeHint}${listExtra}`;
-                document.getElementById('debugProbeHint').textContent = `${preset.probeHint}${listExtra}`;
-                document.getElementById('flashVerifyHint').textContent = preset.verifyHint;
+                document.getElementById('flashProbeHint').textContent = `${I18n.auto(preset.probeHint)}${I18n.auto(listExtra)}`;
+                document.getElementById('debugProbeHint').textContent = `${I18n.auto(preset.probeHint)}${I18n.auto(listExtra)}`;
+                document.getElementById('flashVerifyHint').textContent = I18n.auto(preset.verifyHint);
                 this.syncConfigHints();
                 this.syncElevationUi();
             },
@@ -8432,10 +8614,10 @@
                     }
                 }
 
-                document.getElementById('flashTargetConfigHint').textContent = targetHint;
-                document.getElementById('debugTargetConfigHint').textContent = targetHint;
-                document.getElementById('flashInterfaceConfigHint').textContent = interfaceHint;
-                document.getElementById('debugInterfaceConfigHint').textContent = interfaceHint;
+                document.getElementById('flashTargetConfigHint').textContent = I18n.auto(targetHint);
+                document.getElementById('debugTargetConfigHint').textContent = I18n.auto(targetHint);
+                document.getElementById('flashInterfaceConfigHint').textContent = I18n.auto(interfaceHint);
+                document.getElementById('debugInterfaceConfigHint').textContent = I18n.auto(interfaceHint);
             },
 
             updateManualPathVisibility() {
@@ -9044,7 +9226,7 @@
                     cli: 'cliLogOutput'
                 };
                 const output = document.getElementById(outputMap[action] || 'debugLogOutput');
-                const nextText = output.textContent + String(text || '');
+                const nextText = output.textContent + I18n.autoMultiline(String(text || ''));
                 output.textContent = nextText.length > 200000 ? nextText.slice(-180000) : nextText;
                 output.scrollTop = output.scrollHeight;
             },
@@ -9183,19 +9365,32 @@
                 shellPathInput.style.display = isSshLocalhost ? 'none' : '';
                 sshConfig.style.display = isSshLocalhost ? 'flex' : 'none';
                 startBtn.innerHTML = isSshLocalhost
-                    ? '<i class="fas fa-plug"></i> 连接'
-                    : '<i class="fas fa-play"></i> 启动';
+                    ? `<i class="fas fa-plug"></i> ${I18n.auto('连接')}`
+                    : `<i class="fas fa-play"></i> ${I18n.auto('启动')}`;
                 stopBtn.innerHTML = isSshLocalhost
-                    ? '<i class="fas fa-times"></i> 断开'
-                    : '<i class="fas fa-stop"></i> 停止';
+                    ? `<i class="fas fa-times"></i> ${I18n.auto('断开')}`
+                    : `<i class="fas fa-stop"></i> ${I18n.auto('停止')}`;
+
+                const shellUser = document.getElementById('shellUser');
+                const shellPass = document.getElementById('shellPass');
+                const shellPassphrase = document.getElementById('shellPassphrase');
+                if (shellUser) {
+                    shellUser.setAttribute('placeholder', I18n.auto('Windows 用户名'));
+                }
+                if (shellPass) {
+                    shellPass.setAttribute('placeholder', I18n.auto('Windows 登录密码'));
+                }
+                if (shellPassphrase) {
+                    shellPassphrase.setAttribute('placeholder', I18n.auto('私钥口令'));
+                }
 
                 if (isSshLocalhost) {
                     document.getElementById('shellHost').value = this.sshDefaults.host || '127.0.0.1';
                     document.getElementById('shellPort').value = this.sshDefaults.port || 22;
                     document.getElementById('shellUser').value = this.sshDefaults.username || '';
-                    shellInfo.textContent = `SSH 到 ${this.sshDefaults.host || '127.0.0.1'}`;
+                    shellInfo.textContent = I18n.auto(`SSH 到 ${this.sshDefaults.host || '127.0.0.1'}`);
                     modeNote.style.display = 'block';
-                    modeNote.innerHTML = `${escapeHtml(this.sshDefaults.note || 'Windows 下通过 SSH 连接本机，借助 OpenSSH Server 获取真正的终端语义。')}<br>请先在系统中启用 <code>OpenSSH Server</code>，再使用本机账号登录。`;
+                    modeNote.innerHTML = `${escapeHtml(I18n.auto(this.sshDefaults.note || 'Windows 下通过 SSH 连接本机，借助 OpenSSH Server 获取真正的终端语义。'))}<br>${I18n.auto('请先在系统中启用 OpenSSH Server，再使用本机账号登录。').replace('OpenSSH Server', '<code>OpenSSH Server</code>')}`;
                     updateAuthFields('shell', document.getElementById('shellAuthType').value);
                 } else {
                     shellInfo.textContent = this.shellInfo;
@@ -9309,8 +9504,8 @@
                 this.term.writeln(`\x1b[${colors.frame}m  ╚══════════════════════════════════════════╝\x1b[0m`);
                 this.term.writeln('');
                 this.term.writeln(this.isSshLocalhostMode()
-                    ? '\x1b[90m  填写本机 SSH 凭据后点击 "连接" 按钮开启终端\x1b[0m'
-                    : '\x1b[90m  点击 "启动" 按钮开启终端\x1b[0m');
+                    ? `\x1b[90m  ${I18n.auto('填写本机 SSH 凭据后点击 "连接" 按钮开启终端')}\x1b[0m`
+                    : `\x1b[90m  ${I18n.auto('点击 "启动" 按钮开启终端')}\x1b[0m`);
                 this.term.writeln('');
             },
 
@@ -9371,12 +9566,12 @@
                                 this.connected = false;
                                 this.connectionLabel = '';
                                 this.updateStatus(false);
-                                this.term.writeln(`\n\x1b[33m终端已退出 (code: ${msg.exitCode})\x1b[0m`);
+                                this.term.writeln(`\n\x1b[33m${I18n.auto(`终端已退出 (code: ${msg.exitCode})`)}\x1b[0m`);
                                 Toast.info('终端已退出');
                                 break;
                             case 'error':
                                 Toast.error(msg.message);
-                                this.term.writeln(`\x1b[31m错误: ${msg.message}\x1b[0m`);
+                                this.term.writeln(`\x1b[31m${I18n.auto(`错误: ${msg.message}`)}\x1b[0m`);
                                 break;
                         }
                     } catch (err) {
@@ -9385,7 +9580,7 @@
                 };
 
                 this.ws.onerror = () => {
-                    this.term.writeln('\x1b[31m连接失败，请确保后端服务正在运行\x1b[0m');
+                    this.term.writeln(`\x1b[31m${I18n.auto('连接失败，请确保后端服务正在运行')}\x1b[0m`);
                     Toast.error('WebSocket 连接失败');
                 };
 
@@ -9421,8 +9616,8 @@
                 }
 
                 this.connectionLabel = `${username}@${host}:${port}`;
-                this.term.writeln(`\x1b[33m正在连接 ${this.connectionLabel}...\x1b[0m`);
-                this.term.writeln('\x1b[90m目标为本机 OpenSSH Server，用于提供 Windows 终端 PTY 语义\x1b[0m\n');
+                this.term.writeln(`\x1b[33m${I18n.auto(`正在连接 ${this.connectionLabel}...`)}\x1b[0m`);
+                this.term.writeln(`\x1b[90m${I18n.auto('目标为本机 OpenSSH Server，用于提供 Windows 终端 PTY 语义')}\x1b[0m\n`);
 
                 this.ws = new WebSocket(buildWsUrl('/ssh'));
                 this.ws.onopen = () => {
@@ -9455,13 +9650,13 @@
                                     this.connected = false;
                                     this.connectionLabel = '';
                                     this.updateStatus(false);
-                                    this.term.writeln('\n\x1b[33m本机 SSH 终端已断开\x1b[0m');
+                                    this.term.writeln(`\n\x1b[33m${I18n.auto('本机 SSH 终端已断开')}\x1b[0m`);
                                     Toast.info('本机 SSH 终端已断开');
                                 }
                                 break;
                             case 'error':
                                 Toast.error(msg.message);
-                                this.term.writeln(`\x1b[31m错误: ${msg.message}\x1b[0m`);
+                                this.term.writeln(`\x1b[31m${I18n.auto(`错误: ${msg.message}`)}\x1b[0m`);
                                 break;
                         }
                     } catch (err) {
@@ -9470,7 +9665,7 @@
                 };
 
                 this.ws.onerror = () => {
-                    this.term.writeln('\x1b[31mSSH 连接失败，请确认 OpenSSH Server 已启用并允许本机登录\x1b[0m');
+                    this.term.writeln(`\x1b[31m${I18n.auto('SSH 连接失败，请确认 OpenSSH Server 已启用并允许本机登录')}\x1b[0m`);
                     Toast.error('本机 SSH 连接失败');
                 };
 
@@ -9500,8 +9695,8 @@
                 this.updateStatus(false);
                 if (!quiet && wasConnected) {
                     this.term.writeln(this.isSshLocalhostMode()
-                        ? '\n\x1b[33m本机 SSH 终端已断开\x1b[0m'
-                        : '\n\x1b[33m终端已停止\x1b[0m');
+                        ? `\n\x1b[33m${I18n.auto('本机 SSH 终端已断开')}\x1b[0m`
+                        : `\n\x1b[33m${I18n.auto('终端已停止')}\x1b[0m`);
                     Toast.info(this.isSshLocalhostMode() ? '本机 SSH 终端已断开' : '终端已停止');
                 }
             },
