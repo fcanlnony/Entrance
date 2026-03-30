@@ -4,8 +4,9 @@ services:
       context: .
     image: entrance-tools:latest
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
     environment:
+      - PORT=${PORT:-3000}
       - AUTH_SECRET
       - SSH_PASSWORD_KEY
       - AUTH_TOKEN_TTL

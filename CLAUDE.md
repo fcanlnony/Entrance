@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, SFTP file management, and Docker container monitoring.
+Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, local flashing/debugging workflows, SFTP file management, and Docker container monitoring.
 
 ## Build and Development Commands
 
@@ -18,12 +18,18 @@ npm start
 npm run dev
 # or
 node server.js
+# or on a custom port
+PORT=4000 npm start
+# or
+npm start -- --port 4000
 
 # Default server URL: http://localhost:3000
 
 # Container workflows
 docker build -t entrance-tools .
 docker compose up -d --build
+# or
+PORT=4000 docker compose up -d --build
 # Podman users can substitute docker with podman
 ```
 
@@ -31,8 +37,8 @@ docker compose up -d --build
 
 - `AUTH_SECRET` (required) - Auth token signing key; must decode to at least 32 bytes.
 - `SSH_PASSWORD_KEY` (optional) - 32-byte AES key for stored SSH credentials and private-network allowlists; if omitted, the server writes a generated key to `.ssh_password_key` under `ENTRANCE_DATA_DIR`.
-- `PORT` - HTTP port, defaults to `3000`.
-- `ENTRANCE_DATA_DIR` - Runtime data directory for `users.json`, `userdata/`, `known_hosts.json`, `private-networks.json`, and `.ssh_password_key`.
+- `PORT` - HTTP port, defaults to `3000`; can also be overridden by the `--port` / `-p` startup flag.
+- `ENTRANCE_DATA_DIR` - Runtime data directory for `users.json`, `userdata/`, `known_hosts.json`, `private-networks.json`, and `.ssh_password_key`. Do not upload or commit this directory, `.data/`, or any other user/runtime data directories.
 - `AUTH_TOKEN_TTL` - Bearer token lifetime in seconds, defaults to `43200`.
 - `LOGIN_WINDOW_MS` / `LOGIN_MAX_ATTEMPTS` - Login rate-limit window and failure threshold.
 - `STRICT_HOST_KEY_CHECKING` - When `true`, reject unknown SSH host keys instead of learning them.
@@ -53,6 +59,7 @@ docker compose up -d --build
 │   └── vnc-client.js   # VNC browser client
 ├── server.js           # Express backend server (HTTP + WebSocket + auth + SSH/SFTP/Docker)
 ├── local-shell.js      # Local shell module (Linux/macOS via script, Windows via direct shell spawn)
+├── flash-debug.js      # Admin-only local flash/debug module (OpenOCD / pyOCD / probe-rs + optional elevation)
 ├── vnc.js              # VNC WebSocket proxy
 ├── package.json        # Dependency manifest
 ├── users.json          # User account data (generated at runtime, Argon2 hashes)
@@ -64,17 +71,24 @@ docker compose up -d --build
 
 ### Frontend Architecture
 - Single-file HTML app with no build step
-- Modular JavaScript objects: `State`, `Storage`, `Theme`, `Settings`, `Toast`, `Users`, `Terminal_`, `SFTP`, `Hosts`, `UI`
+- Modular JavaScript objects: `State`, `Storage`, `Theme`, `Settings`, `I18n`, `Toast`, `Terminal_`, `FlashDebug`, `SFTP`, `Hosts`, `UI`
 - CSS variables for theme switching and Material You color scheme support (`data-color-scheme` attribute)
+- UI i18n support with English as the default language and Simplified Chinese as the secondary option
 - Microsoft Fluent Design style
+- `FlashDebug` now uses a shared autocomplete pipeline for tool-specific target inputs:
+  - OpenOCD target configs and interface configs
+  - pyOCD target names from `pyocd list --targets --no-header`
+  - probe-rs chip names from `probe-rs chip list`
+  - Flash & Debug placeholders, helper hints, candidate counters, and fallback probe/catalog notices also run through the shared path and should follow the active UI language
 
 ### Backend Architecture
 - Express.js HTTP/REST API server
-- WebSocket upgrade handling for SSH, VNC, and admin-only local shell sessions
+- WebSocket upgrade handling for SSH, VNC, admin-only local shell sessions, and admin-only flash/debug sessions
 - ssh2 library for SSH/SFTP functionality
 - Auth/token system in `server.js` (signed bearer tokens, login throttling, optional no-login mode)
 - Private target validation via allowlists, private-network CIDR management, and known-host verification
 - File storage for user data, known hosts, and encrypted secrets
+- `flash-debug.js` wraps OpenOCD, pyOCD, and probe-rs, including optional OS-level privilege elevation requests
 - Container deployment support via `Dockerfile` and `compose.yml`
 
 ### Core Modules
@@ -85,8 +99,10 @@ docker compose up -d --build
 5. **Known Hosts Cache** - SSH host key pinning and strict host key checking support
 6. **SFTP Sessions** - In-memory SFTP session management
 7. **Local Shell Service** - Cross-platform local shell WebSocket endpoint
-8. **Docker Stats** - Docker container resource monitoring via `docker stats --no-stream`
-9. **Settings** - In-app settings view for password change (disabled in `ENTRANCE_DESKTOP_NOLOGIN` mode) and Material You color scheme selection (default, sakura, ocean, forest, twilight, amber)
+8. **Flash Debug Service** - Admin-only local flashing/debugging WebSocket + REST endpoints, tool discovery, uploads, and privilege-elevation wrapping
+   - Includes shared target autocomplete catalogs for OpenOCD / pyOCD / probe-rs
+9. **Docker Stats** - Docker container resource monitoring via `docker stats --no-stream`
+10. **Settings** - In-app settings view for password change (disabled in `ENTRANCE_DESKTOP_NOLOGIN` mode), an admin-only private-network allowlist card below the password card, Material You color scheme selection (default, sakura, ocean, forest, twilight, amber), and a separate language selector card below the color scheme card (default English; supports Chinese/English)
 
 ### SSH Monitoring Panels
 The SSH view includes three collapsible monitoring panels below the terminal:
@@ -141,6 +157,14 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 - If `SSH_PASSWORD_KEY` changes, existing encrypted secrets become unreadable until the old key is restored or the values are re-entered.
 - SFTP sessions are stored in memory (Map).
 - User data is isolated per user in separate JSON files under `ENTRANCE_DATA_DIR`.
+- Never upload or commit `.data/`, `ENTRANCE_DATA_DIR` contents, `userdata/`, generated runtime JSON, or any other user data snapshots.
 - Local shell access is admin-only and supported on Linux, macOS, and Windows.
-- The Settings view allows users to change their own password via `PUT /api/users/:username/password` (Argon2id hashed). When `ENTRANCE_DESKTOP_NOLOGIN=1`, the password form is hidden and a notice is shown instead.
+- Flash/debug access is admin-only. The UI can optionally request elevated privileges before launching OpenOCD/pyOCD/probe-rs:
+  - Linux: `pkexec`, or `sudo` with `zenity` / `kdialog` askpass
+  - macOS: `sudo` with `osascript`
+  - Windows: `gsudo` or `sudo`
+- Flash/debug target fields use shared local-search autocomplete. OpenOCD searches discovered config catalogs, pyOCD searches the target catalog returned by `pyocd list --targets --no-header`, and probe-rs searches the chip catalog returned by `probe-rs chip list`.
+- Flash/debug helper copy is part of the same shared frontend path. When changing placeholders, helper hints, or fallback enumeration/catalog messages, keep Chinese and English behavior aligned across OpenOCD, pyOCD, and probe-rs.
+- The Settings view allows users to change their own password via `PUT /api/users/:username/password` (Argon2id hashed). Admins also get a separate private-network allowlist card below the password card. When `ENTRANCE_DESKTOP_NOLOGIN=1`, the password form is hidden and a notice is shown instead.
 - Color schemes are stored in `localStorage` (`colorScheme` key) and applied via the `data-color-scheme` attribute on `<html>`. Available schemes: default, sakura, ocean, forest, twilight, amber.
+- UI language is stored in `localStorage` (`language` key). The app defaults to English and currently supports Simplified Chinese and English.
