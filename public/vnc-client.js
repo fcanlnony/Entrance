@@ -7,6 +7,13 @@
 (function(global) {
     'use strict';
 
+    function t(message) {
+        if (global.I18n && typeof global.I18n.auto === 'function') {
+            return global.I18n.auto(message);
+        }
+        return message;
+    }
+
     const VNC = {
         rfb: null,
         connected: false,
@@ -58,7 +65,7 @@
             if (typeof RFB === 'undefined') {
                 console.error('[VNC Client] noVNC (RFB) 未加载');
                 if (this.callbacks.onError) {
-                    this.callbacks.onError('VNC 库加载失败，请刷新页面重试');
+                    this.callbacks.onError(t('VNC 库加载失败，请刷新页面重试'));
                 }
                 return;
             }
@@ -113,14 +120,14 @@
                     } else if (this.callbacks.onCredentialsRequired) {
                         this.callbacks.onCredentialsRequired();
                     } else if (this.callbacks.onError) {
-                        this.callbacks.onError('VNC 服务器需要密码');
+                        this.callbacks.onError(t('VNC 服务器需要密码'));
                     }
                 });
 
                 this.rfb.addEventListener('securityfailure', (e) => {
                     console.error('[VNC Client] 安全认证失败:', e.detail);
                     if (this.callbacks.onError) {
-                        this.callbacks.onError(`认证失败: ${e.detail.reason || '密码错误'}`);
+                        this.callbacks.onError(t(`认证失败: ${e.detail.reason || '密码错误'}`));
                     }
                 });
 
