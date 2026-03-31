@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, local flashing/debugging workflows, SFTP file management, and Docker container monitoring.
 
+Documentation is English-first: keep the root `README.md` as the default English README, keep the Simplified Chinese translation in `doc/README_CN.md`, use `doc/screenshot.png` from the root README, and use `screenshot_cn.png` inside `doc/README_CN.md`. Keep `AGENTS.md` and `CLAUDE.md` in English when updating repository guidance.
+
 ## Build and Development Commands
 
 ```bash

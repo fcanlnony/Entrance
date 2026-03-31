@@ -1,6 +1,6 @@
 # Entrance Tools
 
-[中文文档 / Chinese README](doc/README_CN.md)
+Default documentation is in English. For Simplified Chinese, see [doc/README_CN.md](doc/README_CN.md).
 
 Web-based server management tools with SSH terminal access, local shell terminal access, VNC remote desktop, WebSerial terminal support, flashing/debugging workflows, and SFTP file management. The UI follows Microsoft Fluent Design, supports light/dark themes, and includes both Chinese and English interface modes.
 ![Screenshot](doc/screenshot.png)
@@ -645,3 +645,7 @@ GPL-3.0 License
 ## Contributing
 
 Issues and pull requests are welcome.
+
+## Acknowledgements
+
+Thanks to everyone who tested Entrance on real machines across browsers, operating systems, serial devices, remote hosts, and flashing/debugging workflows. Your feedback helped catch regressions and improve both the product experience and the bilingual documentation.

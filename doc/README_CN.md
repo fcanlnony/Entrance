@@ -1,5 +1,7 @@
 # Entrance Tools
 
+[English README](../README.md)
+
 基于 Web 的服务器管理工具，支持 SSH 终端、本地 Shell 终端、VNC 远程桌面、WebSerial 串口终端、烧录调试和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题，并提供中文/英文界面切换。
 ![Screenshot](screenshot_cn.png)
 
@@ -642,3 +644,7 @@ GPL-3.0 License
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
+
+## 鸣谢
+
+感谢所有在真实机器、不同浏览器、不同操作系统、串口设备、远程主机以及烧录/调试流程中参与测试的朋友。你们的反馈帮助 Entrance 发现回归问题，并持续改进产品体验以及中英文文档。
