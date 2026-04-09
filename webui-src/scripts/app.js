@@ -1416,12 +1416,17 @@
                 State.colorScheme = Storage.getColorScheme();
                 this.apply();
                 this.applyColorScheme(State.colorScheme);
-                document.getElementById('themeToggle').addEventListener('click', () => this.toggle());
+                const themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                    themeToggle.addEventListener('click', () => this.toggle());
+                }
             },
             apply() {
                 document.documentElement.setAttribute('data-theme', State.theme);
                 const icon = document.querySelector('#themeToggle i');
-                icon.className = State.theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                if (icon) {
+                    icon.className = State.theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                }
                 [
                     ['Terminal_', Terminal_],
                     ['LocalShell', LocalShell],
@@ -2910,7 +2915,10 @@
                     const data = await res.json();
                     if (res.ok) {
                         State.filesTransferred += data.results.length;
-                        document.getElementById('statFiles').textContent = State.filesTransferred;
+                        const statFiles = document.getElementById('statFiles');
+                        if (statFiles) {
+                            statFiles.textContent = State.filesTransferred;
+                        }
                         Toast.success(data.message);
                         if (data.errors.length > 0) data.errors.forEach(e => Toast.error(`失败: ${e.file}`));
                         await this.list(State.currentPath);
