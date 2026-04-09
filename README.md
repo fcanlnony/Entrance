@@ -304,6 +304,13 @@ podman run -d --name entrance-tools \
     └── user1.json       # Saved hosts for user1
 ```
 
+WebUI source is split by responsibility:
+
+- `webui-src/partials/auth-overlay.html` contains the login overlay plus the staged loading/splash markup.
+- `webui-src/styles/app.css` contains the auth overlay and startup animation styles.
+- `webui-src/scripts/app.js` contains the auth/loading controller (`showLoading`, `updateLoadingProgress`) and the staged dashboard boot sequence (`startDashboardBoot`).
+- `public/index.html` and `public/assets/*` are generated outputs from those source files.
+
 ## Technology Stack
 
 ### Frontend

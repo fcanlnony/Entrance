@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, local flashing/debugging workflows, SFTP file management, and Docker container monitoring.
 
-Documentation is English-first: keep the root `README.md` as the default English README, keep the Simplified Chinese translation in `doc/README_CN.md`, use `doc/screenshot.png` from the root README, and use `screenshot_cn.png` inside `doc/README_CN.md`. Keep `AGENTS.md` and `CLAUDE.md` in English when updating repository guidance.
+Documentation is English-first: keep the root `README.md` as the default English README, keep the Simplified Chinese translation in `doc/README_CN.md`, use `doc/screenshot.png` from the root README, and use `screenshot_cn.png` inside `doc/README_CN.md`. Keep `AGENTS.md` and `CLAUDE.md` in English when updating repository guidance. Preserve each document's existing language when editing it; do not mix languages inside a file unless that file already does so intentionally. When `README.md` changes, update every corresponding `README_XX.md` translation document in the repository in the same pass; in this repository that means `doc/README_CN.md` must stay aligned with `README.md`.
 
 ## Build and Development Commands
 
@@ -98,6 +98,7 @@ PORT=4000 docker compose up -d --build
   - When a saved login is being restored and `ENTRANCE_DESKTOP_NOLOGIN` is not enabled, show a Material You wave splash with `public/logo.png` clipped into a rounded rectangle
   - Keep a minimum 3-second progress animation even if backend verification is fast
   - Render the dashboard shell first, then initialize backend-backed modules in stages
+  - The splash markup lives in `webui-src/partials/auth-overlay.html`, the styling lives in `webui-src/styles/app.css`, and the runtime loading/boot sequence lives in `webui-src/scripts/app.js` (`showLoading`, `updateLoadingProgress`, `startDashboardBoot`)
   - In secure desktop no-login mode, the Electron wrapper should own the bootstrap, call `POST /api/auth/desktop/bootstrap`, and inject auth into API/WebSocket requests without exposing the token to the renderer
 - `FlashDebug` now uses a shared autocomplete pipeline for tool-specific target inputs:
   - OpenOCD target configs and interface configs

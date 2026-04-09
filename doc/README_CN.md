@@ -303,6 +303,13 @@ podman run -d --name entrance-tools \
     └── user1.json       # user1 的主机列表
 ```
 
+WebUI 源码按职责拆分：
+
+- `webui-src/partials/auth-overlay.html` 放登录遮罩与分阶段加载/启动页的 HTML 结构。
+- `webui-src/styles/app.css` 放认证遮罩与启动动画相关样式。
+- `webui-src/scripts/app.js` 放认证/加载控制逻辑（`showLoading`、`updateLoadingProgress`）以及工作台分阶段启动流程（`startDashboardBoot`）。
+- `public/index.html` 与 `public/assets/*` 都是由上述源文件生成的产物。
+
 ## 技术栈
 
 ### 前端
