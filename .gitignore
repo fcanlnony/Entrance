@@ -7,5 +7,6 @@ private-networks.json
 .ssh_password_key
 .data/
 data/
+.codex
 *.log
 .DS_Store
