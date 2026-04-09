@@ -25,30 +25,26 @@
                                     <stop offset="52%" stop-color="#78b7ff"></stop>
                                     <stop offset="100%" stop-color="#8ad7f4"></stop>
                                 </linearGradient>
+                                <filter id="materialWave" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.08" numOctaves="1" result="noise">
+                                        <animate attributeName="baseFrequency" values="0.02 0.08; 0.04 0.09; 0.02 0.08" dur="3s" repeatCount="indefinite" />
+                                    </feTurbulence>
+                                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" />
+                                </filter>
                             </defs>
                             <path
                                 class="auth-logo-progress-track"
-                                d="M98 18 C110 10 122 10 134 18 C142 24 150 24 158 18 Q178 18 178 38 C184 50 184 62 178 74 C172 82 172 94 178 102 C184 114 184 126 178 138 Q178 178 138 178 C126 184 114 184 102 178 C94 172 82 172 74 178 C62 184 50 184 38 178 Q18 178 18 138 C12 126 12 114 18 102 C24 94 24 82 18 74 C12 62 12 50 18 38 Q18 18 38 18 C50 12 62 12 74 18 C82 24 90 24 98 18"
+                                d="M 98 18 L 132 18 A 46 46 0 0 1 178 64 L 178 132 A 46 46 0 0 1 132 178 L 64 178 A 46 46 0 0 1 18 132 L 18 64 A 46 46 0 0 1 64 18 Z"
                             ></path>
                             <path
                                 class="auth-logo-progress-fill"
                                 id="authProgressFill"
-                                d="M98 18 C110 10 122 10 134 18 C142 24 150 24 158 18 Q178 18 178 38 C184 50 184 62 178 74 C172 82 172 94 178 102 C184 114 184 126 178 138 Q178 178 138 178 C126 184 114 184 102 178 C94 172 82 172 74 178 C62 184 50 184 38 178 Q18 178 18 138 C12 126 12 114 18 102 C24 94 24 82 18 74 C12 62 12 50 18 38 Q18 18 38 18 C50 12 62 12 74 18 C82 24 90 24 98 18"
+                                d="M 98 18 L 132 18 A 46 46 0 0 1 178 64 L 178 132 A 46 46 0 0 1 132 178 L 64 178 A 46 46 0 0 1 18 132 L 18 64 A 46 46 0 0 1 64 18 Z"
                             ></path>
                         </svg>
                         <div class="auth-logo-shell">
                             <img src="logo.png" alt="Entrance Tools logo">
                         </div>
-                    </div>
-                </div>
-                <div class="auth-loading-copy">
-                    <div class="auth-loading-title" id="authLoadingTitle">正在恢复登录状态...</div>
-                    <div class="auth-loading-sub" id="authLoadingSub">正在验证本地保存的登录态，请稍候。</div>
-                </div>
-                <div class="auth-progress-block">
-                    <div class="auth-progress-meta">
-                        <span class="auth-progress-stage" id="authProgressStage">正在准备界面...</span>
-                        <span class="auth-progress-value" id="authProgressValue">0%</span>
                     </div>
                 </div>
             </div>

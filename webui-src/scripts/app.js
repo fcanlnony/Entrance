@@ -2016,8 +2016,14 @@
                 document.getElementById('authOverlay').classList.remove('hidden');
                 document.getElementById('authLoginPanel').classList.add('hidden');
                 document.getElementById('authLoadingPanel').classList.remove('hidden');
-                document.getElementById('authLoadingTitle').textContent = I18n.auto(title);
-                document.getElementById('authLoadingSub').textContent = I18n.auto(sub);
+                const titleEl = document.getElementById('authLoadingTitle');
+                const subEl = document.getElementById('authLoadingSub');
+                if (titleEl) {
+                    titleEl.textContent = I18n.auto(title);
+                }
+                if (subEl) {
+                    subEl.textContent = I18n.auto(sub);
+                }
                 this.updateLoadingProgress(0, '正在准备界面...');
                 this.showError('');
             },
@@ -2034,8 +2040,10 @@
                     fill.style.strokeDasharray = `${filledLength} ${totalLength}`;
                     fill.style.strokeDashoffset = '0';
                 }
-                value.textContent = `${Math.round(safeProgress * 100)}%`;
-                if (stage) {
+                if (value) {
+                    value.textContent = `${Math.round(safeProgress * 100)}%`;
+                }
+                if (label && stage) {
                     label.textContent = I18n.auto(stage);
                 }
             },
@@ -7434,7 +7442,7 @@
                     runId,
                     showBootOverlay,
                     startedAt: performance.now(),
-                    minDurationMs: 3000,
+                    minDurationMs: 0,
                     actualProgress: 0.06,
                     stage: '正在准备界面...',
                     done: false

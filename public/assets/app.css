@@ -353,12 +353,13 @@
             stroke-linejoin: round;
         }
         .auth-logo-progress-track {
-            stroke: rgba(171, 194, 233, 0.60);
+            stroke: var(--color-border);
             stroke-width: 8;
             opacity: 0.92;
+            filter: url(#materialWave);
         }
         .auth-logo-progress-fill {
-            stroke: url(#authLogoProgressGradient);
+            stroke: var(--color-accent);
             stroke-width: 8;
             opacity: 0;
             transition:
@@ -366,8 +367,9 @@
                 opacity .18s ease-out,
                 filter .24s ease-out;
             filter:
-                drop-shadow(0 0 10px rgba(120, 183, 255, 0.55))
-                drop-shadow(0 10px 18px rgba(80, 134, 232, 0.22));
+                url(#materialWave)
+                drop-shadow(0 0 10px var(--color-accent-soft))
+                drop-shadow(0 10px 18px var(--color-accent-light));
             animation: authProgressPulse 2.4s ease-in-out infinite;
         }
         .auth-logo-shell {
@@ -387,6 +389,7 @@
             height: 100%;
             object-fit: cover;
             display: block;
+            animation: logoPulse 2.4s ease-in-out infinite;
         }
         .auth-loading-copy {
             display: grid;
@@ -431,14 +434,20 @@
         @keyframes authProgressPulse {
             0%, 100% {
                 filter:
-                    drop-shadow(0 0 10px rgba(120, 183, 255, 0.55))
-                    drop-shadow(0 10px 18px rgba(80, 134, 232, 0.22));
+                    url(#materialWave)
+                    drop-shadow(0 0 10px var(--color-accent-soft))
+                    drop-shadow(0 10px 18px var(--color-accent-light));
             }
             50% {
                 filter:
-                    drop-shadow(0 0 14px rgba(138, 214, 244, 0.72))
-                    drop-shadow(0 12px 22px rgba(80, 134, 232, 0.30));
+                    url(#materialWave)
+                    drop-shadow(0 0 14px var(--color-accent-fill))
+                    drop-shadow(0 12px 22px var(--color-accent-light));
             }
+        }
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
         @media (max-width: 560px) {
             .auth-card {
