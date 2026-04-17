@@ -669,6 +669,14 @@ function normalizeExtraArgPosition(value = '') {
     if (!normalized || normalized === 'end' || normalized === 'append') {
         return 'end';
     }
+    if (
+        normalized === 'before_init'
+        || normalized === 'before-init'
+        || normalized === 'pre_init'
+        || normalized === 'pre-init'
+    ) {
+        return 'before_init';
+    }
     if (normalized === 'before_tail' || normalized === 'before-reset' || normalized === 'before_reset') {
         return 'before_tail';
     }
@@ -677,6 +685,7 @@ function normalizeExtraArgPosition(value = '') {
 
 function collectExtraArgBuckets(options = {}) {
     const buckets = {
+        before_init: [],
         before_tail: [],
         end: []
     };
@@ -1472,6 +1481,7 @@ function buildOpenOcdCommand(action, options, executablePath = '') {
     }
 
     if (action === 'flash') {
+        args.push(...extraArgBuckets.before_init);
         args.push('-c', 'init');
         if (isEspOpenOcdTarget(normalizedTarget.value)) {
             tailArgs.push('-c', buildOpenOcdEspFlashCommand(firmwarePath, verify, resetAfterFlash, notes));
@@ -1481,6 +1491,7 @@ function buildOpenOcdCommand(action, options, executablePath = '') {
     } else {
         args.push('-c', `gdb_port ${gdbPort}`);
         args.push('-c', `telnet_port ${telnetPort}`);
+        args.push(...extraArgBuckets.before_init);
         args.push('-c', 'init');
         tailArgs.push('-c', 'reset halt');
         notes.push(`调试服务已准备，GDB 端口 ${gdbPort}，Telnet 端口 ${telnetPort}。`);
@@ -1511,6 +1522,7 @@ function buildPyOcdCommand(action, options) {
 
     if (action === 'flash') {
         args.push('load', firmwarePath, '-t', target);
+        args.push(...extraArgBuckets.before_init);
         if (probeSelection) {
             args.push('-u', probeSelection);
         }
@@ -1523,6 +1535,7 @@ function buildPyOcdCommand(action, options) {
         notes.push('写后校验沿用 pyOCD 内置策略。');
     } else {
         args.push('gdbserver', '-t', target, '-p', String(gdbPort), '-T', String(telnetPort));
+        args.push(...extraArgBuckets.before_init);
         if (probeSelection) {
             args.push('-u', probeSelection);
         }
@@ -1560,6 +1573,7 @@ function buildProbeRsCommand(action, options) {
 
     if (action === 'flash') {
         args.push('download', firmwarePath, '--chip', target);
+        args.push(...extraArgBuckets.before_init);
         if (probeSelection) {
             args.push('--probe', probeSelection);
         }
@@ -1572,6 +1586,7 @@ function buildProbeRsCommand(action, options) {
         notes.push('probe-rs 的烧录使用 download 子命令，支持 bin/hex/elf 等文件。');
     } else {
         args.push('gdb', '--gdb-connection-string', `127.0.0.1:${debugPort}`);
+        args.push(...extraArgBuckets.before_init);
         if (probeSelection) {
             args.push('--probe', probeSelection);
         }

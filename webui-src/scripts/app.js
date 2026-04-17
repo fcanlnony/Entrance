@@ -281,6 +281,7 @@
                     '可选，补充板卡专用 CLI 参数': 'Optional extra CLI parameters for the target board',
                     '添加参数': 'Add Argument',
                     '插入位置': 'Insertion Position',
+                    '初始化前': 'Before Init',
                     '尾部动作前': 'Before Final Action',
                     '命令末尾': 'Command End',
                     '可按需添加或删除参数项，每一项都可单独选择插入位置，命令预览会按这里的顺序拼接。': 'Add or remove argument entries as needed. Each entry can choose its own insertion position, and the command preview follows this order.',
@@ -6951,15 +6952,21 @@
                 positionSelect.className = 'form-input';
                 positionSelect.dataset.extraArgControl = prefix;
                 positionSelect.dataset.extraArgPosition = 'true';
+                const beforeInitOption = document.createElement('option');
+                beforeInitOption.value = 'before_init';
+                setI18nTextValue(beforeInitOption, '初始化前');
                 const endOption = document.createElement('option');
                 endOption.value = 'end';
                 setI18nTextValue(endOption, '命令末尾');
                 const beforeTailOption = document.createElement('option');
                 beforeTailOption.value = 'before_tail';
                 setI18nTextValue(beforeTailOption, '尾部动作前');
+                positionSelect.appendChild(beforeInitOption);
                 positionSelect.appendChild(endOption);
                 positionSelect.appendChild(beforeTailOption);
-                positionSelect.value = entry.position === 'before_tail' ? 'before_tail' : 'end';
+                positionSelect.value = entry.position === 'before_init'
+                    ? 'before_init'
+                    : (entry.position === 'before_tail' ? 'before_tail' : 'end');
                 positionGroup.appendChild(positionLabel);
                 positionGroup.appendChild(positionSelect);
 
