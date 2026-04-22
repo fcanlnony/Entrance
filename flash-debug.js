@@ -670,6 +670,14 @@ function normalizeExtraArgPosition(value = '') {
         return 'end';
     }
     if (
+        normalized === 'before_target'
+        || normalized === 'before-target'
+        || normalized === 'pre_target'
+        || normalized === 'pre-target'
+    ) {
+        return 'before_target';
+    }
+    if (
         normalized === 'before_init'
         || normalized === 'before-init'
         || normalized === 'pre_init'
@@ -685,6 +693,7 @@ function normalizeExtraArgPosition(value = '') {
 
 function collectExtraArgBuckets(options = {}) {
     const buckets = {
+        before_target: [],
         before_init: [],
         before_tail: [],
         end: []
@@ -1472,12 +1481,13 @@ function buildOpenOcdCommand(action, options, executablePath = '') {
         args.push('-c', `espusbjtag chip_id ${espUsbBridgeChipId}`);
         notes.push(`已为 ESP USB Bridge 自动设置 chip_id=${espUsbBridgeChipId}。`);
     }
+    args.push(...extraArgBuckets.before_target);
+    if (speed) {
+        args.push('-c', `adapter speed ${speed}`);
+    }
     args.push('-f', normalizedTarget.value);
     if (normalizedTarget.rewritten) {
         notes.push(`已将 ${normalizedTarget.originalValue} 自动修正为 ${normalizedTarget.value}。`);
-    }
-    if (speed) {
-        args.push('-c', `adapter speed ${speed}`);
     }
 
     if (action === 'flash') {
@@ -1521,7 +1531,9 @@ function buildPyOcdCommand(action, options) {
     const extraArgBuckets = collectExtraArgBuckets(options);
 
     if (action === 'flash') {
-        args.push('load', firmwarePath, '-t', target);
+        args.push('load', firmwarePath);
+        args.push(...extraArgBuckets.before_target);
+        args.push('-t', target);
         args.push(...extraArgBuckets.before_init);
         if (probeSelection) {
             args.push('-u', probeSelection);
@@ -1534,7 +1546,9 @@ function buildPyOcdCommand(action, options) {
         }
         notes.push('写后校验沿用 pyOCD 内置策略。');
     } else {
-        args.push('gdbserver', '-t', target, '-p', String(gdbPort), '-T', String(telnetPort));
+        args.push('gdbserver');
+        args.push(...extraArgBuckets.before_target);
+        args.push('-t', target, '-p', String(gdbPort), '-T', String(telnetPort));
         args.push(...extraArgBuckets.before_init);
         if (probeSelection) {
             args.push('-u', probeSelection);
@@ -1572,7 +1586,9 @@ function buildProbeRsCommand(action, options) {
     const extraArgBuckets = collectExtraArgBuckets(options);
 
     if (action === 'flash') {
-        args.push('download', firmwarePath, '--chip', target);
+        args.push('download', firmwarePath);
+        args.push(...extraArgBuckets.before_target);
+        args.push('--chip', target);
         args.push(...extraArgBuckets.before_init);
         if (probeSelection) {
             args.push('--probe', probeSelection);
@@ -1586,12 +1602,11 @@ function buildProbeRsCommand(action, options) {
         notes.push('probe-rs 的烧录使用 download 子命令，支持 bin/hex/elf 等文件。');
     } else {
         args.push('gdb', '--gdb-connection-string', `127.0.0.1:${debugPort}`);
+        args.push(...extraArgBuckets.before_target);
+        args.push('--chip', target);
         args.push(...extraArgBuckets.before_init);
         if (probeSelection) {
             args.push('--probe', probeSelection);
-        }
-        if (target) {
-            args.push('--chip', target);
         }
         if (speed) {
             args.push('--speed', speed);

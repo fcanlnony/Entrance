@@ -281,6 +281,7 @@
                     '可选，补充板卡专用 CLI 参数': 'Optional extra CLI parameters for the target board',
                     '添加参数': 'Add Argument',
                     '插入位置': 'Insertion Position',
+                    '目标前': 'Before Target',
                     '初始化前': 'Before Init',
                     '尾部动作前': 'Before Final Action',
                     '命令末尾': 'Command End',
@@ -6952,6 +6953,9 @@
                 positionSelect.className = 'form-input';
                 positionSelect.dataset.extraArgControl = prefix;
                 positionSelect.dataset.extraArgPosition = 'true';
+                const beforeTargetOption = document.createElement('option');
+                beforeTargetOption.value = 'before_target';
+                setI18nTextValue(beforeTargetOption, '目标前');
                 const beforeInitOption = document.createElement('option');
                 beforeInitOption.value = 'before_init';
                 setI18nTextValue(beforeInitOption, '初始化前');
@@ -6961,12 +6965,15 @@
                 const beforeTailOption = document.createElement('option');
                 beforeTailOption.value = 'before_tail';
                 setI18nTextValue(beforeTailOption, '尾部动作前');
+                positionSelect.appendChild(beforeTargetOption);
                 positionSelect.appendChild(beforeInitOption);
                 positionSelect.appendChild(endOption);
                 positionSelect.appendChild(beforeTailOption);
-                positionSelect.value = entry.position === 'before_init'
+                positionSelect.value = entry.position === 'before_target'
+                    ? 'before_target'
+                    : (entry.position === 'before_init'
                     ? 'before_init'
-                    : (entry.position === 'before_tail' ? 'before_tail' : 'end');
+                    : (entry.position === 'before_tail' ? 'before_tail' : 'end'));
                 positionGroup.appendChild(positionLabel);
                 positionGroup.appendChild(positionSelect);
 
