@@ -163,7 +163,7 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 - `multer` - File upload middleware
 - `archiver` - ZIP packaging
 
-### Frontend (CDN)
+### Frontend (Local Vendor Bundle)
 - `xterm.js` - Terminal emulator
 - `xterm-addon-fit` - Terminal fit addon
 - `Chart.js` - System stats line chart

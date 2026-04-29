@@ -7,6 +7,8 @@ const repoRoot = path.resolve(__dirname, '..');
 const sourceRoot = path.join(repoRoot, 'webui-src');
 const outputRoot = path.join(repoRoot, 'public');
 const outputAssetsRoot = path.join(outputRoot, 'assets');
+const outputVendorRoot = path.join(outputAssetsRoot, 'vendor');
+const nodeModulesRoot = path.join(repoRoot, 'node_modules');
 
 function ensureDir(dirPath) {
     fs.mkdirSync(dirPath, { recursive: true });
@@ -19,6 +21,25 @@ function readFile(filePath) {
 function writeFile(filePath, content) {
     ensureDir(path.dirname(filePath));
     fs.writeFileSync(filePath, content);
+}
+
+function copyFile(sourcePath, targetPath) {
+    ensureDir(path.dirname(targetPath));
+    fs.copyFileSync(sourcePath, targetPath);
+}
+
+function copyDirectory(sourcePath, targetPath) {
+    ensureDir(targetPath);
+    const entries = fs.readdirSync(sourcePath, { withFileTypes: true });
+    for (const entry of entries) {
+        const childSourcePath = path.join(sourcePath, entry.name);
+        const childTargetPath = path.join(targetPath, entry.name);
+        if (entry.isDirectory()) {
+            copyDirectory(childSourcePath, childTargetPath);
+        } else if (entry.isFile()) {
+            copyFile(childSourcePath, childTargetPath);
+        }
+    }
 }
 
 function resolveIncludes(filePath, stack = []) {
@@ -43,7 +64,38 @@ function buildHtml() {
 function copyAsset(relativePath) {
     const sourcePath = path.join(sourceRoot, relativePath);
     const targetPath = path.join(outputRoot, relativePath.replace(/^(styles|scripts)\//, 'assets/'));
-    writeFile(targetPath, fs.readFileSync(sourcePath));
+    copyFile(sourcePath, targetPath);
+}
+
+function copyVendorAssets() {
+    const vendorFiles = [
+        ['xterm/css/xterm.css', 'xterm/xterm.css'],
+        ['xterm/lib/xterm.js', 'xterm/xterm.js'],
+        ['xterm-addon-fit/lib/xterm-addon-fit.js', 'xterm-addon-fit/xterm-addon-fit.js'],
+        ['chart.js/dist/chart.umd.js', 'chart.js/chart.umd.js'],
+        ['@fortawesome/fontawesome-free/css/all.min.css', 'fontawesome/css/all.min.css']
+    ];
+    const vendorDirectories = [
+        ['@fortawesome/fontawesome-free/webfonts', 'fontawesome/webfonts'],
+        ['@novnc/novnc/core', 'novnc/core'],
+        ['@novnc/novnc/vendor/pako', 'novnc/vendor/pako']
+    ];
+
+    fs.rmSync(outputVendorRoot, { recursive: true, force: true });
+    ensureDir(outputVendorRoot);
+
+    vendorFiles.forEach(([sourceRelativePath, targetRelativePath]) => {
+        copyFile(
+            path.join(nodeModulesRoot, sourceRelativePath),
+            path.join(outputVendorRoot, targetRelativePath)
+        );
+    });
+    vendorDirectories.forEach(([sourceRelativePath, targetRelativePath]) => {
+        copyDirectory(
+            path.join(nodeModulesRoot, sourceRelativePath),
+            path.join(outputVendorRoot, targetRelativePath)
+        );
+    });
 }
 
 function main() {
@@ -51,8 +103,11 @@ function main() {
     ensureDir(outputAssetsRoot);
 
     writeFile(path.join(outputRoot, 'index.html'), buildHtml());
+    fs.rmSync(path.join(outputRoot, 'vnc-client.js'), { force: true });
     copyAsset(path.join('styles', 'app.css'));
     copyAsset(path.join('scripts', 'app.js'));
+    copyAsset(path.join('scripts', 'vnc-client.js'));
+    copyVendorAssets();
 }
 
 main();

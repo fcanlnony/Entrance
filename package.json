@@ -9,12 +9,17 @@
     "dev": "npm run build:webui && node server.js"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.1",
+    "@novnc/novnc": "^1.4.0",
     "archiver": "^6.0.2",
     "argon2": "^0.44.0",
+    "chart.js": "^4.4.1",
     "express": "^4.18.2",
     "multer": "^1.4.5-lts.1",
     "ssh2": "^1.15.0",
-    "ws": "^8.16.0"
+    "ws": "^8.16.0",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
   },
   "engines": {
     "node": ">=16.0.0"
