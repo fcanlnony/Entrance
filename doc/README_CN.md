@@ -5,6 +5,8 @@
 基于 Web 的服务器管理工具，支持 SSH 终端、本地 Shell 终端、VNC 远程桌面、WebSerial 串口终端、烧录调试和 SFTP 文件管理。采用 Microsoft Fluent Design 设计风格，支持亮色/暗色主题，并提供中文/英文界面切换。
 ![Screenshot](screenshot_cn.png)
 
+安装脚本请见 [Install](https://github.com/EntranceToolBox/Entrance-Installer)。
+
 ## 功能特性
 
 ### SSH 终端
@@ -146,17 +148,27 @@ cd Entrance
 # 安装依赖
 npm install
 
-# 启动服务
-npm start
+# 使用 ./.data 里的持久化本地运行数据启动服务
+./start.sh
+# 或在需要局域网 / 反向代理 / 内网穿透浏览器访问时放宽 CORS
+./start_nocors.sh
 ```
 
-`npm start` 现在会先从 `webui-src/` 重建模块化 WebUI，再启动服务。如果只想刷新生成后的前端静态资源，可单独执行 `npm run build:webui`。
+`./start.sh` 是推荐的本地启动入口。首次运行且 `./.data` 还不存在时，它会创建 `./.data`、写入 `./.data/auth_secret`、导出 `ENTRANCE_DATA_DIR` 和 `AUTH_SECRET`，然后再执行 `npm start`。它也支持 `--port=4000`，传入后会改为执行 `npm start -- --port 4000`。
+
+`./start_nocors.sh` 走的是同一套启动流程，只是在调用 `start.sh` 前额外导出 `ENTRANCE_CORS_DISABLE=1`。只有在你明确需要通过局域网 IP、反向代理或内网穿透域名从浏览器访问时才建议使用它。
+
+`npm start` 仍然会先从 `webui-src/` 重建模块化 WebUI，再启动服务，但前提是你已经提前导出了 `AUTH_SECRET`。如果只想刷新生成后的前端静态资源，可单独执行 `npm run build:webui`。
 
 访问 http://localhost:3000，使用账号登录后进入工具面板。
 
 如需指定端口，可使用环境变量或命令行参数：
 
 ```bash
+./start.sh --port=4000
+# 或
+./start_nocors.sh --port=4000
+# 或者在已经导出 AUTH_SECRET 时
 PORT=4000 npm start
 # 或
 npm start -- --port 4000
@@ -164,18 +176,20 @@ npm start -- --port 4000
 
 此时访问 `http://localhost:4000`。
 
-### 最小运行示例
+### `start.sh` 的手动等价流程
 
 ```bash
-mkdir -p ./.data
-[ -f ./.data/auth_secret ] || openssl rand -base64 32 > ./.data/auth_secret
+if [ ! -d ./.data ]; then
+  mkdir -p ./.data
+  [ -f ./.data/auth_secret ] || openssl rand -base64 32 > ./.data/auth_secret
+fi
 
 export ENTRANCE_DATA_DIR="$(pwd)/.data"
 export AUTH_SECRET="$(tr -d '\n' < ./.data/auth_secret)"
 npm start
 ```
 
-上面的示例会把运行时数据固定到 `./.data`，并让 Entrance 在 `./.data/.ssh_password_key` 中自动生成并复用 SSH 凭据加密密钥。不要在每次重启前重新生成 `SSH_PASSWORD_KEY`，否则历史白名单、密码和私钥将无法解密。
+这对应的是未传自定义端口时的 `./start.sh` 行为。如果执行 `./start.sh --port=4000`，最后一行则会变成 `npm start -- --port 4000`。如果 `./.data` 已经存在，脚本不会重新生成 `./.data/auth_secret`，所以重启前要确保这个文件仍然存在。运行时数据会固定在 `./.data`，Entrance 也会在 `./.data/.ssh_password_key` 中自动生成并复用 SSH 凭据加密密钥。不要在每次重启前重新生成 `SSH_PASSWORD_KEY`，否则历史白名单、密码和私钥将无法解密。
 
 默认账号为 `admin/admin`（首次启动自动生成）。
 
@@ -254,6 +268,8 @@ podman run -d --name entrance-tools \
 
 ## 环境变量
 
+如果你想看“某个变量改了以后 Entrance 会变成什么行为”的说明、风险点和部署建议，可以直接查看 [environment-variables_CN.md](environment-variables_CN.md)。
+
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
 | `PORT` | `3000` | HTTP 服务监听端口，也可通过 `npm start -- --port 4000` 覆盖 |
@@ -267,6 +283,7 @@ podman run -d --name entrance-tools \
 | `STRICT_HOST_KEY_CHECKING` | `false` | 设为 `true` 时拒绝未知 SSH 主机指纹 |
 | `ALLOWED_TARGETS` | 空 | 允许连接的目标主机白名单，逗号分隔，支持 `*.example.com` |
 | `ALLOW_PRIVATE_NETWORKS` | `false` | 设为 `true` 时允许直接访问私有地址；否则需通过管理员白名单放行 |
+| `ENTRANCE_CORS_DISABLE` | `0` | 设为 `1` 时允许任意浏览器 `Origin` 访问 API，不再只限制 `localhost` 或桌面渲染端 Origin；适合局域网 IP、反向代理和内网穿透访问 |
 | `ENTRANCE_DESKTOP_NOLOGIN` | `0` | 设为 `1` 时启用桌面免登录。若要在 Electron 中安全使用，建议配合 `ENTRANCE_DESKTOP_API_ONLY=1` 和引导密钥，而不是继续暴露网页 UI |
 | `ENTRANCE_DESKTOP_API_ONLY` | `0` | 设为 `1` 时关闭静态 WebUI，只暴露后端 API；用于由 Electron wrapper 本地渲染前端的场景 |
 | `ENTRANCE_DESKTOP_ALLOWED_ORIGIN` | `app://entrance` | `ENTRANCE_DESKTOP_API_ONLY=1` 时允许访问 API 的渲染端 Origin |
@@ -293,6 +310,8 @@ podman run -d --name entrance-tools \
 ├── vnc.js               # VNC 代理模块
 ├── nginx/               # 反向代理示例配置
 ├── package.json         # 依赖配置
+├── start.sh             # 本地启动辅助脚本，从 ./.data 导出 ENTRANCE_DATA_DIR 和 AUTH_SECRET，并支持 --port=4000
+├── start_nocors.sh      # 在调用 start.sh 前额外导出 ENTRANCE_CORS_DISABLE=1 的包装脚本
 ├── users.json           # 用户数据（自动生成，可位于 ENTRANCE_DATA_DIR）
 ├── .ssh_password_key    # SSH 凭据加密密钥（自动生成）
 ├── LOGIN_KEEP           # 用于登录保持的密码登录时间戳（已加密）
@@ -650,6 +669,7 @@ memory:[used:8192, free:4096, cached:2048]
 - 最近一次密码登录的 Unix 时间戳保存在 `ENTRANCE_DATA_DIR/LOGIN_KEEP` 中，并使用基于 `AUTH_SECRET` 派生密钥的 AES-256-GCM 加密。
 - SSH/SFTP 凭据（密码、私钥、私钥口令）仅保存在用户浏览器本地或服务端用户数据中，服务端落盘会使用 `SSH_PASSWORD_KEY` 进行 AES-256-GCM 加密。
 - 私有网络白名单存储在 `private-networks.json` 中，服务端落盘同样使用 `SSH_PASSWORD_KEY` 进行 AES-256-GCM 加密。
+- `ENTRANCE_CORS_DISABLE=1` 会允许任意浏览器来源访问 API。只有在你明确需要局域网、反向代理或内网穿透访问时才建议开启；桌面/API-only 的高安全部署默认应保持关闭。
 - 在桌面 API-only 模式下，后端默认只绑定到 loopback，不再提供 `public/index.html`，并且只有携带 `X-Entrance-Desktop-Secret` 的 `POST /api/auth/desktop/bootstrap` 才能拿到 admin 免登录 token。
 - `SSH_PASSWORD_KEY` 变更后，历史已加密凭据和白名单将无法解密；需要恢复原密钥或重新录入数据。
 - **本地 Shell 安全提示**（Linux/macOS/Windows，仅管理员可用）：本地 Shell 功能允许直接访问服务器终端，请确保：

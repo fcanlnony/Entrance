@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, local flashing/debugging workflows, SFTP file management, and Docker container monitoring.
 
-Documentation is English-first: keep the root `README.md` as the default English README, keep the Simplified Chinese translation in `doc/README_CN.md`, use `doc/screenshot.png` from the root README, and use `screenshot_cn.png` inside `doc/README_CN.md`. Keep `AGENTS.md` and `CLAUDE.md` in English when updating repository guidance. Preserve each document's existing language when editing it; do not mix languages inside a file unless that file already does so intentionally. When `README.md` changes, update every corresponding `README_XX.md` translation document in the repository in the same pass; in this repository that means `doc/README_CN.md` must stay aligned with `README.md`.
+Documentation is English-first: keep the root `README.md` as the default English README, keep the Simplified Chinese translation in `doc/README_CN.md`, use `doc/screenshot.png` from the root README, and use `screenshot_cn.png` inside `doc/README_CN.md`. Keep `AGENTS.md` and `CLAUDE.md` in English when updating repository guidance. Preserve each document's existing language when editing it; do not mix languages inside a file unless that file already does so intentionally. When modifying a Markdown document, keep the document in its existing language. When `README.md` changes, update every corresponding `README_XX.md` translation document in the repository in the same pass; in this repository that means `doc/README_CN.md` must stay aligned with `README.md`.
 
 ## Collaboration Preference
 
@@ -18,16 +18,25 @@ When the user provides a numbered list of requirements such as `1.` and `2.`, fi
 # Install dependencies
 npm install
 
+# Preferred local startup path
+./start.sh
+# or with permissive CORS for LAN / reverse-proxy / tunnel browser access
+./start_nocors.sh
+
 # Rebuild generated frontend assets from webui-src/
 npm run build:webui
 
-# Start the development server
+# Start the development server after AUTH_SECRET is already exported
 npm start
 # or
 npm run dev
 # or
 node server.js
 # or on a custom port
+./start.sh --port=4000
+# or with permissive CORS
+./start_nocors.sh --port=4000
+# or
 PORT=4000 npm start
 # or
 npm start -- --port 4000
@@ -44,7 +53,7 @@ PORT=4000 docker compose up -d --build
 
 ## Environment Variables
 
-- `AUTH_SECRET` (required) - Auth token signing key; must decode to at least 32 bytes.
+- `AUTH_SECRET` (required) - Auth token signing key; must decode to at least 32 bytes. `./start.sh` bootstraps it from `./.data/auth_secret` for the default local workflow.
 - `SSH_PASSWORD_KEY` (optional) - 32-byte AES key for stored SSH credentials and private-network allowlists; if omitted, the server writes a generated key to `.ssh_password_key` under `ENTRANCE_DATA_DIR`.
 - `PORT` - HTTP port, defaults to `3000`; can also be overridden by the `--port` / `-p` startup flag.
 - `ENTRANCE_HOST` - Explicit bind host override. Defaults to `0.0.0.0` in web mode and `127.0.0.1` in desktop API-only mode.
@@ -54,6 +63,7 @@ PORT=4000 docker compose up -d --build
 - `STRICT_HOST_KEY_CHECKING` - When `true`, reject unknown SSH host keys instead of learning them.
 - `ALLOWED_TARGETS` - Comma-separated allowlist for SSH/VNC target hosts; supports exact names and `*.example.com` patterns.
 - `ALLOW_PRIVATE_NETWORKS` - When `true`, skip the admin-managed private CIDR whitelist check.
+- `ENTRANCE_CORS_DISABLE` - When set to `1`, widen CORS to allow non-localhost browser origins such as LAN IPs, reverse proxies, and tunnel domains. Prefer leaving it off unless that access pattern is intentional.
 - `ENTRANCE_DESKTOP_NOLOGIN` - When set to `1`, enable desktop no-login mode. Use it with the API-only bootstrap flow for secure Electron deployments.
 - `ENTRANCE_DESKTOP_API_ONLY` - When set to `1`, disable static WebUI serving and expose backend APIs only.
 - `ENTRANCE_DESKTOP_ALLOWED_ORIGIN` - Allowed renderer origin for desktop API-only CORS, defaults to `app://entrance`.
@@ -67,6 +77,8 @@ PORT=4000 docker compose up -d --build
 ├── .dockerignore       # Container build exclusions
 ├── compose.yml         # Docker Compose service definition
 ├── Dockerfile          # Container image build
+├── start.sh            # Preferred local launcher; exports ENTRANCE_DATA_DIR and AUTH_SECRET from ./.data and accepts --port=4000
+├── start_nocors.sh     # Wrapper around start.sh that exports ENTRANCE_CORS_DISABLE=1 first
 ├── public/
 │   ├── assets/         # Generated frontend CSS/JS assets
 │   ├── index.html      # Generated frontend entrypoint
@@ -151,7 +163,7 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 - `multer` - File upload middleware
 - `archiver` - ZIP packaging
 
-### Frontend (CDN)
+### Frontend (Local Vendor Bundle)
 - `xterm.js` - Terminal emulator
 - `xterm-addon-fit` - Terminal fit addon
 - `Chart.js` - System stats line chart
@@ -163,7 +175,7 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 ### Adding Features
 1. Backend API: add routes in `server.js`
 2. Frontend features: change `webui-src/scripts/app.js`, `webui-src/styles/app.css`, or the relevant `webui-src/partials/*.html` file, then regenerate `public/` with `npm run build:webui`
-3. Testing: run `npm start` and test locally
+3. Testing: run `./start.sh`, `./start_nocors.sh`, or `npm start` with `AUTH_SECRET` already exported, depending on the access pattern you need to verify
 
 ### Code Style
 - Use ES6+ syntax
@@ -181,11 +193,14 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 ## Important Notes
 
 - Default account: `admin / admin` on first boot.
+- `./start.sh` is the preferred local entry point. It creates `./.data` and `./.data/auth_secret` only when `./.data` does not already exist, then exports `ENTRANCE_DATA_DIR` and `AUTH_SECRET` before calling `npm start`. Pass `--port=4000` to make it run `npm start -- --port 4000`.
+- `./start_nocors.sh` is the convenience wrapper for the same flow with `ENTRANCE_CORS_DISABLE=1`.
 - Password storage: Argon2id hashes in `users.json`; legacy plaintext entries are upgraded on successful login.
 - Password-login keepalive defaults to 7 days. The browser stores the chosen duration and only keeps restoring the saved session while token verification succeeds and the current `AUTH_SECRET` fingerprint still matches.
 - `LOGIN_KEEP` stores the last successful password-login Unix timestamp encrypted with AES-256-GCM using a key derived from `AUTH_SECRET`.
 - Stored SSH credentials and private-network allowlist entries are AES-256-GCM encrypted with `SSH_PASSWORD_KEY`.
 - If `SSH_PASSWORD_KEY` changes, existing encrypted secrets become unreadable until the old key is restored or the values are re-entered.
+- `ENTRANCE_CORS_DISABLE=1` widens browser access and is meant for explicit LAN, reverse-proxy, or tunnel use, not for the default tighter desktop/API-only deployment shape.
 - Desktop no-login should not expose `/api/auth/nologin` to browsers. Use `ENTRANCE_DESKTOP_API_ONLY=1`, loopback binding, and the `POST /api/auth/desktop/bootstrap` + `X-Entrance-Desktop-Secret` flow instead.
 - SFTP sessions are stored in memory (Map).
 - User data is isolated per user in separate JSON files under `ENTRANCE_DATA_DIR`.

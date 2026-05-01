@@ -5,6 +5,8 @@ Default documentation is in English. For Simplified Chinese, see [doc/README_CN.
 Web-based server management tools with SSH terminal access, local shell terminal access, VNC remote desktop, WebSerial terminal support, flashing/debugging workflows, and SFTP file management. The UI follows Microsoft Fluent Design, supports light/dark themes, and includes both Chinese and English interface modes.
 ![Screenshot](doc/screenshot.png)
 
+For the installer script, see [Install](https://github.com/EntranceToolBox/Entrance-Installer).
+
 ## Features
 
 ### SSH Terminal
@@ -147,17 +149,27 @@ cd Entrance
 # Install dependencies
 npm install
 
-# Start the service
-npm start
+# Start the service with persistent local runtime data under ./.data
+./start.sh
+# or use permissive CORS for LAN / reverse-proxy / tunnel browser access
+./start_nocors.sh
 ```
 
-`npm start` now rebuilds the modular WebUI from `webui-src/` before launching the server. Use `npm run build:webui` if you only want to refresh the generated frontend assets.
+`./start.sh` is the preferred local entry point. On the first run, when `./.data` does not exist yet, it creates `./.data`, writes `./.data/auth_secret`, exports `ENTRANCE_DATA_DIR` and `AUTH_SECRET`, and then runs `npm start`. It also accepts `--port=4000`, which makes it call `npm start -- --port 4000`.
+
+`./start_nocors.sh` is the same bootstrap flow with `ENTRANCE_CORS_DISABLE=1` exported first. Use it only when you intentionally need browser access from a LAN IP, reverse proxy, or tunnel domain.
+
+`npm start` still rebuilds the modular WebUI from `webui-src/` before launching the server, but it requires `AUTH_SECRET` to already be exported. Use `npm run build:webui` if you only want to refresh the generated frontend assets.
 
 Visit http://localhost:3000 and sign in to enter the dashboard.
 
 To use a different port, use an environment variable or CLI flag:
 
 ```bash
+./start.sh --port=4000
+# or
+./start_nocors.sh --port=4000
+# or, if AUTH_SECRET is already exported
 PORT=4000 npm start
 # or
 npm start -- --port 4000
@@ -165,18 +177,20 @@ npm start -- --port 4000
 
 Then open `http://localhost:4000`.
 
-### Minimal Run Example
+### Manual Equivalent of `start.sh`
 
 ```bash
-mkdir -p ./.data
-[ -f ./.data/auth_secret ] || openssl rand -base64 32 > ./.data/auth_secret
+if [ ! -d ./.data ]; then
+  mkdir -p ./.data
+  [ -f ./.data/auth_secret ] || openssl rand -base64 32 > ./.data/auth_secret
+fi
 
 export ENTRANCE_DATA_DIR="$(pwd)/.data"
 export AUTH_SECRET="$(tr -d '\n' < ./.data/auth_secret)"
 npm start
 ```
 
-This example pins runtime data to `./.data` and lets Entrance generate and reuse the SSH credential encryption key in `./.data/.ssh_password_key`. Do not regenerate `SSH_PASSWORD_KEY` before each restart, or existing allowlists, passwords, and private keys will become undecryptable.
+This matches `./start.sh` without a custom port. If you run `./start.sh --port=4000`, the final line becomes `npm start -- --port 4000`. If `./.data` already exists, the script does not regenerate `./.data/auth_secret`, so make sure that file is still present before restarting. The runtime data stays pinned to `./.data`, and Entrance generates and reuses the SSH credential encryption key in `./.data/.ssh_password_key`. Do not regenerate `SSH_PASSWORD_KEY` before each restart, or existing allowlists, passwords, and private keys will become undecryptable.
 
 The default account is `admin/admin` on first boot.
 
@@ -255,6 +269,8 @@ podman run -d --name entrance-tools \
 
 ## Environment Variables
 
+For behavior-focused notes, defaults, side effects, and deployment guidance, see [doc/environment-variables.md](doc/environment-variables.md).
+
 | Variable | Default | Description |
 | --- | --- | --- |
 | `PORT` | `3000` | HTTP listening port; can also be overridden with `npm start -- --port 4000` |
@@ -268,6 +284,7 @@ podman run -d --name entrance-tools \
 | `STRICT_HOST_KEY_CHECKING` | `false` | When `true`, reject unknown SSH host keys |
 | `ALLOWED_TARGETS` | empty | Comma-separated allowlist of target hosts, supports `*.example.com` |
 | `ALLOW_PRIVATE_NETWORKS` | `false` | When `true`, allow direct private-address access; otherwise admin allowlisting is required |
+| `ENTRANCE_CORS_DISABLE` | `0` | When `1`, allow any browser `Origin` to call the API instead of restricting CORS to localhost or the desktop renderer origin; useful for LAN IP, reverse-proxy, and tunnel access |
 | `ENTRANCE_DESKTOP_NOLOGIN` | `0` | When `1`, enable desktop no-login. For a secure Electron deployment, pair it with `ENTRANCE_DESKTOP_API_ONLY=1` and a bootstrap secret instead of exposing the web UI |
 | `ENTRANCE_DESKTOP_API_ONLY` | `0` | When `1`, disable static WebUI serving and expose backend APIs only; intended for Electron wrappers that render local frontend assets |
 | `ENTRANCE_DESKTOP_ALLOWED_ORIGIN` | `app://entrance` | Allowed renderer origin for CORS when `ENTRANCE_DESKTOP_API_ONLY=1` |
@@ -294,6 +311,8 @@ podman run -d --name entrance-tools \
 ├── vnc.js               # VNC proxy module
 ├── nginx/               # Reverse proxy example config
 ├── package.json         # Dependency manifest
+├── start.sh             # Local startup helper that exports ENTRANCE_DATA_DIR and AUTH_SECRET from ./.data and accepts --port=4000
+├── start_nocors.sh      # Wrapper around start.sh that exports ENTRANCE_CORS_DISABLE=1 first
 ├── users.json           # User data (generated, may live under ENTRANCE_DATA_DIR)
 ├── .ssh_password_key    # SSH credential encryption key (generated)
 ├── LOGIN_KEEP           # Encrypted password-login timestamp for session keepalive
@@ -651,6 +670,7 @@ memory:[used:8192, free:4096, cached:2048]
 - The last successful password-login timestamp is stored in `ENTRANCE_DATA_DIR/LOGIN_KEEP` and encrypted with AES-256-GCM using a key derived from `AUTH_SECRET`.
 - SSH/SFTP credentials, including passwords, private keys, and passphrases, are stored only in the browser or in server-side user data; when persisted, they are encrypted with AES-256-GCM using `SSH_PASSWORD_KEY`.
 - The private network allowlist is stored in `private-networks.json` and encrypted with AES-256-GCM using `SSH_PASSWORD_KEY`.
+- `ENTRANCE_CORS_DISABLE=1` allows any browser origin to reach the API. Use it only when you intentionally need LAN, reverse-proxy, or tunnel access, and keep it off for tighter desktop/API-only deployments.
 - In desktop API-only mode the backend stops serving `public/index.html`, binds to loopback by default, and only exposes the admin no-login bootstrap through `POST /api/auth/desktop/bootstrap` with `X-Entrance-Desktop-Secret`.
 - If `SSH_PASSWORD_KEY` changes, historical encrypted credentials and allowlist entries become unreadable until the old key is restored or the data is re-entered.
 - **Local Shell Security** (Linux/macOS/Windows, admin only): local shell access gives direct terminal access to the server. Make sure to:

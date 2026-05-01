@@ -80,6 +80,7 @@ const DEFAULT_LOGIN_KEEP_SECONDS = Number.isFinite(AUTH_TOKEN_TTL) && AUTH_TOKEN
 const MAX_LOGIN_KEEP_SECONDS = 10 * 365 * 24 * 60 * 60;
 const DESKTOP_NOLOGIN = process.env.ENTRANCE_DESKTOP_NOLOGIN === '1';
 const DESKTOP_VERSION = String(process.env.ENTRANCE_DESKTOP_VERSION || '').trim();
+const CORS_DISABLE = process.env.ENTRANCE_CORS_DISABLE === '1';
 const DESKTOP_ALLOWED_ORIGIN = String(process.env.ENTRANCE_DESKTOP_ALLOWED_ORIGIN || 'app://entrance').trim() || 'app://entrance';
 const DESKTOP_BOOTSTRAP_SECRET = String(process.env.ENTRANCE_DESKTOP_BOOTSTRAP_SECRET || '').trim();
 const PROJECT_HOMEPAGE = 'https://github.com/fcanlnony/Entrance';
@@ -1077,12 +1078,15 @@ if (!DESKTOP_API_ONLY) {
 const corsOriginPattern = /^(https?:\/\/)(localhost|127\.0\.0\.1)(:\d+)?$/;
 app.use((req, res, next) => {
     const { origin } = req.headers;
-    const originAllowed = !origin || (DESKTOP_API_ONLY ? origin === DESKTOP_ALLOWED_ORIGIN : corsOriginPattern.test(origin));
+    const originAllowed = !origin || CORS_DISABLE || (DESKTOP_API_ONLY ? origin === DESKTOP_ALLOWED_ORIGIN : corsOriginPattern.test(origin));
     if (origin && originAllowed) {
         res.header('Access-Control-Allow-Origin', origin);
         res.header('Vary', 'Origin');
         res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Entrance-Desktop-Secret');
+        if (req.headers['access-control-request-private-network'] === 'true') {
+            res.header('Access-Control-Allow-Private-Network', 'true');
+        }
     } else if (origin) {
         if (req.method === 'OPTIONS') {
             return res.sendStatus(403);

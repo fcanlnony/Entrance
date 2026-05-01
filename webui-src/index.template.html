@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entrance Tools</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@nicktomlin/novnc@0.0.5/core/css/base.css">
+    <link rel="stylesheet" href="assets/vendor/xterm/xterm.css">
+    <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="assets/app.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="assets/vendor/chart.js/chart.umd.js"></script>
 </head>
 <body>
 {{> partials/auth-overlay.html}}
@@ -16,13 +15,13 @@
 {{> partials/modals.html}}
     <div class="toast-container" id="toasts"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script src="assets/vendor/xterm/xterm.js"></script>
+    <script src="assets/vendor/xterm-addon-fit/xterm-addon-fit.js"></script>
     <script type="module">
-        import RFB from 'https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js';
+        import RFB from './assets/vendor/novnc/core/rfb.js';
         window.RFB = RFB;
     </script>
-    <script src="vnc-client.js"></script>
+    <script src="assets/vnc-client.js"></script>
     <script src="assets/app.js"></script>
 </body>
 </html>
