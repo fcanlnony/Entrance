@@ -18,29 +18,16 @@
             <div class="auth-panel auth-loading-panel hidden" id="authLoadingPanel">
                 <div class="auth-boot-scene" aria-hidden="true">
                     <div class="auth-logo-frame">
-                        <svg class="auth-logo-progress" viewBox="0 0 196 196" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="authLogoProgressGradient" x1="18" y1="18" x2="178" y2="178" gradientUnits="userSpaceOnUse">
-                                    <stop offset="0%" stop-color="#5d8ef7"></stop>
-                                    <stop offset="52%" stop-color="#78b7ff"></stop>
-                                    <stop offset="100%" stop-color="#8ad7f4"></stop>
-                                </linearGradient>
-                                <filter id="materialWave" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.08" numOctaves="1" result="noise">
-                                        <animate attributeName="baseFrequency" values="0.02 0.08; 0.04 0.09; 0.02 0.08" dur="3s" repeatCount="indefinite" />
-                                    </feTurbulence>
-                                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" />
-                                </filter>
-                            </defs>
-                            <path
+                        <svg class="auth-logo-progress" viewBox="0 0 200 200" aria-hidden="true">
+                            <circle
                                 class="auth-logo-progress-track"
-                                d="M 98 18 L 132 18 A 46 46 0 0 1 178 64 L 178 132 A 46 46 0 0 1 132 178 L 64 178 A 46 46 0 0 1 18 132 L 18 64 A 46 46 0 0 1 64 18 Z"
-                            ></path>
-                            <path
+                                cx="100" cy="100" r="88"
+                            ></circle>
+                            <circle
                                 class="auth-logo-progress-fill"
                                 id="authProgressFill"
-                                d="M 98 18 L 132 18 A 46 46 0 0 1 178 64 L 178 132 A 46 46 0 0 1 132 178 L 64 178 A 46 46 0 0 1 18 132 L 18 64 A 46 46 0 0 1 64 18 Z"
-                            ></path>
+                                cx="100" cy="100" r="88"
+                            ></circle>
                         </svg>
                         <div class="auth-logo-shell">
                             <img src="logo.png" alt="Entrance Tools logo">

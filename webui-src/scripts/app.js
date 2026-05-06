@@ -2059,12 +2059,10 @@
                 const value = document.getElementById('authProgressValue');
                 const label = document.getElementById('authProgressStage');
                 if (fill) {
-                    const totalLength = fill._progressPathLength || fill.getTotalLength();
-                    const filledLength = totalLength * safeProgress;
-                    fill._progressPathLength = totalLength;
+                    const circumference = 2 * Math.PI * 88;
+                    const filledLength = circumference * safeProgress;
                     fill.style.opacity = safeProgress > 0 ? '1' : '0';
-                    fill.style.strokeDasharray = `${filledLength} ${totalLength}`;
-                    fill.style.strokeDashoffset = '0';
+                    fill.style.strokeDasharray = `${filledLength} ${circumference}`;
                 }
                 if (value) {
                     value.textContent = `${Math.round(safeProgress * 100)}%`;

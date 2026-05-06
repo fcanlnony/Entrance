@@ -333,8 +333,8 @@
             position: absolute;
             left: 50%;
             top: 48%;
-            width: 196px;
-            height: 196px;
+            width: 200px;
+            height: 200px;
             transform: translate(-50%, -50%);
             z-index: 2;
             pointer-events: none;
@@ -345,43 +345,40 @@
             width: 100%;
             height: 100%;
             overflow: visible;
-            filter: drop-shadow(0 12px 24px rgba(63, 91, 145, 0.18));
+            transform: rotate(-90deg);
+            filter: drop-shadow(0 0 8px var(--color-accent-soft));
         }
-        .auth-logo-progress path {
+        .auth-logo-progress circle {
             fill: none;
             stroke-linecap: round;
-            stroke-linejoin: round;
         }
         .auth-logo-progress-track {
-            stroke: var(--color-border);
-            stroke-width: 8;
-            opacity: 0.92;
-            filter: url(#materialWave);
+            stroke: var(--color-accent-soft);
+            stroke-width: 6;
+            opacity: 0.6;
         }
         .auth-logo-progress-fill {
             stroke: var(--color-accent);
-            stroke-width: 8;
+            stroke-width: 6;
+            stroke-dasharray: 0 552.92;
+            stroke-dashoffset: 0;
             opacity: 0;
             transition:
-                stroke-dasharray .18s ease-out,
-                opacity .18s ease-out,
-                filter .24s ease-out;
-            filter:
-                url(#materialWave)
-                drop-shadow(0 0 10px var(--color-accent-soft))
-                drop-shadow(0 10px 18px var(--color-accent-light));
-            animation: authProgressPulse 2.4s ease-in-out infinite;
+                stroke-dasharray .4s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity .3s ease-out;
+            filter: drop-shadow(0 0 6px var(--color-accent-light));
+            animation: authRingGlow 2.4s ease-in-out infinite;
         }
         .auth-logo-shell {
             position: absolute;
-            inset: 28px;
-            border-radius: 36px;
+            inset: 24px;
+            border-radius: 50%;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.60);
-            border: 1px solid rgba(255, 255, 255, 0.58);
+            background: var(--color-bg-2);
+            border: 1px solid var(--color-border);
             box-shadow:
-                0 18px 28px rgba(63, 91, 145, 0.22),
-                inset 0 1px 0 rgba(255, 255, 255, 0.78);
+                0 8px 24px var(--color-accent-soft),
+                inset 0 1px 0 var(--color-accent-outline);
             backdrop-filter: blur(12px);
         }
         .auth-logo-shell img {
@@ -389,7 +386,7 @@
             height: 100%;
             object-fit: cover;
             display: block;
-            animation: logoPulse 2.4s ease-in-out infinite;
+            animation: logoPulse 3s ease-in-out infinite;
         }
         .auth-loading-copy {
             display: grid;
@@ -431,23 +428,17 @@
             color: var(--color-text);
             font-weight: 600;
         }
-        @keyframes authProgressPulse {
+        @keyframes authRingGlow {
             0%, 100% {
-                filter:
-                    url(#materialWave)
-                    drop-shadow(0 0 10px var(--color-accent-soft))
-                    drop-shadow(0 10px 18px var(--color-accent-light));
+                filter: drop-shadow(0 0 6px var(--color-accent-light));
             }
             50% {
-                filter:
-                    url(#materialWave)
-                    drop-shadow(0 0 14px var(--color-accent-fill))
-                    drop-shadow(0 12px 22px var(--color-accent-light));
+                filter: drop-shadow(0 0 14px var(--color-accent-fill));
             }
         }
         @keyframes logoPulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.03); }
         }
         @media (max-width: 560px) {
             .auth-card {
@@ -463,12 +454,12 @@
                 height: 220px;
             }
             .auth-logo-frame {
-                width: 168px;
-                height: 168px;
+                width: 172px;
+                height: 172px;
             }
             .auth-logo-shell {
-                inset: 24px;
-                border-radius: 30px;
+                inset: 20px;
+                border-radius: 50%;
             }
         }
         .logout-btn {
