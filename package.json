@@ -1,6 +1,6 @@
 {
   "name": "entrance-tools",
-  "version": "0.2.0-alpha",
+  "version": "0.2.0-beta",
   "description": "Entrance Tools - Web-based server management with SSH, VNC, WebSerial and SFTP",
   "main": "server.js",
   "scripts": {

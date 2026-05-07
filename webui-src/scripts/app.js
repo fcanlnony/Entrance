@@ -41,7 +41,7 @@
             username: '',
             token: '',
             language: 'en',
-            appVersion: '0.2.0-alpha',
+            appVersion: '0.2.0-beta',
             projectHomepage: 'https://github.com/fcanlnony/Entrance',
             authSecretFingerprint: '',
             defaultLoginKeepSeconds: 604800,
@@ -531,8 +531,8 @@
                     '适配器速率 (kHz)': 'Adapter Speed (kHz)',
                     '支持从 OpenOCD 的 interface 目录中搜索并选择 .cfg。': 'Supports searching and selecting .cfg files from the OpenOCD interface directory.',
                     'OpenOCD 会按 GUI 选项追加 verify/reset/exit 指令。': 'OpenOCD appends verify/reset/exit commands according to the GUI options.',
-                    '优先自动列出已连接 probe，也可手动填写 UID 或部分 UID。': 'Connected probes are listed automatically first, or you can enter a UID or partial UID manually.',
-                    '例如 cmsisdap:12345678 或部分 UID': 'For example: cmsisdap:12345678 or a partial UID',
+                    '优先自动列出已连接 probe，也可手动填写数字 Unique ID。': 'Connected probes are listed automatically first, or you can enter a numeric Unique ID manually.',
+                    '例如 4294967295': 'For example: 4294967295',
                     '目标芯片': 'Target Chip',
                     '例如 stm32f103rc': 'For example: stm32f103rc',
                     '请输入 pyOCD 支持的目标芯片名称。': 'Enter a pyOCD target name.',
@@ -564,7 +564,7 @@
                     'CLI 会话已通过 script PTY 包装，以确保交互式 GDB 输出实时返回到消息框。': 'The CLI session is wrapped with a script PTY so interactive GDB output can stream back to the log in real time.',
                     'OpenOCD 会优先匹配 interface/<adapter>.cfg；若不存在，则按 adapter driver 自动反查接口配置。': 'OpenOCD prefers matching interface/<adapter>.cfg first; if it does not exist, it falls back to resolving the interface config from the adapter driver.',
                     '若板卡需要自定义接口文件或脚本目录，可在附加参数中补充。': 'If the board needs a custom interface file or script directory, add it in the extra arguments.',
-                    'pyOCD 会优先列出当前已连接的 probe；未检测到时可手动填写 UID。': 'pyOCD lists currently connected probes first. If none are detected, enter the UID manually.',
+                    'pyOCD 会优先列出当前已连接的 probe，并只把数字 Unique ID 传给 -u。': 'pyOCD lists currently connected probes first and passes only the numeric Unique ID to -u.',
                     '写后校验沿用 pyOCD 内置烧录策略。': 'Verification after flashing follows the built-in pyOCD behavior.',
                     'probe-rs 的实时调试使用 GDB server 模式，请用支持 GDB Remote 的调试器连接。': 'probe-rs live debugging uses GDB server mode. Connect with a debugger that supports GDB Remote.',
                     '若本机 CLI 版本参数存在差异，可在附加参数中补充。': 'If the local CLI version uses different arguments, add them in the extra arguments.',
@@ -597,8 +597,9 @@
                     '目标关键字': 'Target keywords',
                     '已切换到 ESP-IDF 多镜像烧录模式，将按 flasher_args.json 烧录 bootloader、partition table 和 app。': 'Switched to ESP-IDF multi-image flash mode. bootloader, partition table, and app will be flashed according to flasher_args.json.',
                     '已切换到 ESP32 app bin 烧录模式，默认按应用分区偏移 0x10000 写入。若使用自定义分区，请改用 flasher_args.json。': 'Switched to ESP32 app bin flash mode. The file will be written to the default app partition offset 0x10000. If you use a custom partition layout, use flasher_args.json instead.',
-                    '未检测到已连接 probe，已回退显示 pyOCD debug-probe 插件前缀。': 'No connected probe was detected. Fell back to showing pyOCD debug-probe plugin prefixes.',
+                    '未检测到已连接 probe，可手动填写数字 Unique ID。': 'No connected probe was detected. You can enter a numeric Unique ID manually.',
                     '未检测到已连接 probe，可按 VID:PID 或 VID:PID:Serial 手动输入。': 'No connected probe was detected. You can enter VID:PID or VID:PID:Serial manually.',
+                    'pyOCD Probe UID 只能填写数字': 'pyOCD Probe UID must contain digits only',
                     '读取 probe-rs 芯片目录超时': 'Timed out while reading the probe-rs chip catalog',
                     '读取 pyOCD 目标目录超时': 'Timed out while reading the pyOCD target catalog',
                     '读取 probe-rs 芯片目录失败': 'Failed to read the probe-rs chip catalog',
@@ -938,13 +939,11 @@
                     [/^当前固件路径：(.+)$/u, 'Current firmware path: $1'],
                     [/^当前 CLI ELF \/ 符号文件路径：(.+)$/u, 'Current CLI ELF / symbols path: $1'],
                     [/^当前未单独设置 CLI ELF，默认将沿用烧录文件路径：(.+)$/u, 'No separate CLI ELF is set. The flash file path will be used by default: $1'],
-                    [/^(.+?) 未检测到已连接 probe，已回退显示 pyOCD debug-probe 插件前缀。$/u, (_match, prefix) => `${I18n.auto(prefix)} No connected probe was detected. Fell back to showing pyOCD debug-probe plugin prefixes.`],
+                    [/^(.+?) 未检测到已连接 probe，可手动填写数字 Unique ID。$/u, (_match, prefix) => `${I18n.auto(prefix)} No connected probe was detected. You can enter a numeric Unique ID manually.`],
                     [/^(.+?) 未检测到已连接 probe，可按 VID:PID 或 VID:PID:Serial 手动输入。$/u, (_match, prefix) => `${I18n.auto(prefix)} No connected probe was detected. You can enter VID:PID or VID:PID:Serial manually.`],
-                    [/^(.+?) 当前显示 (\d+) 个 pyOCD 插件前缀，选择后可在右侧继续补充 UID。$/u, (_match, prefix, count) => `${I18n.auto(prefix)} Showing ${count} pyOCD probe prefixes. After selecting one, you can continue entering the UID on the right.`],
                     [/^(.+?) 当前显示 probe-rs 选择模板，可按帮助格式手动补全。$/u, (_match, prefix) => `${I18n.auto(prefix)} Showing probe-rs selector templates. Complete them manually using the help format.`],
                     [/^(.+?) 当前检测到 (\d+) 个候选项。$/u, (_match, prefix, count) => `${I18n.auto(prefix)} ${count} candidates detected.`],
                     [/^(.+?) 当前未检测到候选项，可直接手动输入。$/u, (_match, prefix) => `${I18n.auto(prefix)} No candidates detected right now. You can type manually.`],
-                    [/^当前显示 (\d+) 个 pyOCD 插件前缀，选择后可在右侧继续补充 UID。$/u, 'Showing $1 pyOCD probe prefixes. After selecting one, you can continue entering the UID on the right.'],
                     [/^当前检测到 (\d+) 个候选项。$/u, '$1 candidates detected.'],
                     [/^已载入 (\d+) 个已授权串口，支持按标签、VID:PID 搜索。$/u, 'Loaded $1 granted serial ports. Search by label or VID:PID.'],
                     [/^已选择串口：(.+)$/u, 'Selected serial port: $1'],
@@ -5328,8 +5327,8 @@
                 },
                 pyocd: {
                     probeLabel: 'Probe UID',
-                    probeHint: '优先自动列出已连接 probe，也可手动填写 UID 或部分 UID。',
-                    probePlaceholder: '例如 cmsisdap:12345678 或部分 UID',
+                    probeHint: '优先自动列出已连接 probe，也可手动填写数字 Unique ID。',
+                    probePlaceholder: '例如 4294967295',
                     targetLabel: '目标芯片',
                     targetPlaceholder: '例如 stm32f103rc',
                     targetHint: '请输入 pyOCD 支持的目标芯片名称。',
@@ -6535,8 +6534,6 @@
 
                 if (this.tooling && this.tooling.listError) {
                     listExtra = ` ${this.tooling.listError}`;
-                } else if (count > 0 && programmerSource === 'plugins') {
-                    listExtra = ` 当前显示 ${count} 个 pyOCD 插件前缀，选择后可在右侧继续补充 UID。`;
                 } else if (count > 0 && programmerSource === 'template') {
                     listExtra = ' 当前显示 probe-rs 选择模板，可按帮助格式手动补全。';
                 } else if (count > 0) {

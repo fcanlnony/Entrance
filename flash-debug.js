@@ -901,6 +901,52 @@ function parseTableLikeLines(output) {
     }));
 }
 
+function parsePyOcdProbeOptions(output) {
+    const options = [];
+
+    for (const rawLine of output.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        if (/^(warn|error)\b/i.test(line)) continue;
+        if (/^no available debug probes/i.test(line)) continue;
+        if (/^no debug probes were found/i.test(line)) continue;
+        if (/^the following debug probes were found/i.test(line)) continue;
+        if (/^found \d+ debug probes?/i.test(line)) continue;
+        if (/^#\s+probe\/board\b/i.test(line)) continue;
+        if (/^-+$/.test(line)) continue;
+
+        if (line.includes('|')) {
+            const parts = line.split('|').map(part => part.trim()).filter(Boolean);
+            const uniqueIdIndex = parts.findIndex(part => /^unique\s+id$/i.test(part));
+            if (uniqueIdIndex !== -1) continue;
+            const dataParts = parts.length >= 4 && /^\d+$/.test(parts[0])
+                ? parts.slice(1)
+                : parts;
+            const uniqueId = dataParts.find(part => /^\d+$/.test(part)) || '';
+            if (!/^\d+$/.test(uniqueId)) continue;
+            options.push({
+                value: uniqueId,
+                label: parts.join(' | ')
+            });
+            continue;
+        }
+
+        const match = line.match(/^\d+\s+(.+?)\s{2,}(\S+)\s{2,}(.+?)\s*$/);
+        if (match) {
+            const probeBoard = match[1].trim();
+            const uniqueId = match[2].trim();
+            const target = match[3].trim();
+            if (!/^\d+$/.test(uniqueId)) continue;
+            options.push({
+                value: uniqueId,
+                label: [probeBoard, uniqueId, target].filter(Boolean).join(' | ')
+            });
+        }
+    }
+
+    return uniqueOptions(options);
+}
+
 function parseWarningLines(output) {
     return output
         .split(/\r?\n/)
@@ -1245,6 +1291,17 @@ function normalizeProbeRsProbeSelection(value = '') {
     return normalized;
 }
 
+function normalizePyOcdUniqueId(value = '') {
+    const normalized = normalizeString(value, 'Probe UID', 256);
+    if (!normalized) {
+        return '';
+    }
+    if (!/^\d+$/.test(normalized)) {
+        throw new Error('pyOCD Probe UID 只能填写数字');
+    }
+    return normalized;
+}
+
 function isEspOpenOcdTarget(targetConfig = '') {
     return /^target\/esp32(?:s2|s3)?\.cfg$/i.test(normalizeDisplayPath(targetConfig));
 }
@@ -1286,7 +1343,7 @@ async function listProgrammers(tool, executablePath) {
         if (tool === 'pyocd') {
             const probeResult = await runCommandCapture(executablePath, ['list', '--probes', '--no-header'], { timeoutMs: 5000 });
             const probeOutput = `${probeResult.stdout}\n${probeResult.stderr}`;
-            const detected = parseTableLikeLines(probeOutput);
+            const detected = parsePyOcdProbeOptions(probeOutput);
 
             if (detected.length > 0) {
                 return {
@@ -1296,12 +1353,13 @@ async function listProgrammers(tool, executablePath) {
                 };
             }
 
-            const pluginResult = await runCommandCapture(executablePath, ['list', '--plugins'], { timeoutMs: 5000 });
-            const pluginOutput = `${pluginResult.stdout}\n${pluginResult.stderr}`;
+            const warnings = parseWarningLines(probeOutput);
             return {
-                programmers: parsePyOcdPluginOptions(pluginOutput),
-                listError: '未检测到已连接 probe，已回退显示 pyOCD debug-probe 插件前缀。',
-                programmerSource: 'plugins'
+                programmers: [],
+                listError: warnings[0]
+                    ? `未检测到已连接 probe。${warnings[0]}`
+                    : '未检测到已连接 probe，可手动填写数字 Unique ID。',
+                programmerSource: 'none'
             };
         }
 
@@ -1519,7 +1577,7 @@ function buildPyOcdCommand(action, options) {
         ? normalizeRequiredString(options.firmwarePath, '固件路径', MAX_PATH_LENGTH)
         : '';
     const target = normalizeRequiredString(options.target, '目标芯片', 256);
-    const probeSelection = normalizeString(options.probeSelection, '烧录器', 256);
+    const probeSelection = normalizePyOcdUniqueId(options.probeSelection);
     const speed = normalizeString(options.speed, '速率', 64);
     const resetAfterFlash = normalizeBoolean(options.resetAfterFlash, true);
     const gdbPort = normalizeOptionalInteger(options.gdbPort, 'GDB 端口', { min: 1, max: 65535, fallback: 3333 });
