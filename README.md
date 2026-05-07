@@ -2,6 +2,8 @@
 
 Default documentation is in English. For Simplified Chinese, see [doc/README_CN.md](doc/README_CN.md).
 
+Current version: `0.2.0-beta`.
+
 Web-based server management tools with SSH terminal access, local shell terminal access, VNC remote desktop, WebSerial terminal support, flashing/debugging workflows, and SFTP file management. The UI follows Microsoft Fluent Design, supports light/dark themes, and includes both Chinese and English interface modes.
 ![Screenshot](doc/screenshot.png)
 
