@@ -7,6 +7,23 @@
 (function(global) {
     'use strict';
 
+    function getWsBase() {
+        const fallback = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`;
+        const raw = String(new URLSearchParams(location.search).get('wsBase') || '').trim();
+        if (!raw) {
+            return fallback;
+        }
+        try {
+            const parsed = new URL(raw);
+            if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') {
+                return fallback;
+            }
+            return parsed.toString().replace(/\/$/, '');
+        } catch {
+            return fallback;
+        }
+    }
+
     function t(message) {
         if (global.I18n && typeof global.I18n.auto === 'function') {
             return global.I18n.auto(message);
@@ -60,18 +77,21 @@
                 return;
             }
 
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
             const token = global.Auth && typeof global.Auth.getToken === 'function'
                 ? global.Auth.getToken()
                 : (global.localStorage ? (localStorage.getItem('authToken') || '') : '');
-            const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
-            const wsUrl = `${wsProtocol}//${location.host}/vnc?host=${encodeURIComponent(host)}&port=${port}${tokenParam}`;
+            const wsUrl = new URL('/vnc', `${getWsBase()}/`);
+            wsUrl.searchParams.set('host', host);
+            wsUrl.searchParams.set('port', String(port));
+            if (token) {
+                wsUrl.searchParams.set('token', token);
+            }
 
             console.log(`[VNC Client] Connecting: ${host}:${port}`);
-            console.log(`[VNC Client] WebSocket URL: ${wsUrl}`);
+            console.log(`[VNC Client] WebSocket URL: ${wsUrl.toString()}`);
 
             try {
-                this.rfb = new RFB(this.container, wsUrl, {
+                this.rfb = new RFB(this.container, wsUrl.toString(), {
                     credentials: password ? { password } : undefined,
                     wsProtocols: ['binary']
                 });
