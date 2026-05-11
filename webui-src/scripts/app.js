@@ -1882,8 +1882,7 @@
             },
             async _bootstrap() {
                 if (usesInjectedDesktopAuth()) {
-                    this.showLoading('正在连接桌面会话...', '正在验证桌面包装器注入的本地会话。');
-                    this.verify({ expectNoLogin: true });
+                    this.verify({ expectNoLogin: true, showBootOverlay: false });
                     return;
                 }
 
@@ -1955,13 +1954,16 @@
             },
             async verify(options = {}) {
                 const expectNoLogin = options.expectNoLogin === true;
+                const showBootOverlay = options.showBootOverlay !== false;
                 try {
                     const res = await apiFetch(`${Config.API}/api/auth/verify`, { method: 'POST' });
                     if (res.ok) {
                         const data = await res.json();
                         this.setSession({ token: State.token, nologin: expectNoLogin || data.nologin === true, ...data });
-                        this.showLoading('正在启动工作台...', '先载入界面，再分阶段连接服务模块。');
-                        UI.showDashboard();
+                        if (showBootOverlay) {
+                            this.showLoading('正在启动工作台...', '先载入界面，再分阶段连接服务模块。');
+                        }
+                        UI.showDashboard({ showBootOverlay });
                         return;
                     }
                 } catch {}
