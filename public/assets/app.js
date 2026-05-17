@@ -41,7 +41,7 @@
             username: '',
             token: '',
             language: 'en',
-            appVersion: '0.2.0-beta',
+            appVersion: '0.2.0',
             projectHomepage: 'https://github.com/fcanlnony/Entrance',
             authSecretFingerprint: '',
             defaultLoginKeepSeconds: 604800,
