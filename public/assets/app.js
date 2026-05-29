@@ -56,6 +56,8 @@
             currentPath: '/',
             selectedFiles: [],
             filesTransferred: 0,
+            plugins: [],
+            activePluginId: '',
             theme: 'light',
             colorScheme: 'default',
             // 导航历史
@@ -120,6 +122,7 @@
                     '正在初始化串口与远程桌面模块...': 'Initializing serial and remote desktop modules...',
                     '正在同步本机终端能力...': 'Syncing local shell capabilities...',
                     '正在加载主机列表...': 'Loading saved hosts...',
+                    '正在加载插件...': 'Loading plugins...',
                     '正在加载安全设置...': 'Loading security settings...',
                     '启动完成': 'Startup complete',
                     '用户名': 'Username',
@@ -132,6 +135,8 @@
                     'Web 终端': 'Web Terminal',
                     '串口终端': 'Serial Terminal',
                     '烧录调试': 'Flash & Debug',
+                    '插件安装': 'Plugin Install',
+                    '插件导航': 'Plugin Navigator',
                     '设置': 'Settings',
                     '收起': 'Collapse',
                     '退出': 'Log out',
@@ -366,6 +371,54 @@
                     '登录保持时间已保存，将在下次登录时生效': 'The session keepalive has been saved and will take effect on the next sign-in.',
                     '登录保持时间已更新': 'Session keepalive updated',
                     '登录保持时间更新失败': 'Failed to update the session keepalive',
+                    '安装插件': 'Install Plugin',
+                    '支持上传包含 version.json 和 index.js，可带 index.html 的 zip 插件包。': 'Upload a ZIP plugin package containing version.json and index.js, optionally with index.html.',
+                    '仅管理员可安装和删除插件，普通用户仍可从插件导航进入已安装插件。': 'Only administrators can install and delete plugins. Regular users can still open installed plugins from Plugin Navigator.',
+                    '尚未选择文件': 'No file selected',
+                    '插件包根目录必须包含 version.json，入口 JS 默认是 index.js。': 'The plugin package root must contain version.json. The default JS entry is index.js.',
+                    '选择 ZIP': 'Choose ZIP',
+                    '安装': 'Install',
+                    '等待选择插件包': 'Waiting for a plugin package',
+                    '已安装插件': 'Installed Plugins',
+                    '查看插件名称、版本、作者、描述和项目主页。': 'View plugin name, version, author, description, and project homepage.',
+                    '进入插件页面': 'Open Plugin Page',
+                    '选择插件后会在工作台内打开，就像串口终端等内置页面一样。': 'Choose a plugin to open it inside the workspace, like built-in pages such as Serial Terminal.',
+                    '插件页面': 'Plugin Page',
+                    '返回插件导航': 'Back to Plugin Navigator',
+                    '项目主页': 'Project Homepage',
+                    '请选择插件': 'Choose a plugin',
+                    '作者': 'Author',
+                    '入口': 'Entry',
+                    '页面': 'Page',
+                    '未提供项目主页': 'No project homepage',
+                    '打开项目主页': 'Open project homepage',
+                    '进入插件': 'Open Plugin',
+                    '删除插件': 'Delete Plugin',
+                    '没有已安装插件': 'No installed plugins',
+                    '请选择插件 ZIP 文件': 'Choose a plugin ZIP file',
+                    '仅管理员可安装插件': 'Only administrators can install plugins',
+                    '仅管理员可删除插件': 'Only administrators can delete plugins',
+                    '正在安装插件...': 'Installing plugin...',
+                    '插件安装成功': 'Plugin installed',
+                    '插件安装失败': 'Plugin install failed',
+                    '插件列表加载失败': 'Failed to load plugins',
+                    '确认删除插件：': 'Delete plugin: ',
+                    '插件删除成功': 'Plugin deleted',
+                    '插件删除失败': 'Plugin delete failed',
+                    '插件不存在或已被删除': 'The plugin does not exist or has been deleted',
+                    '插件不存在': 'Plugin not found',
+                    '插件包不能超过 50MB': 'The plugin package cannot exceed 50MB',
+                    '未选择插件 ZIP': 'No plugin ZIP selected',
+                    '插件包必须是 zip 文件': 'The plugin package must be a zip file',
+                    '插件入口文件不存在': 'Plugin entry file not found',
+                    '入口 JS 路径无效': 'Invalid entry JS path',
+                    '入口文件必须是 JS 文件': 'The entry file must be a JS file',
+                    'HTML 入口路径无效': 'Invalid HTML entry path',
+                    'HTML 入口必须是 HTML 文件': 'The HTML entry must be an HTML file',
+                    '项目主页必须是有效 URL': 'Project homepage must be a valid URL',
+                    '项目主页只允许 http 或 https': 'Project homepage must use http or https',
+                    '插件页面加载失败': 'Failed to load plugin page',
+                    '插件已重新加载': 'Plugins reloaded',
                     '新密码': 'New password',
                     '输入新密码': 'Enter a new password',
                     '确认密码': 'Confirm password',
@@ -922,6 +975,16 @@
                     [/^密码修改失败: (.+)$/u, (_match, message) => `Password update failed: ${I18n.auto(message)}`],
                     [/^登录失败: (.+)$/u, (_match, message) => `Sign-in failed: ${I18n.auto(message)}`],
                     [/^登录保持时间更新失败: (.+)$/u, (_match, message) => `Session keepalive update failed: ${I18n.auto(message)}`],
+                    [/^插件安装失败: (.+)$/u, (_match, message) => `Plugin install failed: ${I18n.auto(message)}`],
+                    [/^插件删除失败: (.+)$/u, (_match, message) => `Plugin delete failed: ${I18n.auto(message)}`],
+                    [/^插件列表加载失败: (.+)$/u, (_match, message) => `Failed to load plugins: ${I18n.auto(message)}`],
+                    [/^插件包缺少入口文件 (.+)$/u, 'The plugin package is missing entry file $1'],
+                    [/^插件包缺少 (.+)$/u, 'The plugin package is missing $1'],
+                    [/^(.+) 不是有效 JSON$/u, '$1 is not valid JSON'],
+                    [/^ZIP 内存在非法路径: (.+)$/u, 'The ZIP contains an invalid path: $1'],
+                    [/^ZIP 内存在插件目录外文件: (.+)$/u, 'The ZIP contains a file outside the plugin directory: $1'],
+                    [/^ZIP 路径越界: (.+)$/u, 'ZIP path escapes the plugin directory: $1'],
+                    [/^插件文件数量不能超过 (\d+)$/u, 'Plugin files cannot exceed $1'],
                     [/^连接失败: (.+)$/u, (_match, message) => `Connection failed: ${I18n.auto(message)}`],
                     [/^当前登录保持时间：(.+)$/u, 'Current session keepalive: $1'],
                     [/^列表错误: (.+)$/u, (_match, message) => `List error: ${I18n.auto(message)}`],
@@ -1048,6 +1111,9 @@
                     }
                     if (typeof Settings !== 'undefined' && document.getElementById('languageGrid')) {
                         Settings.renderLanguageGrid();
+                    }
+                    if (typeof Plugins !== 'undefined' && document.getElementById('pluginNavGrid')) {
+                        Plugins.render();
                     }
                 } finally {
                     if (shouldResumeObserver) {
@@ -1455,7 +1521,8 @@
                 [
                     ['Terminal_', Terminal_],
                     ['LocalShell', LocalShell],
-                    ['Serial', Serial]
+                    ['Serial', Serial],
+                    ['Plugins', Plugins]
                 ].forEach(([name, module]) => {
                     try {
                         module.applyTheme();
@@ -1810,6 +1877,300 @@
             }
         };
 
+        const Plugins = {
+            selectedFile: null,
+            loading: false,
+            initialized: false,
+            applyTheme() {
+                this.syncFrameTheme();
+            },
+            init() {
+                if (this.initialized) return;
+                this.initialized = true;
+
+                document.getElementById('pluginSelectBtn')?.addEventListener('click', () => {
+                    if (!State.isAdmin) {
+                        Toast.error('仅管理员可安装插件');
+                        return;
+                    }
+                    document.getElementById('pluginPackageInput').click();
+                });
+                document.getElementById('pluginPackageInput')?.addEventListener('change', (event) => {
+                    const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                    this.setSelectedFile(file);
+                });
+                document.getElementById('pluginInstallBtn')?.addEventListener('click', () => this.install());
+                document.getElementById('pluginRefreshBtn')?.addEventListener('click', async () => {
+                    await this.load();
+                    Toast.success('插件已重新加载');
+                });
+                document.getElementById('pluginNavRefreshBtn')?.addEventListener('click', async () => {
+                    await this.load();
+                    Toast.success('插件已重新加载');
+                });
+                document.getElementById('pluginRuntimeBackBtn')?.addEventListener('click', () => UI.switchView('plugin-nav'));
+
+                const drop = document.getElementById('pluginUploadDrop');
+                if (drop) {
+                    drop.addEventListener('click', () => document.getElementById('pluginSelectBtn')?.click());
+                    drop.addEventListener('dragover', (event) => {
+                        event.preventDefault();
+                        if (State.isAdmin) drop.classList.add('drag-over');
+                    });
+                    drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+                    drop.addEventListener('drop', (event) => {
+                        event.preventDefault();
+                        drop.classList.remove('drag-over');
+                        if (!State.isAdmin) {
+                            Toast.error('仅管理员可安装插件');
+                            return;
+                        }
+                        const file = event.dataTransfer.files && event.dataTransfer.files[0] ? event.dataTransfer.files[0] : null;
+                        if (file) this.setSelectedFile(file);
+                    });
+                }
+
+                document.getElementById('installedPluginsGrid')?.addEventListener('click', (event) => {
+                    const action = event.target.closest('[data-plugin-action]');
+                    if (!action) return;
+                    const id = action.dataset.pluginId || '';
+                    if (action.dataset.pluginAction === 'delete') this.delete(id);
+                    if (action.dataset.pluginAction === 'open') this.open(id);
+                });
+                document.getElementById('pluginNavGrid')?.addEventListener('click', (event) => {
+                    const action = event.target.closest('[data-plugin-action="open"]');
+                    if (!action) return;
+                    this.open(action.dataset.pluginId || '');
+                });
+                this.render();
+            },
+            pluginById(id) {
+                return State.plugins.find(plugin => plugin.id === id) || null;
+            },
+            setSelectedFile(file) {
+                this.selectedFile = file || null;
+                const label = document.getElementById('pluginSelectedFileName');
+                if (label) label.textContent = file ? file.name : I18n.auto('尚未选择文件');
+                const input = document.getElementById('pluginPackageInput');
+                if (!file && input) input.value = '';
+                this.renderInstallStatus(file ? `${file.name} (${this.formatSize(file.size || 0)})` : '等待选择插件包');
+            },
+            formatSize(bytes) {
+                const size = Number(bytes) || 0;
+                if (size < 1024) return `${size} B`;
+                if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+                return `${(size / 1024 / 1024).toFixed(1)} MB`;
+            },
+            renderInstallStatus(text) {
+                const status = document.getElementById('pluginInstallStatus');
+                if (status) status.textContent = I18n.auto(text || '等待选择插件包');
+            },
+            setBusy(busy) {
+                this.loading = busy;
+                ['pluginInstallBtn', 'pluginSelectBtn', 'pluginRefreshBtn', 'pluginNavRefreshBtn'].forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) btn.disabled = busy || ((id === 'pluginInstallBtn' || id === 'pluginSelectBtn') && !State.isAdmin);
+                });
+            },
+            async load(options = {}) {
+                if (!State.loggedIn) return;
+                const silent = options.silent === true;
+                try {
+                    const res = await apiFetch(`${Config.API}/api/plugins`);
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        throw new Error(data.error || '插件列表加载失败');
+                    }
+                    State.plugins = Array.isArray(data.plugins) ? data.plugins : [];
+                    this.render();
+                } catch (err) {
+                    if (!silent) Toast.error(`插件列表加载失败: ${err.message}`);
+                }
+            },
+            render() {
+                this.renderAccessState();
+                this.renderInstallList();
+                this.renderNavList();
+                this.renderRuntimeHeader();
+            },
+            renderAccessState() {
+                const notice = document.getElementById('pluginAdminNotice');
+                if (notice) notice.style.display = State.isAdmin ? 'none' : 'flex';
+                const installBtn = document.getElementById('pluginInstallBtn');
+                const selectBtn = document.getElementById('pluginSelectBtn');
+                if (installBtn) installBtn.disabled = !State.isAdmin || this.loading;
+                if (selectBtn) selectBtn.disabled = !State.isAdmin || this.loading;
+            },
+            buildPluginCard(plugin, mode = 'install') {
+                const homepage = plugin.homepage
+                    ? `<a href="${escapeHtml(plugin.homepage)}" target="_blank" rel="noopener" title="${escapeHtml(I18n.auto('打开项目主页'))}">${escapeHtml(plugin.homepage)}</a>`
+                    : `<span>${escapeHtml(I18n.auto('未提供项目主页'))}</span>`;
+                const deleteButton = mode === 'install'
+                    ? `<button class="btn btn-danger btn-sm" data-plugin-action="delete" data-plugin-id="${escapeHtml(plugin.id)}"${State.isAdmin ? '' : ' disabled'}><i class="fas fa-trash"></i> ${escapeHtml(I18n.auto('删除插件'))}</button>`
+                    : '';
+                return `<article class="plugin-item">
+                    <div class="plugin-item-title">
+                        <h4>${escapeHtml(plugin.name || plugin.id)}</h4>
+                        <span class="plugin-version">${escapeHtml(plugin.version || '')}</span>
+                    </div>
+                    <p class="plugin-desc">${escapeHtml(plugin.description || '')}</p>
+                    <div class="plugin-meta">
+                        <div class="plugin-meta-row"><i class="fas fa-user"></i><span>${escapeHtml(I18n.auto('作者'))}: ${escapeHtml(plugin.author || '--')}</span></div>
+                        <div class="plugin-meta-row"><i class="fas fa-code"></i><span>${escapeHtml(I18n.auto('入口'))}: ${escapeHtml(plugin.entry || 'index.js')}</span></div>
+                        <div class="plugin-meta-row"><i class="fas fa-file-code"></i><span>${escapeHtml(I18n.auto('页面'))}: ${escapeHtml(plugin.html || 'index.html')}</span></div>
+                        <div class="plugin-meta-row"><i class="fas fa-arrow-up-right-from-square"></i>${homepage}</div>
+                    </div>
+                    <div class="plugin-item-actions">
+                        <button class="btn btn-secondary btn-sm" data-plugin-action="open" data-plugin-id="${escapeHtml(plugin.id)}"><i class="fas fa-arrow-right"></i> ${escapeHtml(I18n.auto('进入插件'))}</button>
+                        ${deleteButton}
+                    </div>
+                </article>`;
+            },
+            renderInstallList() {
+                const grid = document.getElementById('installedPluginsGrid');
+                if (!grid) return;
+                grid.innerHTML = State.plugins.length
+                    ? State.plugins.map(plugin => this.buildPluginCard(plugin, 'install')).join('')
+                    : buildEmptyStateHtml('fa-box-open', '没有已安装插件');
+            },
+            renderNavList() {
+                const grid = document.getElementById('pluginNavGrid');
+                if (!grid) return;
+                grid.innerHTML = State.plugins.length
+                    ? State.plugins.map(plugin => this.buildPluginCard(plugin, 'nav')).join('')
+                    : buildEmptyStateHtml('fa-puzzle-piece', '没有已安装插件');
+            },
+            renderRuntimeHeader() {
+                const plugin = this.pluginById(State.activePluginId);
+                const title = document.getElementById('pluginRuntimeTitle');
+                const homepage = document.getElementById('pluginRuntimeHomepage');
+                if (title) title.textContent = plugin ? plugin.name : I18n.auto('插件页面');
+                if (homepage) {
+                    if (plugin && plugin.homepage) {
+                        homepage.href = plugin.homepage;
+                        homepage.style.display = 'inline-flex';
+                    } else {
+                        homepage.removeAttribute('href');
+                        homepage.style.display = 'none';
+                    }
+                }
+            },
+            buildPluginPageUrl(plugin) {
+                const url = new URL(plugin.pagePath, Config.API);
+                if (State.token) url.searchParams.set('token', State.token);
+                url.searchParams.set('theme', State.theme);
+                url.searchParams.set('colorScheme', State.colorScheme);
+                return url.toString();
+            },
+            open(id) {
+                const plugin = this.pluginById(id);
+                if (!plugin) {
+                    Toast.error('插件不存在或已被删除');
+                    return;
+                }
+                State.activePluginId = plugin.id;
+                this.renderRuntime(plugin);
+                UI.switchView('plugin-runtime');
+            },
+            renderRuntime(plugin = null) {
+                const target = plugin || this.pluginById(State.activePluginId);
+                const frame = document.getElementById('pluginFrame');
+                const empty = document.getElementById('pluginRuntimeEmpty');
+                this.renderRuntimeHeader();
+                if (!frame || !empty) return;
+                if (!target) {
+                    frame.classList.remove('active');
+                    frame.removeAttribute('src');
+                    empty.style.display = 'flex';
+                    return;
+                }
+                empty.style.display = 'none';
+                frame.classList.add('active');
+                frame.src = this.buildPluginPageUrl(target);
+            },
+            syncFrameTheme() {
+                const frame = document.getElementById('pluginFrame');
+                if (!frame || !frame.contentWindow || !frame.classList.contains('active')) return;
+                try {
+                    frame.contentWindow.postMessage({
+                        type: 'entrance-theme',
+                        theme: State.theme,
+                        colorScheme: State.colorScheme
+                    }, '*');
+                } catch {}
+            },
+            async install() {
+                if (!State.isAdmin) {
+                    Toast.error('仅管理员可安装插件');
+                    return;
+                }
+                if (!this.selectedFile) {
+                    Toast.error('请选择插件 ZIP 文件');
+                    return;
+                }
+                const form = new FormData();
+                form.append('plugin', this.selectedFile);
+                this.setBusy(true);
+                this.renderInstallStatus('正在安装插件...');
+                try {
+                    const res = await apiFetch(`${Config.API}/api/plugins/install`, {
+                        method: 'POST',
+                        body: form
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        throw new Error(data.error || '插件安装失败');
+                    }
+                    State.plugins = Array.isArray(data.plugins) ? data.plugins : State.plugins;
+                    this.setSelectedFile(null);
+                    this.render();
+                    Toast.success('插件安装成功');
+                } catch (err) {
+                    Toast.error(`插件安装失败: ${err.message}`);
+                    this.renderInstallStatus(err.message);
+                } finally {
+                    this.setBusy(false);
+                    this.renderAccessState();
+                }
+            },
+            async delete(id) {
+                if (!State.isAdmin) {
+                    Toast.error('仅管理员可删除插件');
+                    return;
+                }
+                const plugin = this.pluginById(id);
+                if (!plugin) {
+                    Toast.error('插件不存在或已被删除');
+                    return;
+                }
+                if (!confirm(`${I18n.auto('确认删除插件：')}${plugin.name}`)) {
+                    return;
+                }
+                this.setBusy(true);
+                try {
+                    const res = await apiFetch(`${Config.API}/api/plugins/${encodeURIComponent(plugin.id)}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        throw new Error(data.error || '插件删除失败');
+                    }
+                    State.plugins = Array.isArray(data.plugins) ? data.plugins : State.plugins.filter(item => item.id !== plugin.id);
+                    if (State.activePluginId === plugin.id) {
+                        State.activePluginId = '';
+                        this.renderRuntime(null);
+                    }
+                    this.render();
+                    Toast.success('插件删除成功');
+                } catch (err) {
+                    Toast.error(`插件删除失败: ${err.message}`);
+                } finally {
+                    this.setBusy(false);
+                    this.renderAccessState();
+                }
+            }
+        };
+
         const Toast = {
             show(msg, type = 'info') {
                 const translated = I18n.auto(msg);
@@ -1997,6 +2358,8 @@
                 State.username = '';
                 State.token = '';
                 State.hosts = [];
+                State.plugins = [];
+                State.activePluginId = '';
                 State.navHistory = [];
                 State.navIndex = -1;
                 State.selectedFiles = [];
@@ -7995,6 +8358,7 @@
                 About.init();
                 Theme.init();
                 Settings.init();
+                Plugins.init();
                 Auth.init();
 
                 // 侧边栏
@@ -8276,6 +8640,10 @@
                     await Hosts.load();
                 })) return;
 
+                if (!await runStage(0.90, '正在加载插件...', async () => {
+                    await Plugins.load({ silent: true });
+                })) return;
+
                 if (State.isAdmin) {
                     if (!await runStage(0.94, '正在加载安全设置...', async () => {
                         await Security.load();
@@ -8309,6 +8677,7 @@
                 this.applyRole();
                 About.render();
                 Settings.render();
+                Plugins.render();
                 void this.startDashboardBoot(runId, options);
             },
             hideDashboard() {
@@ -8333,6 +8702,7 @@
                 State.sftpConnected = false;
                 State.sftpSession = null;
                 State.currentPath = '/';
+                Plugins.renderRuntime(null);
             },
             applyRole() {
                 const shellNav = document.querySelector('.nav-item[data-view="shell"]');
@@ -8354,15 +8724,20 @@
                     if (shellView) shellView.style.display = '';
                     if (securityView) securityView.style.display = '';
                 }
+                Plugins.renderAccessState();
             },
             switchView(name) {
                 let nextView = name;
                 if (nextView === 'shell' && !State.isAdmin) nextView = 'ssh';
                 if (nextView === 'security' && !State.isAdmin) nextView = 'settings';
-                const activeNav = nextView === 'security' ? 'settings' : nextView;
+                const activeNav = nextView === 'security'
+                    ? 'settings'
+                    : nextView === 'plugin-runtime' ? 'plugin-nav' : nextView;
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.view === activeNav));
                 document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === `view-${nextView}`));
                 if (nextView === 'settings') Settings.render();
+                if (nextView === 'plugin-install' || nextView === 'plugin-nav') Plugins.load({ silent: true });
+                if (nextView === 'plugin-runtime') Plugins.renderRuntime();
                 if (nextView === 'ssh') setTimeout(() => Terminal_.doFit(), 100);
                 if (nextView === 'shell') setTimeout(() => LocalShell.doFit(), 100);
                 if (nextView === 'serial') setTimeout(() => Serial.doFit(), 100);

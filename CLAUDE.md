@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, local flashing/debugging workflows, SFTP file management, and Docker container monitoring. The current package version is `0.2.0`.
+Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, local flashing/debugging workflows, SFTP file management, Docker container monitoring, and installable frontend plugins. The current package version is `0.2.0`.
 
 Documentation is English-first: keep the root `README.md` as the default English README, keep the Simplified Chinese translation in `doc/README_CN.md`, use `doc/screenshot.png` from the root README, and use `screenshot_cn.png` inside `doc/README_CN.md`. Keep `AGENTS.md` and `CLAUDE.md` in English when updating repository guidance. Preserve each document's existing language when editing it; do not mix languages inside a file unless that file already does so intentionally. When modifying a Markdown document, keep the document in its existing language. When `README.md` changes, update every corresponding `README_XX.md` translation document in the repository in the same pass; in this repository that means `doc/README_CN.md` must stay aligned with `README.md`.
+
+The root README is intentionally an overview with links. Do not add long-form Technology Stack, API, Security Notes, Environment Variables, or container deployment content back into `README.md`; keep README to its current major sections and link out to dedicated docs. Before changing those topics, read and update the relevant documentation pair: `doc/TechnologyStack.md` + `doc/TechnologyStack_CN.md`, `doc/api.md` + `doc/api_CN.md`, `doc/security_note.md` + `doc/security_note_CN.md`, `doc/environment-variables.md` + `doc/environment-variables_CN.md`, and `doc/container.md` + `doc/container_CN.md`. If a new long README topic is needed later, create or update a dedicated `doc/*.md` page plus its Chinese translation, then add only a short README link.
 
 ## Collaboration Preference
 
@@ -25,6 +27,9 @@ npm install
 
 # Rebuild generated frontend assets from webui-src/
 npm run build:webui
+
+# Run the plugin install/navigation smoke test
+npm run test:plugins
 
 # Start the development server after AUTH_SECRET is already exported
 npm start
@@ -51,13 +56,15 @@ PORT=4000 docker compose up -d --build
 # Podman users can substitute docker with podman
 ```
 
+Keep detailed container instructions in `doc/container.md` and `doc/container_CN.md`; README files should only link to those pages.
+
 ## Environment Variables
 
 - `AUTH_SECRET` (required) - Auth token signing key; must decode to at least 32 bytes. `./start.sh` bootstraps it from `./.data/auth_secret` for the default local workflow.
 - `SSH_PASSWORD_KEY` (optional) - 32-byte AES key for stored SSH credentials and private-network allowlists; if omitted, the server writes a generated key to `.ssh_password_key` under `ENTRANCE_DATA_DIR`.
 - `PORT` - HTTP port, defaults to `3000`; can also be overridden by the `--port` / `-p` startup flag.
 - `ENTRANCE_HOST` - Explicit bind host override. Defaults to `0.0.0.0` in web mode and `127.0.0.1` in desktop API-only mode.
-- `ENTRANCE_DATA_DIR` - Runtime data directory for `users.json`, `userdata/`, `known_hosts.json`, `private-networks.json`, `LOGIN_KEEP`, and `.ssh_password_key`. Do not upload or commit this directory, `.data/`, or any other user/runtime data directories.
+- `ENTRANCE_DATA_DIR` - Runtime data directory for `users.json`, `userdata/`, `known_hosts.json`, `private-networks.json`, `LOGIN_KEEP`, `.ssh_password_key`, and `.plugins/`. Do not upload or commit this directory, `.data/`, `.plugins/`, or any other user/runtime data directories.
 - `AUTH_TOKEN_TTL` - Default password-login token lifetime in seconds, defaults to `604800` and can be overridden from the in-app Settings keepalive control.
 - `LOGIN_WINDOW_MS` / `LOGIN_MAX_ATTEMPTS` - Login rate-limit window and failure threshold.
 - `STRICT_HOST_KEY_CHECKING` - When `true`, reject unknown SSH host keys instead of learning them.
@@ -68,6 +75,8 @@ PORT=4000 docker compose up -d --build
 - `ENTRANCE_DESKTOP_API_ONLY` - When set to `1`, disable static WebUI serving and expose backend APIs only.
 - `ENTRANCE_DESKTOP_ALLOWED_ORIGIN` - Allowed renderer origin for desktop API-only CORS, defaults to `app://entrance`.
 - `ENTRANCE_DESKTOP_BOOTSTRAP_SECRET` - Required when both `ENTRANCE_DESKTOP_API_ONLY=1` and `ENTRANCE_DESKTOP_NOLOGIN=1`; used by the desktop wrapper to obtain the admin no-login token securely.
+
+Keep detailed environment-variable behavior in `doc/environment-variables.md` and `doc/environment-variables_CN.md`; README files should only link to those pages.
 
 ## Architecture Overview
 
@@ -84,6 +93,7 @@ PORT=4000 docker compose up -d --build
 │   ├── index.html      # Generated frontend entrypoint
 │   ├── logo.png        # Startup splash logo shown inside the rounded loading card
 │   └── vnc-client.js   # VNC browser client
+├── api/                # Plugin API docs, package contract examples, and hello-plugins smoke-test plugin
 ├── webui-src/
 │   ├── index.template.html  # Frontend template entrypoint
 │   ├── partials/            # HTML fragments for each view/modal/layout section
@@ -97,6 +107,7 @@ PORT=4000 docker compose up -d --build
 ├── package.json        # Dependency manifest
 ├── users.json          # User account data (generated at runtime, Argon2 hashes)
 ├── LOGIN_KEEP          # Encrypted password-login timestamp used for session keepalive
+├── .plugins/           # Installed plugins under ENTRANCE_DATA_DIR (generated runtime state; do not commit)
 ├── known_hosts.json    # SSH host key cache (generated at runtime)
 ├── private-networks.json  # Encrypted private CIDR allowlist (generated at runtime)
 ├── .ssh_password_key   # Generated AES key when SSH_PASSWORD_KEY is not supplied
@@ -110,6 +121,12 @@ PORT=4000 docker compose up -d --build
 - CSS variables for theme switching and Material You color scheme support (`data-color-scheme` attribute)
 - UI i18n support with English as the default language and Simplified Chinese as the secondary option
 - Microsoft Fluent Design style
+- Plugin Install and Plugin Navigator views:
+  - install/delete operations are admin-only
+  - plugin ZIPs may contain files at the ZIP root or in one top-level plugin directory
+  - the plugin root must include `version.json`; `entry` defaults to `index.js`, `html` defaults to `index.html` when present
+  - runtime pages mount through `window.EntrancePlugin.mount(root, context)`
+  - `api/plugins.md` is the authoring contract, and `api/hello-plugins/` is the minimal smoke-test plugin that renders `hello plugins`
 - Startup/auth overlay behavior:
   - When a saved login is being restored and `ENTRANCE_DESKTOP_NOLOGIN` is not enabled, show a Material You wave splash with `public/logo.png` clipped into a rounded rectangle
   - Keep a minimum 3-second progress animation even if backend verification is fast
@@ -131,6 +148,7 @@ PORT=4000 docker compose up -d --build
 - File storage for user data, known hosts, and encrypted secrets
 - `flash-debug.js` wraps OpenOCD, pyOCD, and probe-rs, including optional OS-level privilege elevation requests
 - Container deployment support via `Dockerfile` and `compose.yml`
+- Plugin packages are installed under `.plugins/` in `ENTRANCE_DATA_DIR`; `api/plugins.md`, root `api/` examples, and `api/hello-plugins/` must stay aligned with the backend manifest/entry contract
 
 ### Core Modules
 1. **UserManager** - User account management, Argon2 hashing, and legacy plaintext migration
@@ -143,7 +161,8 @@ PORT=4000 docker compose up -d --build
 8. **Flash Debug Service** - Admin-only local flashing/debugging WebSocket + REST endpoints, tool discovery, uploads, and privilege-elevation wrapping
    - Includes shared target autocomplete catalogs for OpenOCD / pyOCD / probe-rs
 9. **Docker Stats** - Docker container resource monitoring via `docker stats --no-stream`
-10. **Settings** - In-app settings view for password change (disabled in `ENTRANCE_DESKTOP_NOLOGIN` mode), login keepalive presets/custom duration input, an admin-only private-network allowlist card below the keepalive/password cards, Material You color scheme selection (default, sakura, ocean, forest, twilight, amber), and a separate language selector card below the color scheme card (default English; supports Chinese/English)
+10. **Plugins** - ZIP plugin install/list/delete/runtime support using plugin-root `version.json`, `index.js`, and optional `index.html`
+11. **Settings** - In-app settings view for password change (disabled in `ENTRANCE_DESKTOP_NOLOGIN` mode), login keepalive presets/custom duration input, an admin-only private-network allowlist card below the keepalive/password cards, Material You color scheme selection (default, sakura, ocean, forest, twilight, amber), and a separate language selector card below the color scheme card (default English; supports Chinese/English)
 
 ### SSH Monitoring Panels
 The SSH view includes three collapsible monitoring panels below the terminal:
@@ -162,6 +181,7 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 - `argon2` - Password hashing and legacy password migration
 - `multer` - File upload middleware
 - `archiver` - ZIP packaging
+- `adm-zip` - Plugin ZIP extraction
 
 ### Frontend (Local Vendor Bundle)
 - `xterm.js` - Terminal emulator
@@ -175,7 +195,9 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 ### Adding Features
 1. Backend API: add routes in `server.js`
 2. Frontend features: change `webui-src/scripts/app.js`, `webui-src/styles/app.css`, or the relevant `webui-src/partials/*.html` file, then regenerate `public/` with `npm run build:webui`
-3. Testing: run `./start.sh`, `./start_nocors.sh`, or `npm start` with `AUTH_SECRET` already exported, depending on the access pattern you need to verify
+3. Testing: run `npm run test:plugins` for plugin changes, then run `./start.sh`, `./start_nocors.sh`, or `npm start` with `AUTH_SECRET` already exported, depending on the access pattern you need to verify
+4. Plugin changes: keep `server.js`, the frontend `Plugins` object/partials, generated `public/` assets, root `api/` examples, `api/plugins.md`, `api/hello-plugins/`, `README.md`, and `doc/README_CN.md` aligned
+5. Documentation changes: keep long-form reference content out of `README.md`; update the relevant `doc/*.md` page and its `_CN.md` translation, then keep README / `doc/README_CN.md` as link-only entry points for that topic
 
 ### Code Style
 - Use ES6+ syntax
@@ -204,7 +226,9 @@ All three panels follow the same pattern: `collectXxx()` server function → `se
 - Desktop no-login should not expose `/api/auth/nologin` to browsers. Use `ENTRANCE_DESKTOP_API_ONLY=1`, loopback binding, and the `POST /api/auth/desktop/bootstrap` + `X-Entrance-Desktop-Secret` flow instead.
 - SFTP sessions are stored in memory (Map).
 - User data is isolated per user in separate JSON files under `ENTRANCE_DATA_DIR`.
-- Never upload or commit `.data/`, `ENTRANCE_DATA_DIR` contents, `userdata/`, generated runtime JSON, or any other user data snapshots.
+- Never upload or commit `.data/`, `.plugins/`, `ENTRANCE_DATA_DIR` contents, `userdata/`, generated runtime JSON, or any other user data snapshots.
+- Treat installed plugins as admin-installed executable frontend code: validate ZIP paths carefully, keep plugin IDs constrained, and only serve plugin assets from inside the installed plugin root.
+- For plugin smoke testing, run `npm run test:plugins`; it packages `api/hello-plugins/`, installs it through the plugin API, verifies Plugin Navigator runtime content/assets, and deletes it.
 - Local shell access is admin-only and supported on Linux, macOS, and Windows.
 - Flash/debug access is admin-only. The UI can optionally request elevated privileges before launching OpenOCD/pyOCD/probe-rs:
   - Linux: `pkexec`, or `sudo` with `zenity` / `kdialog` askpass

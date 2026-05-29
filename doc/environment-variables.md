@@ -17,7 +17,7 @@ This document explains how each supported Entrance environment variable changes 
 | --- | --- | --- | --- |
 | `PORT` | `3000` | Changes the HTTP listening port | Can also be overridden with `npm start -- --port 4000` |
 | `ENTRANCE_HOST` | `0.0.0.0` in web mode, `127.0.0.1` in desktop API-only mode | Changes the bind address | Useful when you want loopback-only or a specific interface |
-| `ENTRANCE_DATA_DIR` | repository root | Moves runtime data such as `users.json`, `userdata/`, `known_hosts.json`, `private-networks.json`, `.ssh_password_key`, and `LOGIN_KEEP` | Keep this directory persistent and never commit it |
+| `ENTRANCE_DATA_DIR` | repository root | Moves runtime data such as `users.json`, `userdata/`, `known_hosts.json`, `private-networks.json`, `.ssh_password_key`, `LOGIN_KEEP`, and `.plugins/` | Keep this directory persistent and never commit it |
 
 ## Auth and Session
 

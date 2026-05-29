@@ -1,0 +1,10 @@
+{
+  "id": "hello-plugins",
+  "name": "Hello Plugins",
+  "version": "1.0.0",
+  "description": "A minimal plugin used to test Entrance plugin install and navigation.",
+  "author": "Entrance",
+  "homepage": "https://example.com/hello-plugins",
+  "entry": "index.js",
+  "html": "index.html"
+}

@@ -16,6 +16,7 @@ const net = require('net');
 const crypto = require('crypto');
 const argon2 = require('argon2');
 const archiver = require('archiver');
+const AdmZip = require('adm-zip');
 const vncProxy = require('./vnc');
 const localShell = require('./local-shell');
 const flashDebug = require('./flash-debug');
@@ -65,6 +66,7 @@ const DESKTOP_API_ONLY = process.env.ENTRANCE_DESKTOP_API_ONLY === '1';
 const HOST = parseStartupHost(process.env.ENTRANCE_HOST, DESKTOP_API_ONLY ? '127.0.0.1' : '0.0.0.0');
 const DATA_DIR = path.resolve(process.env.ENTRANCE_DATA_DIR || __dirname);
 const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+const PLUGIN_DIR = path.join(DATA_DIR, '.plugins');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const USER_DATA_DIR = path.join(DATA_DIR, 'userdata');
 const KNOWN_HOSTS_FILE = path.join(DATA_DIR, 'known_hosts.json');
@@ -103,6 +105,12 @@ const SSH_USERNAME_MAX_LENGTH = getPositiveIntEnv('SSH_USERNAME_MAX_LENGTH', 128
 const SSH_PASSWORD_MAX_LENGTH = getPositiveIntEnv('SSH_PASSWORD_MAX_LENGTH', 2048);
 const SSH_PASSPHRASE_MAX_LENGTH = getPositiveIntEnv('SSH_PASSPHRASE_MAX_LENGTH', 4096);
 const SSH_PRIVATE_KEY_MAX_LENGTH = getPositiveIntEnv('SSH_PRIVATE_KEY_MAX_LENGTH', 65536);
+const PLUGIN_MANIFEST_RELATIVE_PATH = 'version.json';
+const PLUGIN_META_RELATIVE_PATH = '.entrance-plugin.json';
+const PLUGIN_MAX_ARCHIVE_SIZE = 50 * 1024 * 1024;
+const PLUGIN_MAX_FILE_SIZE = 10 * 1024 * 1024;
+const PLUGIN_MAX_FILES = 200;
+const PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{1,63}$/;
 
 function getPositiveIntEnv(name, fallback) {
     const parsed = parseInt(process.env[name] || '', 10);
@@ -752,6 +760,9 @@ function createHostVerifier(host, port) {
 if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
+if (!fs.existsSync(PLUGIN_DIR)) {
+    fs.mkdirSync(PLUGIN_DIR, { recursive: true });
+}
 if (!fs.existsSync(USER_DATA_DIR)) {
     fs.mkdirSync(USER_DATA_DIR, { recursive: true });
 }
@@ -1042,6 +1053,474 @@ const UserDataManager = {
     }
 };
 
+function normalizeZipEntryName(name) {
+    const raw = String(name || '').replace(/\\/g, '/').trim();
+    if (!raw || raw.includes('\0') || raw.startsWith('/') || /^[a-zA-Z]:/.test(raw)) {
+        return '';
+    }
+    const normalized = path.posix.normalize(raw.replace(/^\.\//, ''));
+    if (!normalized || normalized === '.' || normalized === '..' || normalized.startsWith('../')) {
+        return '';
+    }
+    return normalized;
+}
+
+function readZipEntryText(zip, relativePath) {
+    const entry = zip.getEntries().find(item => normalizeZipEntryName(item.entryName) === relativePath);
+    if (!entry || entry.isDirectory) {
+        return null;
+    }
+    if (entry.header && entry.header.size > PLUGIN_MAX_FILE_SIZE) {
+        throw new Error(`${relativePath} 文件过大`);
+    }
+    return entry.getData().toString('utf8');
+}
+
+function isIgnorableZipEntry(name) {
+    const normalized = normalizeZipEntryName(name);
+    return !normalized || normalized === '.DS_Store' || normalized.startsWith('__MACOSX/');
+}
+
+function stripZipRootPrefix(name, rootPrefix) {
+    const normalized = normalizeZipEntryName(name);
+    if (!normalized) return '';
+    if (!rootPrefix) return normalized;
+    const prefix = rootPrefix.endsWith('/') ? rootPrefix : `${rootPrefix}/`;
+    const rootName = prefix.slice(0, -1);
+    if (normalized === rootName) return '';
+    if (!normalized.startsWith(prefix)) return '';
+    return normalized.slice(prefix.length);
+}
+
+function getPluginArchiveRoot(entries) {
+    const files = entries
+        .filter(entry => !entry.isDirectory)
+        .map(entry => normalizeZipEntryName(entry.entryName))
+        .filter(Boolean)
+        .filter(name => !isIgnorableZipEntry(name));
+    if (files.includes(PLUGIN_MANIFEST_RELATIVE_PATH)) {
+        return '';
+    }
+    const manifestCandidates = files.filter(name => {
+        const parts = name.split('/');
+        return parts.length === 2 && parts[1] === PLUGIN_MANIFEST_RELATIVE_PATH;
+    });
+    if (manifestCandidates.length === 1) {
+        return `${manifestCandidates[0].split('/')[0]}/`;
+    }
+    throw new Error(`插件包缺少 ${PLUGIN_MANIFEST_RELATIVE_PATH}`);
+}
+
+function slugifyPluginId(value) {
+    const slug = String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '-')
+        .replace(/^[^a-z0-9]+/g, '')
+        .replace(/[^a-z0-9]+$/g, '')
+        .slice(0, 64);
+    if (PLUGIN_ID_PATTERN.test(slug)) {
+        return slug;
+    }
+    return `plugin-${crypto.createHash('sha256').update(String(value || Date.now())).digest('hex').slice(0, 12)}`;
+}
+
+function normalizePluginId(value, fallbackName = '') {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw) {
+        if (!PLUGIN_ID_PATTERN.test(raw)) {
+            throw new Error('插件 id 只能包含小写字母、数字、点、下划线和短横线，长度 2-64');
+        }
+        return raw;
+    }
+    return slugifyPluginId(fallbackName);
+}
+
+function normalizePluginString(value, field, options = {}) {
+    const required = options.required !== false;
+    const maxLength = options.maxLength || 120;
+    const text = String(value ?? '').trim();
+    if (!text) {
+        if (required) {
+            throw new Error(`${field}不能为空`);
+        }
+        return '';
+    }
+    if (text.length > maxLength) {
+        throw new Error(`${field}长度超过限制`);
+    }
+    return text;
+}
+
+function normalizePluginHomepage(value) {
+    const text = normalizePluginString(value, '项目主页', { required: false, maxLength: 300 });
+    if (!text) return '';
+    let parsed = null;
+    try {
+        parsed = new URL(text);
+    } catch {
+        throw new Error('项目主页必须是有效 URL');
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+        throw new Error('项目主页只允许 http 或 https');
+    }
+    return parsed.toString();
+}
+
+function normalizePluginEntry(value) {
+    let raw = String(value || 'index.js').trim().replace(/\\/g, '/');
+    const normalized = normalizeZipEntryName(raw);
+    if (!normalized || normalized.startsWith('../')) {
+        throw new Error('入口 JS 路径无效');
+    }
+    if (!normalized.toLowerCase().endsWith('.js')) {
+        throw new Error('入口文件必须是 JS 文件');
+    }
+    return normalized;
+}
+
+function normalizePluginHtml(value) {
+    const rawValue = value === undefined || value === null ? 'index.html' : value;
+    const raw = String(rawValue || '').trim().replace(/\\/g, '/');
+    if (!raw) return '';
+    const normalized = normalizeZipEntryName(raw);
+    if (!normalized || normalized.startsWith('../')) {
+        throw new Error('HTML 入口路径无效');
+    }
+    if (!normalized.toLowerCase().endsWith('.html')) {
+        throw new Error('HTML 入口必须是 HTML 文件');
+    }
+    return normalized;
+}
+
+function normalizePluginManifest(manifest, forcedId = '') {
+    if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+        throw new Error('version.json 必须是 JSON 对象');
+    }
+    const name = normalizePluginString(manifest.name, '插件名称', { maxLength: 120 });
+    const id = forcedId || normalizePluginId(manifest.id, name);
+    return {
+        id,
+        name,
+        version: normalizePluginString(manifest.version, '插件版本', { maxLength: 64 }),
+        description: normalizePluginString(manifest.description, '插件描述', { maxLength: 500 }),
+        author: normalizePluginString(manifest.author, '插件作者', { maxLength: 120 }),
+        homepage: normalizePluginHomepage(manifest.homepage || manifest.projectHomepage || ''),
+        entry: normalizePluginEntry(manifest.entry || manifest.main || 'index.js'),
+        html: normalizePluginHtml(manifest.html)
+    };
+}
+
+function assertPluginId(id) {
+    const normalized = String(id || '').trim().toLowerCase();
+    if (!PLUGIN_ID_PATTERN.test(normalized)) {
+        throw new Error('插件 id 无效');
+    }
+    return normalized;
+}
+
+function getPluginPath(id) {
+    const safeId = assertPluginId(id);
+    return path.join(PLUGIN_DIR, safeId);
+}
+
+function readPluginInstallMeta(pluginPath) {
+    const metaPath = path.join(pluginPath, PLUGIN_META_RELATIVE_PATH);
+    if (!fs.existsSync(metaPath)) {
+        return {};
+    }
+    try {
+        return JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    } catch {
+        return {};
+    }
+}
+
+function encodePluginAssetPath(assetPath) {
+    return String(assetPath || '')
+        .split('/')
+        .filter(Boolean)
+        .map(part => encodeURIComponent(part))
+        .join('/');
+}
+
+function buildPluginRecord(manifest, installMeta = {}) {
+    const assetPath = encodePluginAssetPath(manifest.entry);
+    const htmlAssetPath = encodePluginAssetPath(manifest.html);
+    return {
+        id: manifest.id,
+        name: manifest.name,
+        version: manifest.version,
+        description: manifest.description,
+        author: manifest.author,
+        homepage: manifest.homepage,
+        entry: manifest.entry,
+        html: manifest.html,
+        installedAt: installMeta.installedAt || '',
+        originalName: installMeta.originalName || '',
+        pagePath: `/api/plugins/${encodeURIComponent(manifest.id)}/page`,
+        entryPath: `/api/plugins/${encodeURIComponent(manifest.id)}/assets/${assetPath}`,
+        htmlPath: htmlAssetPath ? `/api/plugins/${encodeURIComponent(manifest.id)}/assets/${htmlAssetPath}` : ''
+    };
+}
+
+function readInstalledPlugin(id) {
+    const pluginPath = getPluginPath(id);
+    const manifestPath = path.join(pluginPath, PLUGIN_MANIFEST_RELATIVE_PATH);
+    if (!fs.existsSync(manifestPath)) {
+        throw new Error('插件不存在');
+    }
+    const manifestRaw = fs.readFileSync(manifestPath, 'utf8');
+    const manifest = normalizePluginManifest(JSON.parse(manifestRaw), assertPluginId(id));
+    const entryPath = path.join(pluginPath, ...manifest.entry.split('/'));
+    if (!fs.existsSync(entryPath) || !fs.statSync(entryPath).isFile()) {
+        throw new Error('插件入口文件不存在');
+    }
+    if (manifest.html) {
+        const htmlPath = path.join(pluginPath, ...manifest.html.split('/'));
+        if (!fs.existsSync(htmlPath) || !fs.statSync(htmlPath).isFile()) {
+            manifest.html = '';
+        }
+    }
+    const meta = readPluginInstallMeta(pluginPath);
+    return {
+        path: pluginPath,
+        manifest,
+        meta,
+        record: buildPluginRecord(manifest, meta)
+    };
+}
+
+function listInstalledPlugins() {
+    if (!fs.existsSync(PLUGIN_DIR)) {
+        return [];
+    }
+    return fs.readdirSync(PLUGIN_DIR, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => {
+            try {
+                return readInstalledPlugin(entry.name).record;
+            } catch (err) {
+                console.warn(`[Plugins] 跳过无效插件 ${entry.name}: ${err.message}`);
+                return null;
+            }
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function validatePluginArchive(zip) {
+    const entries = zip.getEntries();
+    const rootPrefix = getPluginArchiveRoot(entries);
+    const normalizedEntries = new Map();
+    const relevantEntries = [];
+    let fileCount = 0;
+    for (const entry of entries) {
+        const normalized = normalizeZipEntryName(entry.entryName);
+        if (!normalized && !isIgnorableZipEntry(entry.entryName)) {
+            throw new Error(`ZIP 内存在非法路径: ${entry.entryName}`);
+        }
+        if (!normalized || isIgnorableZipEntry(entry.entryName)) {
+            continue;
+        }
+        const relativeName = stripZipRootPrefix(normalized, rootPrefix);
+        if (!relativeName) {
+            if (rootPrefix && normalized !== rootPrefix.slice(0, -1)) {
+                throw new Error(`ZIP 内存在插件目录外文件: ${entry.entryName}`);
+            }
+            continue;
+        }
+        if (!entry.isDirectory) {
+            fileCount += 1;
+            if (fileCount > PLUGIN_MAX_FILES) {
+                throw new Error(`插件文件数量不能超过 ${PLUGIN_MAX_FILES}`);
+            }
+            if (entry.header && entry.header.size > PLUGIN_MAX_FILE_SIZE) {
+                throw new Error(`${relativeName} 文件过大`);
+            }
+        }
+        normalizedEntries.set(relativeName, entry);
+        relevantEntries.push({ entry, relativeName });
+    }
+
+    const manifestEntry = normalizedEntries.get(PLUGIN_MANIFEST_RELATIVE_PATH);
+    if (!manifestEntry || manifestEntry.isDirectory) {
+        throw new Error(`插件包缺少 ${PLUGIN_MANIFEST_RELATIVE_PATH}`);
+    }
+    const manifestRaw = manifestEntry.getData().toString('utf8');
+    let manifestJson = null;
+    try {
+        manifestJson = JSON.parse(manifestRaw);
+    } catch {
+        throw new Error(`${PLUGIN_MANIFEST_RELATIVE_PATH} 不是有效 JSON`);
+    }
+    const manifest = normalizePluginManifest(manifestJson);
+    const entry = normalizedEntries.get(manifest.entry);
+    if (!entry || entry.isDirectory) {
+        throw new Error(`插件包缺少入口文件 ${manifest.entry}`);
+    }
+    const html = manifest.html ? normalizedEntries.get(manifest.html) : null;
+    if (manifest.html && (!html || html.isDirectory)) {
+        manifest.html = '';
+    }
+    return { manifest, entries: relevantEntries };
+}
+
+function extractPluginArchive(entries, targetDir) {
+    fs.mkdirSync(targetDir, { recursive: true });
+    for (const item of entries) {
+        const { entry, relativeName } = item;
+        const targetPath = path.resolve(targetDir, relativeName);
+        if (!targetPath.startsWith(path.resolve(targetDir) + path.sep) && targetPath !== path.resolve(targetDir)) {
+            throw new Error(`ZIP 路径越界: ${entry.entryName}`);
+        }
+        if (entry.isDirectory) {
+            fs.mkdirSync(targetPath, { recursive: true });
+            continue;
+        }
+        fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+        fs.writeFileSync(targetPath, entry.getData());
+    }
+}
+
+function installPluginArchive(file) {
+    if (!file) {
+        throw new Error('未选择插件 ZIP');
+    }
+    const originalName = Buffer.from(file.originalname || '', 'latin1').toString('utf8') || file.originalname || '';
+    if (path.extname(originalName).toLowerCase() !== '.zip') {
+        throw new Error('插件包必须是 zip 文件');
+    }
+    const zip = new AdmZip(file.path);
+    const { manifest, entries } = validatePluginArchive(zip);
+    const tempDirName = `.install-${manifest.id}-${crypto.randomBytes(8).toString('hex')}`;
+    const tempDir = path.join(PLUGIN_DIR, tempDirName);
+    const finalDir = getPluginPath(manifest.id);
+    try {
+        extractPluginArchive(entries, tempDir);
+        fs.writeFileSync(path.join(tempDir, PLUGIN_META_RELATIVE_PATH), JSON.stringify({
+            installedAt: new Date().toISOString(),
+            originalName
+        }, null, 2));
+        fs.rmSync(finalDir, { recursive: true, force: true });
+        fs.renameSync(tempDir, finalDir);
+    } catch (err) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        throw err;
+    }
+    return readInstalledPlugin(manifest.id).record;
+}
+
+function getPluginAssetPath(pluginId, assetPath) {
+    const plugin = readInstalledPlugin(pluginId);
+    const normalizedAsset = normalizeZipEntryName(String(assetPath || '').replace(/^\//, ''));
+    if (!normalizedAsset) {
+        throw new Error('资源路径无效');
+    }
+    const pluginDir = path.resolve(plugin.path);
+    const targetPath = path.resolve(pluginDir, normalizedAsset);
+    if (!targetPath.startsWith(pluginDir + path.sep) && targetPath !== pluginDir) {
+        throw new Error('资源路径无效');
+    }
+    if (!fs.existsSync(targetPath) || !fs.statSync(targetPath).isFile()) {
+        throw new Error('资源不存在');
+    }
+    return { plugin, targetPath };
+}
+
+function safeJsonForScript(value) {
+    return JSON.stringify(value).replace(/[<>&\u2028\u2029]/g, c => ({
+        '<': '\\u003c',
+        '>': '\\u003e',
+        '&': '\\u0026',
+        '\u2028': '\\u2028',
+        '\u2029': '\\u2029'
+    }[c]));
+}
+
+function extractBodyFragment(html) {
+    const text = String(html || '');
+    const match = text.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+    return match ? match[1] : text;
+}
+
+function buildPluginPageHtml(plugin, token, query = {}) {
+    const theme = query.theme === 'dark' ? 'dark' : 'light';
+    const colorScheme = ['default', 'sakura', 'ocean', 'forest', 'twilight', 'amber'].includes(query.colorScheme)
+        ? query.colorScheme
+        : 'default';
+    const encodedEntry = encodePluginAssetPath(plugin.manifest.entry);
+    const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+    const entryUrl = `/api/plugins/${encodeURIComponent(plugin.manifest.id)}/assets/${encodedEntry}${tokenQuery}`;
+    const context = {
+        apiBase: '',
+        plugin: plugin.record,
+        theme,
+        colorScheme
+    };
+    const htmlFragment = plugin.manifest.html
+        ? extractBodyFragment(fs.readFileSync(path.join(plugin.path, ...plugin.manifest.html.split('/')), 'utf8'))
+        : '';
+    const contextJson = safeJsonForScript(context);
+    const tokenJson = safeJsonForScript(token || '');
+    const htmlJson = safeJsonForScript(htmlFragment);
+    return `<!DOCTYPE html>
+<html lang="en" data-theme="${theme}" data-color-scheme="${colorScheme}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/assets/vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/assets/app.css">
+    <style>
+        body { min-height: 100vh; height: auto; overflow: auto; background: var(--color-bg-1); }
+        #plugin-root { min-height: 100vh; color: var(--color-text); }
+        .plugin-empty { margin: 24px; padding: 24px; border: 1px dashed var(--color-border); border-radius: 8px; color: var(--color-text-2); }
+    </style>
+</head>
+<body>
+    <div id="plugin-root"></div>
+    <script>
+        document.getElementById('plugin-root').innerHTML = ${htmlJson};
+        window.EntrancePluginContext = Object.assign(${contextJson}, {
+            token: ${tokenJson},
+            apiBase: location.origin
+        });
+        window.EntrancePluginApi = {
+            fetch(path, options) {
+                const opts = Object.assign({}, options || {});
+                const headers = Object.assign({}, opts.headers || {});
+                if (window.EntrancePluginContext.token) {
+                    headers.Authorization = 'Bearer ' + window.EntrancePluginContext.token;
+                }
+                opts.headers = headers;
+                return fetch(new URL(path, window.EntrancePluginContext.apiBase).toString(), opts);
+            }
+        };
+        window.addEventListener('message', (event) => {
+            const data = event.data || {};
+            if (data.type !== 'entrance-theme') return;
+            if (data.theme) document.documentElement.setAttribute('data-theme', data.theme);
+            if (data.colorScheme) document.documentElement.setAttribute('data-color-scheme', data.colorScheme);
+        });
+    </script>
+    <script src="${entryUrl}"></script>
+    <script>
+        (function() {
+            const root = document.getElementById('plugin-root');
+            const context = Object.assign({}, window.EntrancePluginContext, { api: window.EntrancePluginApi });
+            if (window.EntrancePlugin && typeof window.EntrancePlugin.mount === 'function') {
+                window.EntrancePlugin.mount(root, context);
+                return;
+            }
+            if (!root.hasChildNodes()) {
+                root.innerHTML = '<div class="plugin-empty">Plugin loaded. Expose window.EntrancePlugin.mount(root, context) to render UI.</div>';
+            }
+        })();
+    </script>
+</body>
+</html>`;
+}
+
 // Multer 配置
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -1066,6 +1545,11 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     limits: { fileSize: 500 * 1024 * 1024 }
+});
+
+const pluginUpload = multer({
+    storage,
+    limits: { fileSize: PLUGIN_MAX_ARCHIVE_SIZE }
 });
 
 // 中间件
@@ -1226,6 +1710,66 @@ app.post('/api/auth/session', requireAuth, (req, res) => {
 
 // 保护所有 API（登录接口除外）
 app.use('/api', requireAuth);
+
+// ============================================
+// 插件 API
+// ============================================
+app.get('/api/plugins', (req, res) => {
+    res.json({ plugins: listInstalledPlugins() });
+});
+
+app.post('/api/plugins/install', requireAdmin, (req, res) => {
+    pluginUpload.single('plugin')(req, res, (err) => {
+        if (err) {
+            const message = err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE'
+                ? '插件包不能超过 50MB'
+                : err.message;
+            return res.status(400).json({ error: message });
+        }
+        try {
+            const plugin = installPluginArchive(req.file);
+            res.json({ success: true, plugin, plugins: listInstalledPlugins() });
+        } catch (installErr) {
+            res.status(400).json({ error: installErr.message });
+        } finally {
+            if (req.file && req.file.path) {
+                fs.rmSync(req.file.path, { force: true });
+            }
+        }
+    });
+});
+
+app.delete('/api/plugins/:id', requireAdmin, (req, res) => {
+    try {
+        const pluginPath = getPluginPath(req.params.id);
+        if (!fs.existsSync(pluginPath)) {
+            return res.status(404).json({ error: '插件不存在' });
+        }
+        fs.rmSync(pluginPath, { recursive: true, force: true });
+        res.json({ success: true, plugins: listInstalledPlugins() });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.get('/api/plugins/:id/page', (req, res) => {
+    try {
+        const plugin = readInstalledPlugin(req.params.id);
+        const token = getTokenFromRequest(req) || '';
+        res.type('html').send(buildPluginPageHtml(plugin, token, req.query || {}));
+    } catch (err) {
+        res.status(404).send(`<p>${err.message}</p>`);
+    }
+});
+
+app.get('/api/plugins/:id/assets/*', (req, res) => {
+    try {
+        const { targetPath } = getPluginAssetPath(req.params.id, req.params[0]);
+        res.sendFile(targetPath);
+    } catch (err) {
+        res.status(404).json({ error: err.message });
+    }
+});
 
 // ============================================
 // 用户数据 API（主机、统计）

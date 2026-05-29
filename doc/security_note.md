@@ -1,0 +1,22 @@
+# Security Notes
+
+- Login is enabled by default. Auth tokens are signed with `AUTH_SECRET`. If you enable desktop no-login, do it through `ENTRANCE_DESKTOP_API_ONLY=1` plus `ENTRANCE_DESKTOP_BOOTSTRAP_SECRET` so browsers cannot obtain the admin token from `/api/auth/nologin`.
+- Password-login keepalive defaults to 7 days and can be changed from Settings. The current preference is stored in browser local storage and can be refreshed immediately for the active session.
+- The browser keeps the saved login only while token verification succeeds and the current `AUTH_SECRET` fingerprint matches the one recorded for that session.
+- Passwords in `users.json` are stored as `Argon2id` hashes. Legacy plaintext passwords are migrated automatically after a successful login.
+- The last successful password-login timestamp is stored in `ENTRANCE_DATA_DIR/LOGIN_KEEP` and encrypted with AES-256-GCM using a key derived from `AUTH_SECRET`.
+- SSH/SFTP credentials, including passwords, private keys, and passphrases, are stored only in the browser or in server-side user data; when persisted, they are encrypted with AES-256-GCM using `SSH_PASSWORD_KEY`.
+- The private network allowlist is stored in `private-networks.json` and encrypted with AES-256-GCM using `SSH_PASSWORD_KEY`.
+- `ENTRANCE_CORS_DISABLE=1` allows any browser origin to reach the API. Use it only when you intentionally need LAN, reverse-proxy, or tunnel access, and keep it off for tighter desktop/API-only deployments.
+- In desktop API-only mode the backend stops serving `public/index.html`, binds to loopback by default, and only exposes the admin no-login bootstrap through `POST /api/auth/desktop/bootstrap` with `X-Entrance-Desktop-Secret`.
+- If `SSH_PASSWORD_KEY` changes, historical encrypted credentials and allowlist entries become unreadable until the old key is restored or the data is re-entered.
+- **Local Shell Security** (Linux/macOS/Windows, admin only): local shell access gives direct terminal access to the server. Make sure to:
+  - use it only on trusted networks
+  - restrict access to authorized administrators
+  - on Windows, enable only the local `OpenSSH Server` and limit which local accounts may log in
+  - consider disabling this feature in production or adding extra authentication at the reverse proxy layer
+- **Flash/Debug Security** (admin only): flashing/debugging can invoke local toolchains directly and optionally request admin/root privileges. Make sure to:
+  - enable it only on trusted developer machines or lab environments
+  - keep executables such as `OpenOCD`, `pyOCD`, `probe-rs`, `pkexec`, `sudo`, and `gsudo` within a trusted supply chain
+  - enable "request admin/root privileges" only when device access or driver permissions actually require it
+  - when using Linux GUI password dialog mode, ensure `zenity` or `kdialog` comes from the system package manager

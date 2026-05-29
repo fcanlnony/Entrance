@@ -67,6 +67,8 @@
                 <div class="nav-item" data-view="shell"><i class="fas fa-laptop-code"></i><span>Web 终端</span></div>
                 <div class="nav-item" data-view="serial"><i class="fas fa-microchip"></i><span>串口终端</span></div>
                 <div class="nav-item" data-view="flashdebug"><i class="fas fa-bolt"></i><span>烧录调试</span></div>
+                <div class="nav-item" data-view="plugin-install"><i class="fas fa-box-archive"></i><span>插件安装</span></div>
+                <div class="nav-item" data-view="plugin-nav"><i class="fas fa-puzzle-piece"></i><span>插件导航</span></div>
                 <div class="nav-item" data-view="settings"><i class="fas fa-gear"></i><span>设置</span></div>
             </nav>
             <div class="sidebar-footer">
@@ -1125,6 +1127,83 @@
             </div>
 
             <!-- Settings -->
+
+            <div class="view" id="view-plugin-install">
+                <div class="header"><h2><i class="fas fa-box-archive"></i> 插件安装</h2></div>
+                <div class="content">
+                    <div class="plugin-layout">
+                        <section class="plugin-card plugin-upload-card">
+                            <div class="plugin-card-head">
+                                <div>
+                                    <h3><i class="fas fa-cloud-arrow-up"></i> 安装插件</h3>
+                                    <p>支持上传包含 version.json 和 index.js，可带 index.html 的 zip 插件包。</p>
+                                </div>
+                                <span class="plugin-badge">ZIP</span>
+                            </div>
+                            <div class="settings-note" id="pluginAdminNotice" style="display:none">
+                                <i class="fas fa-shield-halved"></i>
+                                <span>仅管理员可安装和删除插件，普通用户仍可从插件导航进入已安装插件。</span>
+                            </div>
+                            <div class="plugin-upload-drop" id="pluginUploadDrop">
+                                <i class="fas fa-file-zipper"></i>
+                                <div>
+                                    <strong id="pluginSelectedFileName">尚未选择文件</strong>
+                                    <p>插件包根目录必须包含 version.json，入口 JS 默认是 index.js。</p>
+                                </div>
+                            </div>
+                            <div class="plugin-actions">
+                                <button class="btn btn-secondary" id="pluginSelectBtn"><i class="fas fa-folder-open"></i> 选择 ZIP</button>
+                                <button class="btn" id="pluginInstallBtn"><i class="fas fa-download"></i> 安装</button>
+                            </div>
+                            <div class="settings-keep-status" id="pluginInstallStatus">等待选择插件包</div>
+                            <input type="file" class="hidden-input" id="pluginPackageInput" accept=".zip,application/zip">
+                        </section>
+                        <section class="plugin-card">
+                            <div class="plugin-card-head">
+                                <div>
+                                    <h3><i class="fas fa-layer-group"></i> 已安装插件</h3>
+                                    <p>查看插件名称、版本、作者、描述和项目主页。</p>
+                                </div>
+                                <button class="btn btn-secondary btn-sm" id="pluginRefreshBtn"><i class="fas fa-rotate"></i> 刷新</button>
+                            </div>
+                            <div class="plugin-grid" id="installedPluginsGrid"></div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view" id="view-plugin-nav">
+                <div class="header"><h2><i class="fas fa-puzzle-piece"></i> 插件导航</h2></div>
+                <div class="content">
+                    <div class="plugin-nav-head">
+                        <div>
+                            <h3>进入插件页面</h3>
+                            <p>选择插件后会在工作台内打开，就像串口终端等内置页面一样。</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" id="pluginNavRefreshBtn"><i class="fas fa-rotate"></i> 刷新</button>
+                    </div>
+                    <div class="plugin-grid plugin-nav-grid" id="pluginNavGrid"></div>
+                </div>
+            </div>
+
+            <div class="view" id="view-plugin-runtime">
+                <div class="header plugin-runtime-header">
+                    <h2><i class="fas fa-puzzle-piece"></i> <span id="pluginRuntimeTitle">插件页面</span></h2>
+                    <div class="plugin-runtime-actions">
+                        <button class="btn btn-secondary btn-sm" id="pluginRuntimeBackBtn"><i class="fas fa-arrow-left"></i> 返回插件导航</button>
+                        <a class="btn btn-secondary btn-sm" id="pluginRuntimeHomepage" href="#" target="_blank" rel="noopener" style="display:none"><i class="fas fa-arrow-up-right-from-square"></i> 项目主页</a>
+                    </div>
+                </div>
+                <div class="content plugin-runtime-content">
+                    <div class="plugin-runtime-shell">
+                        <div class="plugin-runtime-empty" id="pluginRuntimeEmpty">
+                            <i class="fas fa-puzzle-piece"></i>
+                            <p>请选择插件</p>
+                        </div>
+                        <iframe id="pluginFrame" class="plugin-frame" title="插件页面" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-downloads allow-same-origin"></iframe>
+                    </div>
+                </div>
+            </div>
 
             <div class="view" id="view-settings">
                 <div class="header"><h2><i class="fas fa-gear"></i> 设置</h2></div>

@@ -1,0 +1,22 @@
+# 安全说明
+
+- 登录默认启用。认证 token 使用 `AUTH_SECRET` 签名。如果启用桌面免登录，应通过 `ENTRANCE_DESKTOP_API_ONLY=1` 加 `ENTRANCE_DESKTOP_BOOTSTRAP_SECRET` 实现，避免浏览器从 `/api/auth/nologin` 获取 admin token。
+- 密码登录保持时间默认 7 天，可在设置页修改。当前偏好保存在浏览器本地存储中，并可立即刷新当前会话。
+- 只有 token 校验成功，并且当前 `AUTH_SECRET` 指纹与该会话记录的指纹一致时，浏览器才会继续保留已保存登录态。
+- `users.json` 中的密码以 `Argon2id` 哈希保存。旧版明文密码会在成功登录后自动迁移。
+- 最近一次密码登录时间戳保存在 `ENTRANCE_DATA_DIR/LOGIN_KEEP` 中，并使用基于 `AUTH_SECRET` 派生密钥的 AES-256-GCM 加密。
+- SSH/SFTP 凭据（包括密码、私钥和私钥口令）只保存在浏览器或服务端用户数据中；服务端持久化时，会使用 `SSH_PASSWORD_KEY` 进行 AES-256-GCM 加密。
+- 私有网络白名单保存在 `private-networks.json` 中，并使用 `SSH_PASSWORD_KEY` 进行 AES-256-GCM 加密。
+- `ENTRANCE_CORS_DISABLE=1` 会允许任意浏览器来源访问 API。只有明确需要局域网、反向代理或隧道访问时才应开启；更严格的桌面/API-only 部署应保持关闭。
+- 在桌面 API-only 模式下，后端停止提供 `public/index.html`，默认绑定到 loopback，并且只通过带有 `X-Entrance-Desktop-Secret` 的 `POST /api/auth/desktop/bootstrap` 暴露 admin 免登录引导能力。
+- 如果 `SSH_PASSWORD_KEY` 发生变化，历史加密凭据和白名单条目会变得不可读，直到恢复旧密钥或重新录入数据。
+- **本地 Shell 安全**（Linux/macOS/Windows，仅管理员）：本地 Shell 会提供服务器终端的直接访问能力。请确保：
+  - 只在受信任网络中使用
+  - 仅授权管理员访问
+  - 在 Windows 上只启用本机 `OpenSSH Server`，并限制可登录的本地账户
+  - 在生产环境中考虑禁用此功能，或在反向代理层增加额外认证
+- **烧录/调试安全**（仅管理员）：烧录/调试功能可以直接调用本机工具链，并可选请求管理员/root 权限。请确保：
+  - 只在受信任的开发机或实验室环境中启用
+  - 确保 `OpenOCD`、`pyOCD`、`probe-rs`、`pkexec`、`sudo`、`gsudo` 等可执行文件来源可信
+  - 只有设备访问或驱动权限确实需要时，才启用“请求管理员/root 权限”
+  - 使用 Linux 图形密码对话框模式时，确认 `zenity` 或 `kdialog` 来自系统包管理器

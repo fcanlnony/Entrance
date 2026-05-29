@@ -17,7 +17,7 @@
 | --- | --- | --- | --- |
 | `PORT` | `3000` | 修改 HTTP 监听端口 | 也可以通过 `npm start -- --port 4000` 覆盖 |
 | `ENTRANCE_HOST` | Web 模式为 `0.0.0.0`，桌面 API-only 模式为 `127.0.0.1` | 修改服务绑定地址 | 适合控制只监听 loopback 或指定网卡 |
-| `ENTRANCE_DATA_DIR` | 项目根目录 | 改变运行时数据目录，包括 `users.json`、`userdata/`、`known_hosts.json`、`private-networks.json`、`.ssh_password_key`、`LOGIN_KEEP` | 该目录应持久化保存，且不要提交到仓库 |
+| `ENTRANCE_DATA_DIR` | 项目根目录 | 改变运行时数据目录，包括 `users.json`、`userdata/`、`known_hosts.json`、`private-networks.json`、`.ssh_password_key`、`LOGIN_KEEP`、`.plugins/` | 该目录应持久化保存，且不要提交到仓库 |
 
 ## 认证与会话
 
