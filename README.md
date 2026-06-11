@@ -110,7 +110,7 @@ For the installer script, see [Install](https://github.com/EntranceToolBox/Entra
 - Installed plugins are stored under `.plugins/` in `ENTRANCE_DATA_DIR` (repo-root `.plugins/` by default)
 - The root `api/` directory contains the plugin package contract examples: `version.json`, `index.js`, and `index.html`
 - Plugins can load bundled browser-side vendor APIs copied from existing `node_modules`, including `chart.js`, `xterm`, `xterm-addon-fit`, and `noVNC`
-- Plugin authoring and runtime API reference: [api/plugins.md](api/plugins.md) and [api/plugins_CN.md](api/plugins_CN.md)
+- Plugin authoring and runtime API reference: [api/plugins.md](api/plugins.md)
 
 ### UI Features
 - Microsoft Fluent Design
