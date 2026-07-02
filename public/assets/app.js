@@ -2060,6 +2060,7 @@
                 if (State.token) url.searchParams.set('token', State.token);
                 url.searchParams.set('theme', State.theme);
                 url.searchParams.set('colorScheme', State.colorScheme);
+                url.searchParams.set('language', State.language);
                 return url.toString();
             },
             open(id) {
@@ -2095,7 +2096,8 @@
                     frame.contentWindow.postMessage({
                         type: 'entrance-theme',
                         theme: State.theme,
-                        colorScheme: State.colorScheme
+                        colorScheme: State.colorScheme,
+                        language: State.language
                     }, '*');
                 } catch {}
             },
