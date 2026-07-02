@@ -1490,6 +1490,8 @@ function buildPluginPageHtml(plugin, token, query = {}) {
     const colorScheme = ['default', 'sakura', 'ocean', 'forest', 'twilight', 'amber'].includes(query.colorScheme)
         ? query.colorScheme
         : 'default';
+    const language = query.language === 'zh' ? 'zh' : 'en';
+    const htmlLang = language === 'zh' ? 'zh-CN' : 'en';
     const encodedEntry = encodePluginAssetPath(plugin.manifest.entry);
     const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
     const entryUrl = `/api/plugins/${encodeURIComponent(plugin.manifest.id)}/assets/${encodedEntry}${tokenQuery}`;
@@ -1498,6 +1500,7 @@ function buildPluginPageHtml(plugin, token, query = {}) {
         plugin: plugin.record,
         theme,
         colorScheme,
+        language,
         vendors: getPluginVendorRegistry()
     };
     const htmlFragment = plugin.manifest.html
@@ -1507,7 +1510,7 @@ function buildPluginPageHtml(plugin, token, query = {}) {
     const tokenJson = safeJsonForScript(token || '');
     const htmlJson = safeJsonForScript(htmlFragment);
     return `<!DOCTYPE html>
-<html lang="en" data-theme="${theme}" data-color-scheme="${colorScheme}">
+<html lang="${htmlLang}" data-theme="${theme}" data-color-scheme="${colorScheme}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1689,6 +1692,10 @@ function buildPluginPageHtml(plugin, token, query = {}) {
             if (data.type !== 'entrance-theme') return;
             if (data.theme) document.documentElement.setAttribute('data-theme', data.theme);
             if (data.colorScheme) document.documentElement.setAttribute('data-color-scheme', data.colorScheme);
+            if (data.language) {
+                window.EntrancePluginContext.language = data.language === 'zh' ? 'zh' : 'en';
+                document.documentElement.lang = window.EntrancePluginContext.language === 'zh' ? 'zh-CN' : 'en';
+            }
         });
     </script>
     <script src="${entryUrl}"></script>

@@ -1,0 +1,387 @@
+<main class="etop-shell">
+  <style>
+    .etop-shell {
+      min-height: 100vh;
+      padding: 22px;
+      color: var(--color-text);
+      background:
+        linear-gradient(135deg, rgba(16, 124, 16, 0.08), transparent 34%),
+        linear-gradient(315deg, rgba(255, 140, 0, 0.08), transparent 36%),
+        var(--color-bg-1);
+      font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+    }
+
+    .etop-panel {
+      display: grid;
+      gap: 16px;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .etop-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .etop-title {
+      display: grid;
+      gap: 5px;
+    }
+
+    .etop-title h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .etop-title p {
+      margin: 0;
+      color: var(--color-text-2);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .etop-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      padding: 0 11px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-bg-2);
+      color: var(--color-text-2);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .etop-status[data-state="connected"] {
+      border-color: rgba(16, 124, 16, 0.36);
+      color: var(--color-success);
+    }
+
+    .etop-status[data-state="error"] {
+      border-color: rgba(232, 17, 35, 0.36);
+      color: var(--color-danger);
+    }
+
+    .etop-controls {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) 130px auto auto;
+      gap: 10px;
+      align-items: end;
+      padding: 14px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--color-bg-2) 92%, transparent);
+    }
+
+    .etop-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .etop-field label {
+      color: var(--color-text-3);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .etop-input {
+      width: 100%;
+      min-height: 38px;
+      padding: 0 10px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-bg-1);
+      color: var(--color-text);
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .etop-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-bg-1);
+      color: var(--color-text);
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .etop-button:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    .etop-button.primary {
+      border-color: var(--color-accent);
+      background: var(--color-accent);
+      color: white;
+    }
+
+    .etop-button.primary:hover {
+      filter: brightness(0.96);
+      color: white;
+    }
+
+    .etop-button:disabled,
+    .etop-input:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+
+    .etop-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .etop-card {
+      display: grid;
+      gap: 12px;
+      min-height: 236px;
+      padding: 15px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-bg-2);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    .etop-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .etop-card-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .etop-card-title i {
+      color: var(--ring-color);
+    }
+
+    .etop-card-badge {
+      color: var(--color-text-3);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .etop-ring {
+      position: relative;
+      width: min(142px, 62vw);
+      aspect-ratio: 1;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+    }
+
+    .etop-ring svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .etop-track,
+    .etop-progress {
+      fill: none;
+      stroke-width: 10;
+    }
+
+    .etop-track {
+      stroke: color-mix(in srgb, var(--color-border) 78%, transparent);
+    }
+
+    .etop-progress {
+      stroke: var(--ring-color);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 260ms ease;
+    }
+
+    .etop-ring-center {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .etop-value {
+      font-size: 26px;
+      font-weight: 750;
+      line-height: 1;
+    }
+
+    .etop-unit {
+      margin-top: 6px;
+      color: var(--color-text-3);
+      font-size: 12px;
+    }
+
+    .etop-detail {
+      min-height: 40px;
+      color: var(--color-text-2);
+      font-size: 12px;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .etop-log {
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-bg-2);
+      color: var(--color-text-2);
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .etop-empty {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px;
+      border: 1px dashed var(--color-border);
+      border-radius: 8px;
+      background: var(--color-bg-2);
+      color: var(--color-text-2);
+      font-size: 13px;
+    }
+
+    @media (max-width: 920px) {
+      .etop-controls {
+        grid-template-columns: 1fr 130px;
+      }
+
+      .etop-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .etop-shell {
+        padding: 14px;
+      }
+
+      .etop-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .etop-controls,
+      .etop-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .etop-button {
+        width: 100%;
+      }
+    }
+  </style>
+
+  <section class="etop-panel">
+    <header class="etop-header">
+      <div class="etop-title">
+        <h1 data-etop-title>etop</h1>
+        <p data-etop-i18n="subtitle">Remote host pulse monitor powered by saved Entrance SSH records.</p>
+      </div>
+      <div class="etop-status" data-etop-status data-state="idle">
+        <i class="fas fa-circle"></i>
+        <span>Idle</span>
+      </div>
+    </header>
+
+    <section class="etop-controls" aria-label="etop controls">
+      <div class="etop-field">
+        <label for="etopHostSelect" data-etop-i18n="savedServer">Saved server</label>
+        <select class="etop-input" id="etopHostSelect" data-etop-hosts>
+          <option value="">Loading saved hosts...</option>
+        </select>
+      </div>
+      <div class="etop-field">
+        <label for="etopInterval" data-etop-i18n="interval">Interval</label>
+        <select class="etop-input" id="etopInterval" data-etop-interval>
+          <option value="1000">1s</option>
+          <option value="2000">2s</option>
+          <option value="5000">5s</option>
+          <option value="10000">10s</option>
+        </select>
+      </div>
+      <button class="etop-button" type="button" data-etop-refresh title="Reload saved hosts">
+        <i class="fas fa-rotate"></i>
+        <span data-etop-i18n="refresh">Refresh</span>
+      </button>
+      <button class="etop-button primary" type="button" data-etop-connect>
+        <i class="fas fa-plug"></i>
+        <span>Connect</span>
+      </button>
+    </section>
+
+    <div class="etop-empty" data-etop-empty>
+      <i class="fas fa-server"></i>
+      <span>Select a saved host to start sampling CPU, memory, disk, and network activity.</span>
+    </div>
+
+    <section class="etop-grid" aria-label="etop metrics">
+      <article class="etop-card" data-etop-card="cpu" style="--ring-color:#2563eb">
+        <div class="etop-card-head">
+          <div class="etop-card-title"><i class="fas fa-microchip"></i><span>CPU</span></div>
+          <span class="etop-card-badge" data-etop-badge="cpu" data-etop-i18n="usage">usage</span>
+        </div>
+        <div class="etop-ring" data-etop-ring="cpu"></div>
+        <div class="etop-detail" data-etop-detail="cpu">Waiting for sample</div>
+      </article>
+
+      <article class="etop-card" data-etop-card="mem" style="--ring-color:#107c10">
+        <div class="etop-card-head">
+          <div class="etop-card-title"><i class="fas fa-memory"></i><span data-etop-i18n="memory">Memory</span></div>
+          <span class="etop-card-badge" data-etop-badge="mem" data-etop-i18n="used">used</span>
+        </div>
+        <div class="etop-ring" data-etop-ring="mem"></div>
+        <div class="etop-detail" data-etop-detail="mem">Waiting for sample</div>
+      </article>
+
+      <article class="etop-card" data-etop-card="disk" style="--ring-color:#d97706">
+        <div class="etop-card-head">
+          <div class="etop-card-title"><i class="fas fa-hard-drive"></i><span data-etop-i18n="disk">Disk</span></div>
+          <span class="etop-card-badge" data-etop-badge="disk" data-etop-i18n="root">root</span>
+        </div>
+        <div class="etop-ring" data-etop-ring="disk"></div>
+        <div class="etop-detail" data-etop-detail="disk">Waiting for sample</div>
+      </article>
+
+      <article class="etop-card" data-etop-card="net" style="--ring-color:#0891b2">
+        <div class="etop-card-head">
+          <div class="etop-card-title"><i class="fas fa-network-wired"></i><span data-etop-i18n="network">Network</span></div>
+          <span class="etop-card-badge" data-etop-badge="net">RX + TX</span>
+        </div>
+        <div class="etop-ring" data-etop-ring="net"></div>
+        <div class="etop-detail" data-etop-detail="net">Waiting for sample</div>
+      </article>
+    </section>
+
+    <div class="etop-log" data-etop-log>Ready.</div>
+  </section>
+</main>

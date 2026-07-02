@@ -229,6 +229,7 @@ For behavior-focused notes, defaults, side effects, and deployment guidance, see
 │   ├── index.html       # Generated frontend entrypoint
 │   └── vnc-client.js
 ├── api/                 # Plugin package contract examples
+├── plugins_examples/    # Standalone plugin examples for plugin authoring
 ├── webui-src/           # Editable WebUI source files and HTML partials
 │   ├── index.template.html
 │   ├── partials/

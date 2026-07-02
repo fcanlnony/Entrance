@@ -94,6 +94,7 @@ Keep detailed environment-variable behavior in `doc/environment-variables.md` an
 │   ├── logo.png        # Startup splash logo shown inside the rounded loading card
 │   └── vnc-client.js   # VNC browser client
 ├── api/                # Plugin API docs, package contract examples, and hello-plugins smoke-test plugin
+├── plugins_examples/   # Standalone plugin examples for demonstrating plugin authoring patterns
 ├── webui-src/
 │   ├── index.template.html  # Frontend template entrypoint
 │   ├── partials/            # HTML fragments for each view/modal/layout section

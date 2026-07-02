@@ -67,6 +67,7 @@ window.EntrancePlugin = {
 - `context.plugin` - 规范化后的 manifest 和安装元数据
 - `context.theme` - 当前 `light` 或 `dark` 主题
 - `context.colorScheme` - 当前配色方案 key
+- `context.language` - 当前界面语言 key，值为 `en` 或 `zh`
 - `context.apiBase` - 当前 Entrance 的 origin，适合拼接绝对 URL
 - `context.vendors` - 从现有 `node_modules` 复制到浏览器侧后的 vendor 注册表元数据
 

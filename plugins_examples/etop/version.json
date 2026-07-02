@@ -1,0 +1,10 @@
+{
+  "id": "etop",
+  "name": "etop",
+  "version": "1.0.0",
+  "description": "A lightweight remote server monitor plugin for CPU, memory, disk, and network throughput.",
+  "author": "Entrance",
+  "homepage": "https://example.com/etop",
+  "entry": "index.js",
+  "html": "index.html"
+}

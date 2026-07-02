@@ -228,6 +228,7 @@ Docker、Docker Compose 与 Podman 容器部署方式见 [container_CN.md](conta
 │   ├── index.html       # 生成后的前端入口
 │   └── vnc-client.js
 ├── api/                 # 插件包契约示例
+├── plugins_examples/    # 独立插件示例，用于编写插件时参考
 ├── webui-src/           # 可编辑的 WebUI 源文件与 HTML 分块
 │   ├── index.template.html
 │   ├── partials/

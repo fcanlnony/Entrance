@@ -67,6 +67,7 @@ window.EntrancePlugin = {
 - `context.plugin` - the normalized manifest plus install metadata
 - `context.theme` - current `light` or `dark` theme
 - `context.colorScheme` - current color scheme key
+- `context.language` - current UI language key, `en` or `zh`
 - `context.apiBase` - current Entrance origin, useful when constructing absolute URLs
 - `context.vendors` - metadata for the bundled browser-side vendor registry copied from existing `node_modules`
 
