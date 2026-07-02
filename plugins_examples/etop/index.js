@@ -8,6 +8,122 @@
     const MEM_CARD = 'mem';
     const DISK_CARD = 'disk';
     const NET_CARD = 'net';
+    const TRANSLATIONS = {
+        en: {
+            subtitle: 'Remote host pulse monitor powered by saved Entrance SSH records.',
+            savedServer: 'Saved server',
+            interval: 'Interval',
+            refresh: 'Refresh',
+            connect: 'Connect',
+            disconnect: 'Disconnect',
+            idle: 'Idle',
+            loadingHosts: 'Loading hosts',
+            loadingHostsOption: 'Loading saved hosts...',
+            loadingHostsLog: 'Loading saved server records from Entrance...',
+            connected: 'Connected',
+            connecting: 'Connecting',
+            disconnected: 'Disconnected',
+            hostLoadFailed: 'Host load failed',
+            noHostSelected: 'No host selected',
+            credentialNeeded: 'Credential needed',
+            wsError: 'WebSocket error',
+            sshError: 'SSH error',
+            noSavedHosts: 'No saved hosts',
+            verifyUserFailed: 'Unable to resolve current Entrance user.',
+            loadHostsFailed: 'Unable to load saved hosts.',
+            noSavedHostsLog: 'No saved hosts found. Add a server in the Entrance Hosts view first.',
+            noSavedHostsEmpty: 'No saved hosts are available. Save a server record in Entrance first.',
+            selectHostEmpty: 'Select a saved host to start sampling CPU, memory, disk, and network activity.',
+            selectHostLog: 'Select a saved host before connecting.',
+            loadedHosts: 'Loaded {count} saved {hostLabel}.',
+            hostSingular: 'host',
+            hostPlural: 'hosts',
+            intervalSet: 'Sampling interval set to {interval}.',
+            connectingTo: 'Connecting to {target}...',
+            connectedSampling: 'Connected. Sampling every {interval}.',
+            sampleTimeout: 'Sample timed out; waiting for the next interval.',
+            sshCommandFailed: 'SSH command failed.',
+            sshClosed: 'SSH connection closed.',
+            disconnectedLog: 'Disconnected.',
+            lastSample: 'Last sample {time} from {host}.',
+            remoteHost: 'remote host',
+            usage: 'usage',
+            used: 'used',
+            memory: 'Memory',
+            disk: 'Disk',
+            network: 'Network',
+            root: 'root',
+            waitingSample: 'Waiting for sample',
+            collectingBaseline: 'Collecting baseline sample',
+            cpuActive: '{value}% active across all cores',
+            waitingMemory: 'Waiting for memory counters',
+            waitingDisk: 'Waiting for root filesystem usage',
+            waitingNetwork: 'Collecting network baseline sample',
+            diskUsage: '{used} / {total} on {mount}',
+            networkDetail: 'RX {rx} · TX {tx}',
+            missingPrivateKey: 'This host has no saved private key. Edit the host record in Entrance first.',
+            missingPassword: 'This host has no saved password. Edit the host record in Entrance first.',
+            reloadTitle: 'Reload saved hosts',
+            ready: 'Ready.'
+        },
+        zh: {
+            subtitle: '通过 Entrance 已保存的 SSH 主机记录监控远程主机脉搏。',
+            savedServer: '已保存服务器',
+            interval: '间隔',
+            refresh: '刷新',
+            connect: '连接',
+            disconnect: '断开',
+            idle: '空闲',
+            loadingHosts: '正在加载主机',
+            loadingHostsOption: '正在加载已保存主机...',
+            loadingHostsLog: '正在从 Entrance 加载已保存的服务器记录...',
+            connected: '已连接',
+            connecting: '正在连接',
+            disconnected: '已断开',
+            hostLoadFailed: '主机加载失败',
+            noHostSelected: '未选择主机',
+            credentialNeeded: '需要凭据',
+            wsError: 'WebSocket 错误',
+            sshError: 'SSH 错误',
+            noSavedHosts: '暂无保存的主机',
+            verifyUserFailed: '无法识别当前 Entrance 用户。',
+            loadHostsFailed: '无法加载已保存主机。',
+            noSavedHostsLog: '未找到已保存主机。请先在 Entrance 主机视图中添加服务器。',
+            noSavedHostsEmpty: '暂无可用的已保存主机。请先在 Entrance 中保存服务器记录。',
+            selectHostEmpty: '选择已保存主机后开始采样 CPU、内存、磁盘和网络活动。',
+            selectHostLog: '连接前请选择一个已保存主机。',
+            loadedHosts: '已加载 {count} 个已保存主机。',
+            hostSingular: 'host',
+            hostPlural: 'hosts',
+            intervalSet: '采样间隔已设置为 {interval}。',
+            connectingTo: '正在连接 {target}...',
+            connectedSampling: '已连接。每 {interval} 采样一次。',
+            sampleTimeout: '采样超时，等待下一次间隔。',
+            sshCommandFailed: 'SSH 命令执行失败。',
+            sshClosed: 'SSH 连接已关闭。',
+            disconnectedLog: '已断开连接。',
+            lastSample: '上次采样 {time}，来源 {host}。',
+            remoteHost: '远程主机',
+            usage: '占用',
+            used: '已用',
+            memory: '内存',
+            disk: '磁盘',
+            network: '网络',
+            root: '根分区',
+            waitingSample: '等待采样',
+            collectingBaseline: '正在收集基线样本',
+            cpuActive: '全部核心活跃 {value}%',
+            waitingMemory: '等待内存计数器',
+            waitingDisk: '等待根文件系统用量',
+            waitingNetwork: '正在收集网络基线样本',
+            diskUsage: '{used} / {total}，挂载点 {mount}',
+            networkDetail: '接收 {rx} · 发送 {tx}',
+            missingPrivateKey: '该主机没有保存私钥。请先在 Entrance 中编辑主机记录。',
+            missingPassword: '该主机没有保存密码。请先在 Entrance 中编辑主机记录。',
+            reloadTitle: '重新加载已保存主机',
+            ready: '就绪。'
+        }
+    };
 
     window.EntrancePlugin = {
         async mount(root, context) {
@@ -23,6 +139,7 @@
             user: null,
             ws: null,
             connected: false,
+            language: context.language === 'zh' ? 'zh' : 'en',
             selectedHost: null,
             intervalMs: 1000,
             timer: null,
@@ -63,15 +180,59 @@
             }
         };
 
+        function t(key, vars = {}) {
+            const table = TRANSLATIONS[state.language] || TRANSLATIONS.en;
+            const template = table[key] || TRANSLATIONS.en[key] || key;
+            return template.replace(/\{(\w+)\}/g, (_match, name) => {
+                return Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : '';
+            });
+        }
+
+        function applyTranslations() {
+            root.querySelectorAll('[data-etop-i18n]').forEach(element => {
+                element.textContent = t(element.dataset.etopI18n);
+            });
+            if (els.refresh) {
+                els.refresh.title = t('reloadTitle');
+            }
+            if (els.empty) {
+                const text = els.empty.querySelector('span');
+                if (text) {
+                    text.textContent = state.hosts.length ? t('selectHostEmpty') : t('noSavedHostsEmpty');
+                }
+            }
+            renderHosts();
+            renderMetrics();
+            setConnectButton(state.connected);
+            if (state.status) {
+                setStatus(state.status.stateName, state.status.key, state.status.vars);
+            }
+            if (state.log) {
+                setLog(state.log.key, state.log.vars);
+            }
+        }
+
+        function handleHostMessage(event) {
+            const data = event.data || {};
+            if (data.type !== 'entrance-theme' || !data.language) return;
+            const next = data.language === 'zh' ? 'zh' : 'en';
+            if (state.language === next) return;
+            state.language = next;
+            context.language = next;
+            applyTranslations();
+        }
+
         return {
             async init() {
                 if (els.title) els.title.textContent = context.plugin.name || 'etop';
+                applyTranslations();
                 buildRings();
                 bindEvents();
-                setStatus('idle', 'Loading hosts');
-                setLog('Loading saved server records from Entrance...');
+                setStatus('idle', 'loadingHosts');
+                setLog('loadingHostsLog');
                 await loadHosts();
                 window.addEventListener('beforeunload', cleanup);
+                window.addEventListener('message', handleHostMessage);
             }
         };
 
@@ -89,7 +250,7 @@
             els.interval?.addEventListener('change', () => {
                 const next = parseInt(els.interval.value, 10);
                 state.intervalMs = Number.isFinite(next) && next >= 1000 ? next : 1000;
-                setLog(`Sampling interval set to ${formatInterval(state.intervalMs)}.`);
+                setLog('intervalSet', { interval: formatInterval(state.intervalMs) });
                 if (state.connected) {
                     startSampling();
                 }
@@ -102,25 +263,28 @@
                 const verifyRes = await context.api.fetch('/api/auth/verify', { method: 'POST' });
                 const verify = await verifyRes.json().catch(() => ({}));
                 if (!verifyRes.ok || !verify.username) {
-                    throw new Error(verify.error || 'Unable to resolve current Entrance user.');
+                    throw new Error(verify.error || t('verifyUserFailed'));
                 }
                 state.user = verify.username;
 
                 const hostsRes = await context.api.fetch(`/api/userdata/${encodeURIComponent(state.user)}/hosts`);
                 const hosts = await hostsRes.json().catch(() => []);
                 if (!hostsRes.ok) {
-                    throw new Error(hosts.error || 'Unable to load saved hosts.');
+                    throw new Error(hosts.error || t('loadHostsFailed'));
                 }
 
                 state.hosts = Array.isArray(hosts) ? hosts : [];
                 renderHosts();
-                setStatus(state.connected ? 'connected' : 'idle', state.connected ? 'Connected' : 'Idle');
+                setStatus(state.connected ? 'connected' : 'idle', state.connected ? 'connected' : 'idle');
                 setLog(state.hosts.length
-                    ? `Loaded ${state.hosts.length} saved host${state.hosts.length === 1 ? '' : 's'}.`
-                    : 'No saved hosts found. Add a server in the Entrance Hosts view first.');
+                    ? 'loadedHosts'
+                    : 'noSavedHostsLog', {
+                        count: state.hosts.length,
+                        hostLabel: t(state.hosts.length === 1 ? 'hostSingular' : 'hostPlural')
+                    });
             } catch (err) {
-                setStatus('error', 'Host load failed');
-                setLog(err.message);
+                setStatus('error', 'hostLoadFailed');
+                setLogText(err.message);
                 renderHosts();
             } finally {
                 setControlsBusy(false);
@@ -130,11 +294,11 @@
         function renderHosts() {
             if (!els.hosts) return;
             if (!state.hosts.length) {
-                els.hosts.innerHTML = '<option value="">No saved hosts</option>';
+                els.hosts.innerHTML = `<option value="">${escapeHtml(t('noSavedHosts'))}</option>`;
                 els.hosts.disabled = true;
                 if (els.empty) {
                     els.empty.style.display = 'flex';
-                    els.empty.querySelector('span').textContent = 'No saved hosts are available. Save a server record in Entrance first.';
+                    els.empty.querySelector('span').textContent = t('noSavedHostsEmpty');
                 }
                 return;
             }
@@ -145,7 +309,7 @@
             }).join('');
             if (els.empty) {
                 els.empty.style.display = state.connected ? 'none' : 'flex';
-                els.empty.querySelector('span').textContent = 'Select a saved host to start sampling CPU, memory, disk, and network activity.';
+                els.empty.querySelector('span').textContent = t('selectHostEmpty');
             }
         }
 
@@ -153,8 +317,8 @@
             const index = parseInt(els.hosts?.value || '', 10);
             const host = state.hosts[index];
             if (!host) {
-                setStatus('error', 'No host selected');
-                setLog('Select a saved host before connecting.');
+                setStatus('error', 'noHostSelected');
+                setLog('selectHostLog');
                 return;
             }
 
@@ -162,16 +326,16 @@
             try {
                 authPayload = getHostCredentialPayload(host);
             } catch (err) {
-                setStatus('error', 'Credential needed');
-                setLog(err.message);
+                setStatus('error', 'credentialNeeded');
+                setLogText(err.message);
                 return;
             }
 
             cleanupConnection();
             resetSamples();
             state.selectedHost = host;
-            setStatus('idle', 'Connecting');
-            setLog(`Connecting to ${host.user}@${host.host}:${host.port || 22}...`);
+            setStatus('idle', 'connecting');
+            setLog('connectingTo', { target: `${host.user}@${host.host}:${host.port || 22}` });
             setControlsBusy(true);
 
             const ws = new WebSocket(buildWsUrl('/ssh'));
@@ -187,8 +351,8 @@
             };
             ws.onmessage = event => handleWsMessage(event);
             ws.onerror = () => {
-                setStatus('error', 'WebSocket error');
-                setLog('WebSocket connection failed.');
+                setStatus('error', 'wsError');
+                setLog('wsError');
                 setControlsBusy(false);
             };
             ws.onclose = () => {
@@ -197,8 +361,8 @@
                 setControlsBusy(false);
                 setConnectButton(false);
                 if (wasConnected) {
-                    setStatus('idle', 'Disconnected');
-                    setLog('SSH connection closed.');
+                    setStatus('idle', 'disconnected');
+                    setLog('sshClosed');
                 }
             };
         }
@@ -215,9 +379,9 @@
                 state.connected = true;
                 setControlsBusy(false);
                 setConnectButton(true);
-                setStatus('connected', 'Connected');
+                setStatus('connected', 'connected');
                 if (els.empty) els.empty.style.display = 'none';
-                setLog(`Connected. Sampling every ${formatInterval(state.intervalMs)}.`);
+                setLog('connectedSampling', { interval: formatInterval(state.intervalMs) });
                 startSampling();
                 return;
             }
@@ -228,8 +392,8 @@
             }
 
             if (message.type === 'error') {
-                setStatus('error', 'SSH error');
-                setLog(message.message || 'SSH command failed.');
+                setStatus('error', 'sshError');
+                setLogText(message.message || t('sshCommandFailed'));
                 return;
             }
 
@@ -259,7 +423,7 @@
             if (state.inFlightTimer) window.clearTimeout(state.inFlightTimer);
             state.inFlightTimer = window.setTimeout(() => {
                 state.inFlight = false;
-                setLog('Sample timed out; waiting for the next interval.');
+                setLog('sampleTimeout');
             }, Math.max(2500, state.intervalMs * 2));
         }
 
@@ -315,7 +479,10 @@
             updateDisk(sample.DISK);
             updateNetwork(sample.NET, now);
             renderMetrics();
-            setLog(`Last sample ${new Date(now).toLocaleTimeString()} from ${state.selectedHost?.host || 'remote host'}.`);
+            setLog('lastSample', {
+                time: new Date(now).toLocaleTimeString(),
+                host: state.selectedHost?.host || t('remoteHost')
+            });
         }
 
         function updateCpu(parts) {
@@ -381,20 +548,22 @@
 
         function renderMetrics() {
             const cpu = state.latest.cpu;
-            updateRing(CPU_CARD, cpu ? cpu.percent : 0, cpu ? `${cpu.percent.toFixed(0)}%` : '--', 'usage');
-            setDetail(CPU_CARD, cpu ? `${cpu.percent.toFixed(1)}% active across all cores` : 'Collecting baseline sample');
+            updateRing(CPU_CARD, cpu ? cpu.percent : 0, cpu ? `${cpu.percent.toFixed(0)}%` : '--', t('usage'));
+            setDetail(CPU_CARD, cpu ? t('cpuActive', { value: cpu.percent.toFixed(1) }) : t('collectingBaseline'));
 
             const mem = state.latest.mem;
-            updateRing(MEM_CARD, mem ? mem.percent : 0, mem ? `${mem.percent.toFixed(0)}%` : '--', 'used');
-            setDetail(MEM_CARD, mem ? `${formatBytes(mem.usedBytes)} / ${formatBytes(mem.totalBytes)}` : 'Waiting for memory counters');
+            updateRing(MEM_CARD, mem ? mem.percent : 0, mem ? `${mem.percent.toFixed(0)}%` : '--', t('used'));
+            setDetail(MEM_CARD, mem ? `${formatBytes(mem.usedBytes)} / ${formatBytes(mem.totalBytes)}` : t('waitingMemory'));
 
             const disk = state.latest.disk;
-            updateRing(DISK_CARD, disk ? disk.percent : 0, disk ? `${disk.percent.toFixed(0)}%` : '--', disk ? disk.mount : 'root');
-            setDetail(DISK_CARD, disk ? `${formatBytes(disk.usedBytes)} / ${formatBytes(disk.totalBytes)} on ${disk.mount}` : 'Waiting for root filesystem usage');
+            updateRing(DISK_CARD, disk ? disk.percent : 0, disk ? `${disk.percent.toFixed(0)}%` : '--', disk ? disk.mount : t('root'));
+            setDetail(DISK_CARD, disk
+                ? t('diskUsage', { used: formatBytes(disk.usedBytes), total: formatBytes(disk.totalBytes), mount: disk.mount })
+                : t('waitingDisk'));
 
             const net = state.latest.net;
             updateRing(NET_CARD, net ? net.percent : 0, net ? formatRateShort(net.totalRate) : '--', 'RX + TX');
-            setDetail(NET_CARD, net ? `RX ${formatRate(net.rxRate)} · TX ${formatRate(net.txRate)}` : 'Collecting network baseline sample');
+            setDetail(NET_CARD, net ? t('networkDetail', { rx: formatRate(net.rxRate), tx: formatRate(net.txRate) }) : t('waitingNetwork'));
         }
 
         function buildRings() {
@@ -446,8 +615,8 @@
             cleanupConnection();
             setControlsBusy(false);
             setConnectButton(false);
-            setStatus('idle', 'Disconnected');
-            setLog('Disconnected.');
+            setStatus('idle', 'disconnected');
+            setLog('disconnectedLog');
             if (els.empty) els.empty.style.display = state.hosts.length ? 'flex' : 'none';
         }
 
@@ -475,16 +644,24 @@
         function cleanup() {
             disconnect();
             window.removeEventListener('beforeunload', cleanup);
+            window.removeEventListener('message', handleHostMessage);
         }
 
-        function setStatus(stateName, text) {
+        function setStatus(stateName, key, vars = {}) {
             if (!els.status) return;
+            state.status = { stateName, key, vars };
             els.status.dataset.state = stateName;
             const icon = stateName === 'connected' ? 'fa-circle-check' : stateName === 'error' ? 'fa-triangle-exclamation' : 'fa-circle';
-            els.status.innerHTML = `<i class="fas ${icon}"></i><span>${escapeHtml(text)}</span>`;
+            els.status.innerHTML = `<i class="fas ${icon}"></i><span>${escapeHtml(t(key, vars))}</span>`;
         }
 
-        function setLog(text) {
+        function setLog(key, vars = {}) {
+            state.log = { key, vars };
+            if (els.log) els.log.textContent = t(key, vars);
+        }
+
+        function setLogText(text) {
+            state.log = null;
             if (els.log) els.log.textContent = text;
         }
 
@@ -499,8 +676,8 @@
             if (!els.connect) return;
             els.connect.classList.toggle('primary', !connected);
             els.connect.innerHTML = connected
-                ? '<i class="fas fa-xmark"></i><span>Disconnect</span>'
-                : '<i class="fas fa-plug"></i><span>Connect</span>';
+                ? `<i class="fas fa-xmark"></i><span>${escapeHtml(t('disconnect'))}</span>`
+                : `<i class="fas fa-plug"></i><span>${escapeHtml(t('connect'))}</span>`;
             if (els.hosts) els.hosts.disabled = connected || !state.hosts.length;
         }
 
@@ -521,7 +698,7 @@
 
             if (authType === AUTH_TYPE_KEY) {
                 if (!privateKey) {
-                    throw new Error('This host has no saved private key. Edit the host record in Entrance first.');
+                    throw new Error(t('missingPrivateKey'));
                 }
                 return passphrase
                     ? { authType: AUTH_TYPE_KEY, privateKey, passphrase }
@@ -529,7 +706,7 @@
             }
 
             if (!password) {
-                throw new Error('This host has no saved password. Edit the host record in Entrance first.');
+                throw new Error(t('missingPassword'));
             }
             return { authType: AUTH_TYPE_PASSWORD, password };
         }
