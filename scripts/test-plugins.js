@@ -183,6 +183,8 @@ async function main() {
         assert.equal(page.status, 200, page.text);
         assert.match(page.text, /hello plugins/);
         assert.match(page.text, /EntrancePlugin/);
+        assert.match(page.text, /loadVendor/);
+        assert.match(page.text, /chart\.umd\.js/);
 
         const asset = await request(port, 'GET', `/api/plugins/hello-plugins/assets/index.js?token=${encodeURIComponent(token)}`);
         assert.equal(asset.status, 200, asset.text);

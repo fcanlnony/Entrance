@@ -2,7 +2,7 @@
   "id": "example-plugin",
   "name": "Example Plugin",
   "version": "1.0.0",
-  "description": "A minimal Entrance plugin package example.",
+  "description": "An Entrance plugin example that loads Chart.js from bundled vendor assets.",
   "author": "Entrance Plugin Author",
   "homepage": "https://example.com/example-plugin",
   "entry": "index.js",

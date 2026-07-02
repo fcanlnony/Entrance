@@ -111,6 +111,35 @@ const PLUGIN_MAX_ARCHIVE_SIZE = 50 * 1024 * 1024;
 const PLUGIN_MAX_FILE_SIZE = 10 * 1024 * 1024;
 const PLUGIN_MAX_FILES = 200;
 const PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{1,63}$/;
+const PLUGIN_VENDOR_ASSETS = Object.freeze({
+    'chart.js': Object.freeze({
+        type: 'script',
+        url: '/assets/vendor/chart.js/chart.umd.js',
+        global: 'Chart'
+    }),
+    'xterm': Object.freeze({
+        type: 'script',
+        url: '/assets/vendor/xterm/xterm.js',
+        global: 'Terminal',
+        styles: Object.freeze(['/assets/vendor/xterm/xterm.css'])
+    }),
+    'xterm-addon-fit': Object.freeze({
+        type: 'script',
+        url: '/assets/vendor/xterm-addon-fit/xterm-addon-fit.js',
+        global: 'FitAddon',
+        export: 'FitAddon'
+    }),
+    'novnc': Object.freeze({
+        type: 'module',
+        url: '/assets/vendor/novnc/core/rfb.js',
+        export: 'default'
+    }),
+    'fontawesome': Object.freeze({
+        type: 'style',
+        url: '/assets/vendor/fontawesome/css/all.min.css',
+        preloaded: true
+    })
+});
 
 function getPositiveIntEnv(name, fallback) {
     const parsed = parseInt(process.env[name] || '', 10);
@@ -1444,6 +1473,18 @@ function extractBodyFragment(html) {
     return match ? match[1] : text;
 }
 
+function getPluginVendorRegistry() {
+    return Object.fromEntries(Object.entries(PLUGIN_VENDOR_ASSETS).map(([name, definition]) => [name, {
+        name,
+        type: definition.type,
+        url: definition.url,
+        styles: Array.isArray(definition.styles) ? [...definition.styles] : [],
+        global: definition.global || '',
+        export: definition.export || '',
+        preloaded: definition.preloaded === true
+    }]));
+}
+
 function buildPluginPageHtml(plugin, token, query = {}) {
     const theme = query.theme === 'dark' ? 'dark' : 'light';
     const colorScheme = ['default', 'sakura', 'ocean', 'forest', 'twilight', 'amber'].includes(query.colorScheme)
@@ -1456,7 +1497,8 @@ function buildPluginPageHtml(plugin, token, query = {}) {
         apiBase: '',
         plugin: plugin.record,
         theme,
-        colorScheme
+        colorScheme,
+        vendors: getPluginVendorRegistry()
     };
     const htmlFragment = plugin.manifest.html
         ? extractBodyFragment(fs.readFileSync(path.join(plugin.path, ...plugin.manifest.html.split('/')), 'utf8'))
@@ -1485,17 +1527,163 @@ function buildPluginPageHtml(plugin, token, query = {}) {
             token: ${tokenJson},
             apiBase: location.origin
         });
-        window.EntrancePluginApi = {
-            fetch(path, options) {
-                const opts = Object.assign({}, options || {});
-                const headers = Object.assign({}, opts.headers || {});
-                if (window.EntrancePluginContext.token) {
-                    headers.Authorization = 'Bearer ' + window.EntrancePluginContext.token;
-                }
-                opts.headers = headers;
-                return fetch(new URL(path, window.EntrancePluginContext.apiBase).toString(), opts);
+        window.EntrancePluginApi = (function() {
+            const assetPromises = Object.create(null);
+
+            function getVendor(name) {
+                const vendors = window.EntrancePluginContext.vendors || {};
+                return vendors[String(name || '')] || null;
             }
-        };
+
+            function ensureStyle(url) {
+                if (!url) return Promise.resolve(null);
+                const key = 'style:' + url;
+                if (assetPromises[key]) return assetPromises[key];
+                const existing = document.querySelector('link[data-entrance-plugin-style="' + url + '"], link[rel="stylesheet"][href="' + url + '"]');
+                if (existing) {
+                    assetPromises[key] = Promise.resolve(existing);
+                    return assetPromises[key];
+                }
+                assetPromises[key] = new Promise((resolve, reject) => {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = url;
+                    link.dataset.entrancePluginStyle = url;
+                    link.onload = () => resolve(link);
+                    link.onerror = () => reject(new Error('Failed to load plugin stylesheet: ' + url));
+                    document.head.appendChild(link);
+                }).catch(err => {
+                    delete assetPromises[key];
+                    throw err;
+                });
+                return assetPromises[key];
+            }
+
+            function ensureStyles(urls) {
+                const list = Array.isArray(urls) ? urls.filter(Boolean) : [];
+                return Promise.all(list.map(ensureStyle));
+            }
+
+            function readGlobalExport(vendor) {
+                if (!vendor || !vendor.global) return undefined;
+                const exposed = window[vendor.global];
+                if (
+                    exposed
+                    && vendor.export
+                    && vendor.export !== 'default'
+                    && typeof exposed === 'object'
+                    && vendor.export in exposed
+                ) {
+                    return exposed[vendor.export];
+                }
+                return exposed;
+            }
+
+            function ensureScriptVendor(vendor) {
+                const existing = readGlobalExport(vendor);
+                if (typeof existing !== 'undefined') {
+                    return Promise.resolve(existing);
+                }
+                const key = 'script:' + vendor.url;
+                if (assetPromises[key]) return assetPromises[key];
+                assetPromises[key] = ensureStyles(vendor.styles).then(() => new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = vendor.url;
+                    script.async = true;
+                    script.dataset.entrancePluginScript = vendor.url;
+                    script.onload = () => {
+                        const loaded = readGlobalExport(vendor);
+                        if (typeof loaded === 'undefined') {
+                            reject(new Error('Vendor "' + vendor.name + '" did not expose the expected browser API'));
+                            return;
+                        }
+                        resolve(loaded);
+                    };
+                    script.onerror = () => reject(new Error('Failed to load vendor "' + vendor.name + '" from ' + vendor.url));
+                    document.head.appendChild(script);
+                })).catch(err => {
+                    delete assetPromises[key];
+                    throw err;
+                });
+                return assetPromises[key];
+            }
+
+            function ensureModuleVendor(vendor) {
+                const key = 'module:' + vendor.url;
+                if (assetPromises[key]) return assetPromises[key];
+                assetPromises[key] = ensureStyles(vendor.styles).then(async () => {
+                    const moduleUrl = new URL(vendor.url, window.EntrancePluginContext.apiBase).toString();
+                    const imported = await import(moduleUrl);
+                    if (vendor.export === 'default') {
+                        return imported.default;
+                    }
+                    if (vendor.export) {
+                        return imported[vendor.export];
+                    }
+                    return imported;
+                }).then(value => {
+                    if (typeof value === 'undefined') {
+                        throw new Error('Vendor "' + vendor.name + '" did not expose the expected module export');
+                    }
+                    return value;
+                }).catch(err => {
+                    delete assetPromises[key];
+                    throw err;
+                });
+                return assetPromises[key];
+            }
+
+            return {
+                fetch(path, options) {
+                    const opts = Object.assign({}, options || {});
+                    const headers = Object.assign({}, opts.headers || {});
+                    if (window.EntrancePluginContext.token) {
+                        headers.Authorization = 'Bearer ' + window.EntrancePluginContext.token;
+                    }
+                    opts.headers = headers;
+                    return fetch(new URL(path, window.EntrancePluginContext.apiBase).toString(), opts);
+                },
+                getVendor(name) {
+                    return getVendor(name);
+                },
+                listVendors() {
+                    return Object.assign({}, window.EntrancePluginContext.vendors || {});
+                },
+                async loadVendor(name) {
+                    const vendor = getVendor(name);
+                    if (!vendor) {
+                        throw new Error('Unknown plugin vendor: ' + name);
+                    }
+                    if (vendor.type === 'style') {
+                        await ensureStyle(vendor.url);
+                        return vendor;
+                    }
+                    if (vendor.type === 'script') {
+                        return ensureScriptVendor(vendor);
+                    }
+                    if (vendor.type === 'module') {
+                        return ensureModuleVendor(vendor);
+                    }
+                    throw new Error('Unsupported vendor type for "' + vendor.name + '": ' + vendor.type);
+                }
+            };
+        })();
+
+        function showPluginMessage(message) {
+            const root = document.getElementById('plugin-root');
+            root.innerHTML = '';
+            const box = document.createElement('div');
+            box.className = 'plugin-empty';
+            box.textContent = message;
+            root.appendChild(box);
+        }
+
+        function showPluginError(error) {
+            const message = error && error.message ? error.message : 'Plugin render failed.';
+            console.error('[Plugin Runtime]', error);
+            showPluginMessage(message);
+        }
+
         window.addEventListener('message', (event) => {
             const data = event.data || {};
             if (data.type !== 'entrance-theme') return;
@@ -1509,12 +1697,26 @@ function buildPluginPageHtml(plugin, token, query = {}) {
             const root = document.getElementById('plugin-root');
             const context = Object.assign({}, window.EntrancePluginContext, { api: window.EntrancePluginApi });
             if (window.EntrancePlugin && typeof window.EntrancePlugin.mount === 'function') {
-                window.EntrancePlugin.mount(root, context);
+                try {
+                    const result = window.EntrancePlugin.mount(root, context);
+                    if (result && typeof result.then === 'function') {
+                        Promise.resolve(result).then(() => {
+                            if (!root.hasChildNodes()) {
+                                showPluginMessage('Plugin loaded. Expose window.EntrancePlugin.mount(root, context) to render UI.');
+                            }
+                        }).catch(showPluginError);
+                        return;
+                    }
+                } catch (err) {
+                    showPluginError(err);
+                    return;
+                }
+                if (!root.hasChildNodes()) {
+                    showPluginMessage('Plugin loaded. Expose window.EntrancePlugin.mount(root, context) to render UI.');
+                }
                 return;
             }
-            if (!root.hasChildNodes()) {
-                root.innerHTML = '<div class="plugin-empty">Plugin loaded. Expose window.EntrancePlugin.mount(root, context) to render UI.</div>';
-            }
+            showPluginMessage('Plugin loaded. Expose window.EntrancePlugin.mount(root, context) to render UI.');
         })();
     </script>
 </body>

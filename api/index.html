@@ -1,5 +1,17 @@
-<main style="padding:24px;display:grid;gap:12px;color:var(--color-text)">
-  <h1 data-plugin-title style="font-size:24px;margin:0">Example Plugin</h1>
-  <p data-plugin-description style="margin:0;color:var(--color-text-2)">Plugin description</p>
-  <p data-plugin-status style="margin:0;color:var(--color-text-3);font-size:13px"></p>
+<main style="padding:24px;display:grid;gap:16px;color:var(--color-text)">
+  <header style="display:grid;gap:8px">
+    <h1 data-plugin-title style="font-size:24px;margin:0">Example Plugin</h1>
+    <p data-plugin-description style="margin:0;color:var(--color-text-2)">Plugin description</p>
+    <p data-plugin-status style="margin:0;color:var(--color-text-3);font-size:13px"></p>
+  </header>
+
+  <section style="display:grid;gap:8px;padding:16px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-bg-2)">
+    <strong style="font-size:14px">Bundled vendor modules</strong>
+    <p data-plugin-vendors style="margin:0;color:var(--color-text-2);font-size:13px"></p>
+  </section>
+
+  <section style="display:grid;gap:12px;padding:16px;border:1px solid var(--color-border);border-radius:16px;background:var(--color-bg-2)">
+    <strong style="font-size:14px">Chart.js example</strong>
+    <canvas data-plugin-chart height="180"></canvas>
+  </section>
 </main>

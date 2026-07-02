@@ -108,6 +108,8 @@
 - 插件导航会在工作台内打开已安装插件，体验类似串口终端等内置页面
 - 已安装插件保存到 `ENTRANCE_DATA_DIR` 下的 `.plugins/`（默认是仓库根目录 `.plugins/`）
 - 仓库根目录 `api/` 提供插件包契约示例：`version.json`、`index.js` 和 `index.html`
+- 插件可加载从现有 `node_modules` 打包到浏览器侧的 vendor API，包括 `chart.js`、`xterm`、`xterm-addon-fit` 和 `noVNC`
+- 插件编写与运行时 API 文档： [api/plugins_CN.md](../api/plugins_CN.md)
 
 ### 界面特性
 - Microsoft Fluent Design 设计风格
