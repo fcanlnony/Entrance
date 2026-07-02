@@ -10,4 +10,5 @@ private-networks.json
 data/
 .codex
 *.log
+*.zip
 .DS_Store
