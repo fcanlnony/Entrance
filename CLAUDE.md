@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, local flashing/debugging workflows, SFTP file management, Docker container monitoring, and installable frontend plugins. The current package version is `0.2.1`.
+Entrance Tools is a web-based server management tool that supports SSH terminals, VNC remote desktops, WebSerial terminals, local flashing/debugging workflows, SFTP file management, Docker container monitoring, and installable frontend plugins. The current package version is `0.2.1-1`.
 
 Documentation is English-first: keep the root `README.md` as the default English README, keep the Simplified Chinese translation in `doc/README_CN.md`, use `doc/screenshot.png` from the root README, and use `screenshot_cn.png` inside `doc/README_CN.md`. Keep `AGENTS.md` and `CLAUDE.md` in English when updating repository guidance. Preserve each document's existing language when editing it; do not mix languages inside a file unless that file already does so intentionally. When modifying a Markdown document, keep the document in its existing language. When `README.md` changes, update every corresponding `README_XX.md` translation document in the repository in the same pass; in this repository that means `doc/README_CN.md` must stay aligned with `README.md`.
 

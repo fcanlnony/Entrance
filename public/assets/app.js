@@ -219,6 +219,9 @@
                     '新增网段 (CIDR)': 'Add Network (CIDR)',
                     '添加': 'Add',
                     '当前白名单': 'Current Allowlist',
+                    '连接方式': 'Connection Mode',
+                    '浏览器串口': 'Browser Serial',
+                    '服务端串口': 'Server Serial',
                     '波特率': 'Baud Rate',
                     '数据位': 'Data Bits',
                     '停止位': 'Stop Bits',
@@ -230,7 +233,9 @@
                     '硬件': 'Hardware',
                     '串口设备': 'Serial Device',
                     '搜索已授权串口，例如 VID:PID': 'Search granted serial ports, for example VID:PID',
+                    '搜索服务端串口，例如 /dev/ttyACM0': 'Search server serial ports, for example /dev/ttyACM0',
                     '刷新已授权串口': 'Refresh granted serial ports',
+                    '刷新服务端串口': 'Refresh server serial ports',
                     '添加新串口': 'Add Serial Port',
                     '连接串口': 'Connect Serial',
                     '模拟数据演示': 'Demo Data',
@@ -557,16 +562,27 @@
                     '磁盘写 KB/s': 'Disk Write KB/s',
                     '当前环境不支持 Web Serial': 'The current environment does not support Web Serial',
                     '请使用支持 Web Serial 的桌面应用或 Chromium 内核浏览器': 'Use the desktop app or a Chromium-based browser with Web Serial support',
+                    '当前浏览器不支持 Web Serial，可切换到服务端串口模式。': 'This browser does not support Web Serial. You can switch to Server Serial mode.',
+                    '服务端串口需要管理员权限': 'Server serial requires administrator permissions',
                     '请先断开当前连接': 'Disconnect the current connection first',
                     '演示模式已启动': 'Demo mode started',
                     '串口已连接': 'Serial connected',
                     '未选择串口设备': 'No serial device selected',
+                    '未选择服务端串口设备': 'No server serial device selected',
                     '未知错误': 'Unknown error',
                     '可搜索已授权串口，未找到时点击“添加新串口”。': 'Search granted serial ports here. If nothing matches, click "Add Serial Port".',
                     '输入关键字搜索已授权串口。': 'Type keywords to search granted serial ports.',
                     '尚无已授权串口，点击“添加新串口”从系统中选择。': 'No granted serial ports yet. Click "Add Serial Port" to choose one from the system picker.',
                     '未找到匹配的已授权串口，可点击“添加新串口”。': 'No matching granted serial port found. Click "Add Serial Port" to authorize another one.',
+                    '正在读取服务端串口列表...': 'Reading server serial ports...',
+                    '尚无服务端串口，可手动输入 /dev/ttyACM0、/dev/ttyUSB0 等路径。': 'No server serial ports found. You can enter paths such as /dev/ttyACM0 or /dev/ttyUSB0 manually.',
+                    '已载入服务端串口，支持按路径、VID:PID 搜索，也可手动输入。': 'Server serial ports loaded. Search by path or VID:PID, or enter a path manually.',
+                    '输入关键字搜索服务端串口，或手动输入设备路径。': 'Type keywords to search server serial ports, or enter a device path manually.',
+                    '未找到匹配的服务端串口，可继续手动输入设备路径。': 'No matching server serial port found. You can keep entering a device path.',
+                    '服务端串口列表刷新失败': 'Failed to refresh server serial ports',
+                    '已选择服务端串口': 'Selected server serial port',
                     '已授权串口': 'Granted serial port',
+                    '服务端串口设备': 'Server serial port',
                     '蓝牙串口': 'Bluetooth serial',
                     'USB 串口': 'USB serial',
                     '当前串口已从系统断开': 'The current serial port was disconnected from the system',
@@ -575,7 +591,10 @@
                     '串口被占用或无权限访问，请检查设备占用和用户组权限。': 'The serial port is busy or access is denied. Check whether the device is in use and verify group permissions.',
                     '演示模式已停止': 'Demo mode stopped',
                     '串口已断开': 'Serial disconnected',
+                    '服务端串口已断开': 'Server serial disconnected',
                     '演示模式': 'Demo Mode',
+                    '服务端': 'Server',
+                    '浏览器': 'Browser',
                     '串口终端 - 演示模式': 'Serial Terminal - Demo Mode',
                     '烧录器 Adapter': 'Adapter',
                     '来自 OpenOCD 的 adapter list，通常映射到 interface/<adapter>.cfg。': 'Taken from the OpenOCD adapter list, usually mapped to interface/<adapter>.cfg.',
@@ -1010,7 +1029,10 @@
                     [/^当前检测到 (\d+) 个候选项。$/u, '$1 candidates detected.'],
                     [/^已载入 (\d+) 个已授权串口，支持按标签、VID:PID 搜索。$/u, 'Loaded $1 granted serial ports. Search by label or VID:PID.'],
                     [/^已选择串口：(.+)$/u, 'Selected serial port: $1'],
+                    [/^已选择服务端串口：(.+)$/u, 'Selected server serial port: $1'],
+                    [/^已载入 (\d+) 个服务端串口，支持按路径、VID:PID 搜索，也可手动输入。$/u, 'Loaded $1 server serial ports. Search by path or VID:PID, or enter a path manually.'],
                     [/^已授权串口列表刷新失败: (.+)$/u, (_match, message) => `Failed to refresh granted serial ports: ${I18n.auto(message)}`],
+                    [/^服务端串口列表刷新失败: (.+)$/u, (_match, message) => `Failed to refresh server serial ports: ${I18n.auto(message)}`],
                     [/^正在检测 (.+) \.\.\.$/u, 'Checking $1...'],
                     [/^SSH 到 (.+)$/u, 'SSH to $1'],
                     [/^当前服务器: (.+)$/u, 'Current server: $1'],
@@ -1030,6 +1052,7 @@
                     [/^错误: (.+)$/u, (_match, message) => `Error: ${I18n.auto(message)}`],
                     [/^读取错误: (.+)$/u, (_match, message) => `Read error: ${I18n.auto(message)}`],
                     [/^串口已连接 \((.+)\)$/u, 'Serial connected ($1)'],
+                    [/^服务端串口已连接 (.+) \((.+)\)$/u, 'Server serial connected $1 ($2)'],
                     [/^建议: (.+)$/u, (_match, message) => `Suggestion: ${I18n.auto(message)}`],
                     [/^终端已退出 \(code: (.+)\)$/u, 'Terminal exited (code: $1)'],
                     [/^Shell 进程错误: (.+)$/u, (_match, message) => `Shell process error: ${I18n.auto(message)}`],
@@ -4445,6 +4468,11 @@
             term: null,
             fit: null,
             connected: false,
+            connectionMode: 'browser',
+            serverWs: null,
+            serverDisconnecting: false,
+            serverPorts: [],
+            selectedServerPortPath: '',
             readLoop: null,
             platformDenied: false,
             pendingCR: false,
@@ -4480,6 +4508,25 @@
 
             getPortSuggestionsPanel() {
                 return document.getElementById('serialPortSuggestions');
+            },
+
+            getConnectionModeSelect() {
+                return document.getElementById('serialConnectionMode');
+            },
+
+            isServerMode() {
+                return this.connectionMode === 'server';
+            },
+
+            syncConnectionMode() {
+                const select = this.getConnectionModeSelect();
+                let nextMode = select ? select.value : this.connectionMode;
+                if (nextMode === 'server' && !State.isAdmin) {
+                    nextMode = 'browser';
+                    if (select) select.value = 'browser';
+                    Toast.info('服务端串口需要管理员权限');
+                }
+                this.connectionMode = nextMode === 'server' ? 'server' : 'browser';
             },
 
             ensureGrantedPortId(port) {
@@ -4567,6 +4614,61 @@
                 ].filter(Boolean).join(' ').toLowerCase();
             },
 
+            normalizeServerPort(port = {}) {
+                const portPath = String(port.path || '').trim();
+                return {
+                    id: portPath,
+                    path: portPath,
+                    manufacturer: String(port.manufacturer || '').trim(),
+                    serialNumber: String(port.serialNumber || '').trim(),
+                    pnpId: String(port.pnpId || '').trim(),
+                    locationId: String(port.locationId || '').trim(),
+                    vendorId: String(port.vendorId || '').trim().toUpperCase(),
+                    productId: String(port.productId || '').trim().toUpperCase()
+                };
+            },
+
+            normalizeServerPorts(ports = []) {
+                return ports
+                    .map((port) => this.normalizeServerPort(port))
+                    .filter((port) => port.path)
+                    .sort((left, right) => left.path.localeCompare(right.path));
+            },
+
+            describeServerPort(descriptor) {
+                if (!descriptor) return '';
+                return descriptor.path || `${I18n.auto('服务端串口设备')}`;
+            },
+
+            describeServerPortMeta(descriptor) {
+                if (!descriptor) return '';
+                const parts = [];
+                if (descriptor.manufacturer) parts.push(descriptor.manufacturer);
+                if (descriptor.vendorId) parts.push(`VID:${descriptor.vendorId}`);
+                if (descriptor.productId) parts.push(`PID:${descriptor.productId}`);
+                if (descriptor.serialNumber) parts.push(`SN:${descriptor.serialNumber}`);
+                if (descriptor.pnpId) parts.push(descriptor.pnpId);
+                return parts.length ? parts.join(' · ') : I18n.auto('服务端串口设备');
+            },
+
+            buildServerPortSearchText(descriptor) {
+                return [
+                    this.describeServerPort(descriptor),
+                    this.describeServerPortMeta(descriptor),
+                    descriptor.path,
+                    descriptor.manufacturer,
+                    descriptor.serialNumber,
+                    descriptor.pnpId,
+                    descriptor.locationId,
+                    descriptor.vendorId,
+                    descriptor.productId,
+                    descriptor.vendorId && descriptor.productId ? `${descriptor.vendorId}:${descriptor.productId}` : '',
+                    'server',
+                    'serial',
+                    'port'
+                ].filter(Boolean).join(' ').toLowerCase();
+            },
+
             normalizeGrantedPorts(descriptors = []) {
                 return descriptors
                     .filter((descriptor) => descriptor && descriptor.port)
@@ -4581,12 +4683,27 @@
                 return this.grantedPorts.find((descriptor) => descriptor.id === this.selectedGrantedPortId) || null;
             },
 
+            getSelectedServerPort() {
+                return this.serverPorts.find((descriptor) => descriptor.path === this.selectedServerPortPath) || null;
+            },
+
             findGrantedPortByPort(port) {
                 return this.grantedPorts.find((descriptor) => descriptor.port === port) || null;
             },
 
             clearSelectedGrantedPort(options = {}) {
                 this.selectedGrantedPortId = '';
+                if (!options.keepInput) {
+                    const input = this.getPortSearchInput();
+                    if (input) {
+                        input.value = '';
+                    }
+                }
+                this.updatePortHint(options.message || '');
+            },
+
+            clearSelectedServerPort(options = {}) {
+                this.selectedServerPortPath = '';
                 if (!options.keepInput) {
                     const input = this.getPortSearchInput();
                     if (input) {
@@ -4612,12 +4729,44 @@
                 }
             },
 
+            selectServerPort(descriptor, options = {}) {
+                if (!descriptor) {
+                    this.clearSelectedServerPort(options);
+                    return;
+                }
+                this.selectedServerPortPath = descriptor.path;
+                const input = this.getPortSearchInput();
+                if (input && options.syncInput !== false) {
+                    input.value = this.describeServerPort(descriptor);
+                }
+                this.updatePortHint();
+                if (options.keepSuggestionsOpen !== true) {
+                    this.closePortSuggestions();
+                }
+            },
+
             updatePortHint(message = '') {
                 const hint = document.getElementById('serialPortHint');
                 if (!hint) return;
 
                 if (message) {
                     hint.textContent = I18n.auto(message);
+                    return;
+                }
+
+                if (this.isServerMode()) {
+                    const selected = this.getSelectedServerPort();
+                    if (selected) {
+                        hint.textContent = I18n.auto(`已选择服务端串口：${this.describeServerPort(selected)}`);
+                        return;
+                    }
+
+                    if (!this.serverPorts.length) {
+                        hint.textContent = I18n.auto('尚无服务端串口，可手动输入 /dev/ttyACM0、/dev/ttyUSB0 等路径。');
+                        return;
+                    }
+
+                    hint.textContent = I18n.auto(`已载入 ${this.serverPorts.length} 个服务端串口，支持按路径、VID:PID 搜索，也可手动输入。`);
                     return;
                 }
 
@@ -4728,6 +4877,44 @@
                 return -1;
             },
 
+            scoreServerPort(query, descriptor) {
+                if (!query || !descriptor) return -1;
+
+                const label = this.describeServerPort(descriptor).toLowerCase();
+                const meta = this.describeServerPortMeta(descriptor).toLowerCase();
+                const searchText = this.buildServerPortSearchText(descriptor);
+
+                if (label === query) return 10000 - label.length;
+                if (label.startsWith(query)) return 9300 - label.length;
+
+                const labelIndex = label.indexOf(query);
+                if (labelIndex !== -1) {
+                    return 8600 - (labelIndex * 10) - label.length;
+                }
+
+                const metaIndex = meta.indexOf(query);
+                if (metaIndex !== -1) {
+                    return 7600 - (metaIndex * 10) - meta.length;
+                }
+
+                const searchIndex = searchText.indexOf(query);
+                if (searchIndex !== -1) {
+                    return 7000 - (searchIndex * 4) - searchText.length;
+                }
+
+                const fuzzyLabel = this.fuzzyPortMatch(query, label);
+                if (fuzzyLabel) {
+                    return 5200 - (fuzzyLabel.gaps * 4) - fuzzyLabel.start;
+                }
+
+                const fuzzyMeta = this.fuzzyPortMatch(query, meta);
+                if (fuzzyMeta) {
+                    return 4200 - (fuzzyMeta.gaps * 4) - fuzzyMeta.start;
+                }
+
+                return -1;
+            },
+
             searchGrantedPorts(query, limit = 24) {
                 const normalizedQuery = this.normalizePortSearch(query);
                 if (!normalizedQuery) {
@@ -4751,6 +4938,29 @@
                 return results.slice(0, limit).map((result) => result.descriptor);
             },
 
+            searchServerPorts(query, limit = 24) {
+                const normalizedQuery = this.normalizePortSearch(query);
+                if (!normalizedQuery) {
+                    return this.serverPorts.slice(0, limit);
+                }
+
+                const results = [];
+                this.serverPorts.forEach((descriptor) => {
+                    const score = this.scoreServerPort(normalizedQuery, descriptor);
+                    if (score < 0) return;
+                    results.push({ descriptor, score });
+                });
+
+                results.sort((left, right) => {
+                    if (right.score !== left.score) {
+                        return right.score - left.score;
+                    }
+                    return left.descriptor.path.localeCompare(right.descriptor.path);
+                });
+
+                return results.slice(0, limit).map((result) => result.descriptor);
+            },
+
             renderPortSuggestions(results = [], message = '') {
                 const panel = this.getPortSuggestionsPanel();
                 if (!panel) return;
@@ -4767,6 +4977,7 @@
                 }
 
                 results.forEach((descriptor, index) => {
+                    const serverMode = this.isServerMode();
                     const button = document.createElement('button');
                     button.type = 'button';
                     button.className = 'flashdebug-suggestion';
@@ -4776,20 +4987,31 @@
 
                     const primary = document.createElement('span');
                     primary.className = 'flashdebug-suggestion-primary';
-                    primary.textContent = this.describeGrantedPort(descriptor);
+                    primary.textContent = serverMode
+                        ? this.describeServerPort(descriptor)
+                        : this.describeGrantedPort(descriptor);
                     button.appendChild(primary);
 
                     const meta = document.createElement('span');
                     meta.className = 'flashdebug-suggestion-meta';
-                    const metaText = this.describeGrantedPortMeta(descriptor);
-                    meta.textContent = descriptor.id === this.selectedGrantedPortId
+                    const metaText = serverMode
+                        ? this.describeServerPortMeta(descriptor)
+                        : this.describeGrantedPortMeta(descriptor);
+                    const selected = serverMode
+                        ? descriptor.path === this.selectedServerPortPath
+                        : descriptor.id === this.selectedGrantedPortId;
+                    meta.textContent = selected
                         ? `${metaText} · ${I18n.auto('当前')}`
                         : metaText;
                     button.appendChild(meta);
 
                     button.addEventListener('mousedown', (event) => {
                         event.preventDefault();
-                        this.selectGrantedPort(descriptor);
+                        if (this.isServerMode()) {
+                            this.selectServerPort(descriptor);
+                        } else {
+                            this.selectGrantedPort(descriptor);
+                        }
                     });
                     panel.appendChild(button);
                 });
@@ -4811,7 +5033,18 @@
                 let results = [];
                 let message = '';
 
-                if (!this.grantedPorts.length) {
+                if (this.isServerMode()) {
+                    if (!this.serverPorts.length) {
+                        message = '尚无服务端串口，可手动输入 /dev/ttyACM0、/dev/ttyUSB0 等路径。';
+                    } else if (!query) {
+                        results = this.searchServerPorts('', 24);
+                    } else {
+                        results = this.searchServerPorts(query, 24);
+                        if (!results.length) {
+                            message = '未找到匹配的服务端串口，可继续手动输入设备路径。';
+                        }
+                    }
+                } else if (!this.grantedPorts.length) {
                     message = '尚无已授权串口，点击“添加新串口”从系统中选择。';
                 } else if (!query) {
                     results = this.searchGrantedPorts('', 24);
@@ -4855,9 +5088,16 @@
                 const input = this.getPortSearchInput();
                 if (!input) return;
 
-                const selected = this.getSelectedGrantedPort();
-                if (selected && input.value.trim() !== this.describeGrantedPort(selected)) {
-                    this.selectedGrantedPortId = '';
+                if (this.isServerMode()) {
+                    const selected = this.getSelectedServerPort();
+                    if (selected && input.value.trim() !== this.describeServerPort(selected)) {
+                        this.selectedServerPortPath = '';
+                    }
+                } else {
+                    const selected = this.getSelectedGrantedPort();
+                    if (selected && input.value.trim() !== this.describeGrantedPort(selected)) {
+                        this.selectedGrantedPortId = '';
+                    }
                 }
                 this.updatePortHint();
                 this.updatePortSuggestions();
@@ -4879,7 +5119,11 @@
                 if (event.key === 'Enter') {
                     if (this.portSearchUi.activeIndex >= 0 && this.portSearchUi.results[this.portSearchUi.activeIndex]) {
                         event.preventDefault();
-                        this.selectGrantedPort(this.portSearchUi.results[this.portSearchUi.activeIndex]);
+                        if (this.isServerMode()) {
+                            this.selectServerPort(this.portSearchUi.results[this.portSearchUi.activeIndex]);
+                        } else {
+                            this.selectGrantedPort(this.portSearchUi.results[this.portSearchUi.activeIndex]);
+                        }
                     }
                     return;
                 }
@@ -4892,6 +5136,9 @@
 
             async refreshGrantedPorts() {
                 try {
+                    if (!('serial' in navigator)) {
+                        return;
+                    }
                     const selectedPort = this.getSelectedGrantedPort() ? this.getSelectedGrantedPort().port : null;
                     const ports = await navigator.serial.getPorts();
                     this.grantedPorts = this.normalizeGrantedPorts(
@@ -4912,6 +5159,33 @@
                 } catch (error) {
                     console.error('刷新已授权串口失败:', error);
                     this.updatePortHint(`已授权串口列表刷新失败: ${error.message || error}`);
+                }
+            },
+
+            async refreshServerPorts() {
+                if (!State.isAdmin) {
+                    this.updatePortHint('服务端串口需要管理员权限');
+                    return;
+                }
+                try {
+                    this.updatePortHint('正在读取服务端串口列表...');
+                    const selectedPath = this.selectedServerPortPath;
+                    const res = await apiFetch(`${Config.API}/api/serial/ports`);
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || '服务端串口列表刷新失败');
+                    }
+                    this.serverPorts = this.normalizeServerPorts(Array.isArray(data.ports) ? data.ports : []);
+                    if (selectedPath && !this.serverPorts.some((port) => port.path === selectedPath)) {
+                        this.selectedServerPortPath = '';
+                    }
+                    this.updatePortHint();
+                    if (document.activeElement && document.activeElement.id === 'serialPortSearch') {
+                        this.updatePortSuggestions();
+                    }
+                } catch (error) {
+                    console.error('刷新服务端串口失败:', error);
+                    this.updatePortHint(`服务端串口列表刷新失败: ${error.message || error}`);
                 }
             },
 
@@ -4953,6 +5227,81 @@
                 return matched.port;
             },
 
+            resolveServerPortPath() {
+                const selected = this.getSelectedServerPort();
+                if (selected) {
+                    return selected.path;
+                }
+
+                const input = this.getPortSearchInput();
+                const query = input ? input.value.trim() : '';
+                if (!query) return '';
+
+                const matched = this.searchServerPorts(query, 1)[0] || null;
+                if (matched) {
+                    this.selectServerPort(matched);
+                    return matched.path;
+                }
+
+                return query;
+            },
+
+            updateModeUi() {
+                this.syncConnectionMode();
+                const input = this.getPortSearchInput();
+                const refreshBtn = document.getElementById('serialRefreshPortsBtn');
+                const requestBtn = document.getElementById('serialRequestPortBtn');
+                const warning = document.getElementById('serialNotSupported');
+
+                if (input) {
+                    input.placeholder = I18n.auto(this.isServerMode()
+                        ? '搜索服务端串口，例如 /dev/ttyACM0'
+                        : '搜索已授权串口，例如 VID:PID');
+                    input.value = this.isServerMode()
+                        ? (this.getSelectedServerPort() ? this.describeServerPort(this.getSelectedServerPort()) : '')
+                        : (this.getSelectedGrantedPort() ? this.describeGrantedPort(this.getSelectedGrantedPort()) : '');
+                }
+                if (refreshBtn) {
+                    refreshBtn.title = I18n.auto(this.isServerMode() ? '刷新服务端串口' : '刷新已授权串口');
+                    refreshBtn.setAttribute('aria-label', refreshBtn.title);
+                    refreshBtn.disabled = this.connected || (!this.isServerMode() && this.platformDenied);
+                }
+                if (requestBtn) {
+                    requestBtn.style.display = this.isServerMode() ? 'none' : 'inline-flex';
+                    requestBtn.disabled = this.connected || this.platformDenied;
+                }
+                if (warning) {
+                    warning.style.display = this.platformDenied && !this.isServerMode() ? 'block' : 'none';
+                }
+                this.updatePortHint();
+                this.closePortSuggestions();
+            },
+
+            async setConnectionMode(mode) {
+                if (this.connected || this.demoMode) {
+                    const select = this.getConnectionModeSelect();
+                    if (select) select.value = this.connectionMode;
+                    Toast.info('请先断开当前连接');
+                    return;
+                }
+                const select = this.getConnectionModeSelect();
+                if (select) select.value = mode;
+                this.updateModeUi();
+                if (this.isServerMode()) {
+                    await this.refreshServerPorts();
+                } else {
+                    await this.refreshGrantedPorts();
+                }
+            },
+
+            async refreshCurrentPorts() {
+                if (this.isServerMode()) {
+                    await this.refreshServerPorts();
+                } else {
+                    await this.refreshGrantedPorts();
+                }
+            },
+
             async requestNewPort(options = {}) {
                 const config = {
                     silentCancel: false,
@@ -4992,12 +5341,9 @@
                     document.getElementById('serialNotSupported').style.display = 'block';
                     document.getElementById('serialNotSupported').innerHTML =
                         '<p style="color:var(--color-warning);margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> 当前环境不支持 Web Serial</p>' +
-                        '<p style="color:var(--color-text-2);font-size:12px">请使用支持 Web Serial 的桌面应用或 Chromium 内核浏览器</p>';
-                    document.getElementById('serialConnectBtn').disabled = true;
+                        '<p style="color:var(--color-text-2);font-size:12px">当前浏览器不支持 Web Serial，可切换到服务端串口模式。</p>';
                     document.getElementById('serialRequestPortBtn').disabled = true;
                     document.getElementById('serialRefreshPortsBtn').disabled = true;
-                    document.getElementById('serialPortSearch').disabled = true;
-                    return;
                 }
 
                 // 初始化终端
@@ -5017,7 +5363,9 @@
 
                 // 终端输入处理
                 this.term.onData(data => {
-                    if (this.connected && this.writer) {
+                    if (this.connected && this.isServerMode()) {
+                        this.write(data);
+                    } else if (this.connected && this.writer) {
                         this.write(data);
                     }
                 });
@@ -5037,8 +5385,14 @@
                     }
                 });
                 document.getElementById('serialRefreshPortsBtn').addEventListener('click', () => {
-                    void this.refreshGrantedPorts();
+                    void this.refreshCurrentPorts();
                 });
+                const modeSelect = this.getConnectionModeSelect();
+                if (modeSelect) {
+                    modeSelect.addEventListener('change', () => {
+                        void this.setConnectionMode(modeSelect.value);
+                    });
+                }
 
                 const portSearchInput = this.getPortSearchInput();
                 const portSuggestionsPanel = this.getPortSuggestionsPanel();
@@ -5069,7 +5423,7 @@
                 // Demo mode button
                 document.getElementById('serialDemoBtn').addEventListener('click', () => this.startDemo());
 
-                if (typeof navigator.serial.addEventListener === 'function') {
+                if ('serial' in navigator && typeof navigator.serial.addEventListener === 'function') {
                     navigator.serial.addEventListener('connect', (event) => {
                         const port = event && event.port ? event.port : null;
                         if (port) {
@@ -5101,8 +5455,24 @@
                     });
                 }
 
-                this.updatePortHint();
-                void this.refreshGrantedPorts();
+                if (!State.isAdmin) {
+                    const modeSelect = this.getConnectionModeSelect();
+                    if (modeSelect) {
+                        modeSelect.value = 'browser';
+                        modeSelect.querySelector('option[value="server"]')?.setAttribute('disabled', 'disabled');
+                    }
+                } else if (this.platformDenied) {
+                    const modeSelect = this.getConnectionModeSelect();
+                    if (modeSelect) {
+                        modeSelect.value = 'server';
+                    }
+                }
+                this.updateModeUi();
+                if (this.isServerMode()) {
+                    void this.refreshServerPorts();
+                } else {
+                    void this.refreshGrantedPorts();
+                }
             },
 
             applyTheme() {
@@ -5291,6 +5661,11 @@
 
             async connect() {
                 try {
+                    this.syncConnectionMode();
+                    if (this.isServerMode()) {
+                        await this.connectServerSerial();
+                        return;
+                    }
                     if (this.platformDenied) {
                         Toast.error('当前平台不允许访问串口');
                         return;
@@ -5378,6 +5753,176 @@
                         this.term.writeln(`\x1b[33m${I18n.auto(`建议: ${hint}`)}\x1b[0m`);
                     }
                 }
+            },
+
+            getSerialConfig() {
+                return {
+                    baudRate: parseInt(document.getElementById('serialBaudRate').value),
+                    dataBits: parseInt(document.getElementById('serialDataBits').value),
+                    stopBits: parseInt(document.getElementById('serialStopBits').value),
+                    parity: document.getElementById('serialParity').value,
+                    flowControl: document.getElementById('serialFlowControl').value
+                };
+            },
+
+            connectServerSerial() {
+                return new Promise((resolve) => {
+                    if (!State.isAdmin) {
+                        Toast.error('服务端串口需要管理员权限');
+                        resolve(false);
+                        return;
+                    }
+
+                    const portPath = this.resolveServerPortPath();
+                    if (!portPath) {
+                        Toast.info('未选择服务端串口设备');
+                        this.term.writeln(`\x1b[33m${I18n.auto('未选择服务端串口设备')}\x1b[0m`);
+                        resolve(false);
+                        return;
+                    }
+
+                    const config = this.getSerialConfig();
+                    const wsUrl = new URL(`${Config.WS_BASE}/serial`);
+                    if (State.token) {
+                        wsUrl.searchParams.set('token', State.token);
+                    }
+                    const ws = new WebSocket(wsUrl.toString());
+                    this.serverWs = ws;
+                    this.serverDisconnecting = false;
+
+                    let settled = false;
+                    const settle = (value) => {
+                        if (settled) return;
+                        settled = true;
+                        resolve(value);
+                    };
+
+                    ws.onopen = () => {
+                        ws.send(JSON.stringify({
+                            type: 'connect',
+                            path: portPath,
+                            ...config
+                        }));
+                    };
+
+                    ws.onmessage = (event) => {
+                        let message = null;
+                        try {
+                            message = JSON.parse(event.data);
+                        } catch {
+                            return;
+                        }
+
+                        if (message.type === 'connected') {
+                            this.connected = true;
+                            this.pendingCR = false;
+                            this.chunkQueue = [];
+                            this.queuedSize = 0;
+                            this.queueScheduled = false;
+                            this.updateStatus(true);
+                            this.term.clear();
+                            this.term.writeln(`\x1b[32m${I18n.auto(`服务端串口已连接 ${message.path || portPath} (${message.baudRate || config.baudRate} bps)`)}\x1b[0m\n`);
+                            Toast.success('串口已连接');
+                            settle(true);
+                            return;
+                        }
+
+                        if (message.type === 'data') {
+                            const chunk = this.decodeSerialData(message);
+                            if (!chunk) return;
+                            this.chunkQueue.push(chunk);
+                            this.queuedSize += chunk.length;
+                            if (this.queuedSize > 1024 * 1024) {
+                                const now = Date.now();
+                                if (now - this.lastDropNotice > 2000) {
+                                    this.term.writeln(`\n\x1b[33m${I18n.auto('数据过快，已丢弃部分内容')}\x1b[0m`);
+                                    this.lastDropNotice = now;
+                                }
+                                this.chunkQueue = [];
+                                this.queuedSize = 0;
+                                this.lineBuffer = '';
+                                this.pendingCR = false;
+                            }
+                            this.scheduleQueue();
+                            return;
+                        }
+
+                        if (message.type === 'error') {
+                            const errorMessage = message.message || '未知错误';
+                            Toast.error(`连接失败: ${errorMessage}`);
+                            this.term.writeln(`\x1b[31m${I18n.auto(`连接失败: ${errorMessage}`)}\x1b[0m`);
+                            if (!this.connected) {
+                                try { ws.close(); } catch {}
+                                settle(false);
+                            }
+                            return;
+                        }
+
+                        if (message.type === 'disconnected') {
+                            if (this.connected) {
+                                this.connected = false;
+                                if (this.serverWs === ws) {
+                                    this.serverWs = null;
+                                }
+                                this.updateStatus(false);
+                                if (!this.serverDisconnecting) {
+                                    this.term.writeln(`\n\x1b[33m${I18n.auto('服务端串口已断开')}\x1b[0m`);
+                                    Toast.info('服务端串口已断开');
+                                }
+                            }
+                            settle(false);
+                        }
+                    };
+
+                    ws.onerror = () => {
+                        Toast.error('连接失败: WebSocket');
+                        this.term.writeln(`\x1b[31m${I18n.auto('连接失败: WebSocket')}\x1b[0m`);
+                        settle(false);
+                    };
+
+                    ws.onclose = () => {
+                        if (this.serverWs === ws) {
+                            this.serverWs = null;
+                        }
+                        if (this.connected) {
+                            this.connected = false;
+                            this.updateStatus(false);
+                            if (!this.serverDisconnecting) {
+                                this.term.writeln(`\n\x1b[33m${I18n.auto('服务端串口已断开')}\x1b[0m`);
+                                Toast.info('服务端串口已断开');
+                            }
+                        }
+                        this.serverDisconnecting = false;
+                        settle(false);
+                    };
+                });
+            },
+
+            decodeSerialData(message) {
+                if (!message) return '';
+                if (message.encoding === 'base64') {
+                    try {
+                        const binary = atob(String(message.data || ''));
+                        const bytes = new Uint8Array(binary.length);
+                        for (let index = 0; index < binary.length; index += 1) {
+                            bytes[index] = binary.charCodeAt(index);
+                        }
+                        return new TextDecoder().decode(bytes);
+                    } catch (error) {
+                        console.error('服务端串口数据解码失败:', error);
+                        return '';
+                    }
+                }
+                return String(message.data || '');
+            },
+
+            encodeSerialData(data) {
+                const bytes = new TextEncoder().encode(String(data || ''));
+                let binary = '';
+                bytes.forEach((byte) => {
+                    binary += String.fromCharCode(byte);
+                });
+                return btoa(binary);
             },
 
             normalizeIncoming(chunk) {
@@ -5527,6 +6072,16 @@
             },
 
             async write(data) {
+                if (this.isServerMode()) {
+                    if (this.serverWs && this.serverWs.readyState === WebSocket.OPEN) {
+                        this.serverWs.send(JSON.stringify({
+                            type: 'data',
+                            encoding: 'base64',
+                            data: this.encodeSerialData(data)
+                        }));
+                    }
+                    return;
+                }
                 if (this.writer) {
                     try {
                         await this.writer.write(data);
@@ -5547,11 +6102,25 @@
 
                 if (mode === 'hex') {
                     // HEX 模式：将空格分隔的十六进制字符串转换为字节
-                    const hexBytes = data.replace(/\s/g, '').match(/.{1,2}/g);
-                    if (hexBytes) {
-                        const bytes = hexBytes.map(h => parseInt(h, 16));
-                        const uint8 = new Uint8Array(bytes);
-                        await this.writer.write(new TextDecoder().decode(uint8));
+                    const normalizedHex = data.replace(/\s/g, '');
+                    if (!/^(?:[0-9a-fA-F]{2})*$/.test(normalizedHex)) {
+                        Toast.error('HEX 数据格式无效');
+                        return;
+                    }
+                    if (this.isServerMode()) {
+                        if (!this.serverWs || this.serverWs.readyState !== WebSocket.OPEN) return;
+                        this.serverWs.send(JSON.stringify({
+                            type: 'data',
+                            encoding: 'hex',
+                            data: normalizedHex
+                        }));
+                    } else {
+                        const hexBytes = normalizedHex.match(/.{1,2}/g);
+                        if (hexBytes) {
+                            const bytes = hexBytes.map(h => parseInt(h, 16));
+                            const uint8 = new Uint8Array(bytes);
+                            await this.writer.write(new TextDecoder().decode(uint8));
+                        }
                     }
                 } else {
                     // 文本模式
@@ -5576,6 +6145,22 @@
                     this.updateStatus(false);
                     this.term.writeln(`\n\x1b[33m${I18n.auto('演示模式已停止')}\x1b[0m`);
                     Toast.info('演示模式已停止');
+                    return;
+                }
+
+                if (this.serverWs) {
+                    const ws = this.serverWs;
+                    this.serverWs = null;
+                    this.serverDisconnecting = true;
+                    try {
+                        if (ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ type: 'disconnect' }));
+                        }
+                        ws.close();
+                    } catch {}
+                    this.updateStatus(false);
+                    this.term.writeln(`\n\x1b[33m${I18n.auto('服务端串口已断开')}\x1b[0m`);
+                    Toast.info('服务端串口已断开');
                     return;
                 }
 
@@ -5612,6 +6197,7 @@
                 const searchInput = document.getElementById('serialPortSearch');
                 const refreshBtn = document.getElementById('serialRefreshPortsBtn');
                 const requestBtn = document.getElementById('serialRequestPortBtn');
+                const modeSelect = this.getConnectionModeSelect();
 
                 if (connected) {
                     status.classList.remove('disconnected');
@@ -5637,13 +6223,19 @@
                     searchInput.disabled = connected;
                 }
                 if (refreshBtn) {
-                    refreshBtn.disabled = connected;
+                    refreshBtn.disabled = connected || (!this.isServerMode() && this.platformDenied);
                 }
                 if (requestBtn) {
-                    requestBtn.disabled = connected;
+                    requestBtn.disabled = connected || this.platformDenied;
+                }
+                if (modeSelect) {
+                    modeSelect.disabled = connected;
                 }
                 if (connected) {
                     this.closePortSuggestions();
+                }
+                if (!connected) {
+                    this.updateModeUi();
                 }
             }
         };

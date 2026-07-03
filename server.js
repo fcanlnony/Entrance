@@ -20,6 +20,7 @@ const AdmZip = require('adm-zip');
 const vncProxy = require('./vnc');
 const localShell = require('./local-shell');
 const flashDebug = require('./flash-debug');
+const remoteSerial = require('./remote-serial');
 const { version: APP_VERSION } = require('./package.json');
 
 const app = express();
@@ -3039,6 +3040,15 @@ app.get('/api/localshell/status', requireAdmin, (req, res) => {
     });
 });
 
+app.get('/api/serial/ports', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const ports = await remoteSerial.listPorts();
+        res.json({ ports });
+    } catch (err) {
+        res.status(500).json({ error: err.message || '串口列表读取失败' });
+    }
+});
+
 app.get('/api/flashdebug/tooling', requireAuth, requireAdmin, async (req, res) => {
     try {
         const info = await flashDebug.getToolingInfo({
@@ -3100,6 +3110,16 @@ server.on('upgrade', (request, socket, head) => {
         }
         request.auth = auth;
         flashDebug.handleUpgrade(request, socket, head);
+    } else if (pathname === '/serial') {
+        const auth = authenticateUpgrade(request);
+        if (!auth) {
+            return rejectUpgrade(socket, 401, 'Unauthorized');
+        }
+        if (auth.role !== 'admin') {
+            return rejectUpgrade(socket, 403, 'Forbidden');
+        }
+        request.auth = auth;
+        remoteSerial.handleUpgrade(request, socket, head);
     }
     // /vnc 由 vncProxy 自己处理
 });
@@ -3127,6 +3147,7 @@ async function bootstrap() {
 ║   - SSH 终端 (WebSocket)                                  ║
 ║   - SFTP 文件管理 (REST API)                              ║
 ║   - VNC 远程桌面 (WebSocket 代理)                         ║
+║   - 服务端串口代理 (WebSocket)                            ║
 ║   - 文件/文件夹上传                                       ║
 ║   - 用户管理 (REST API)                                   ║
 ║                                                           ║
@@ -3152,6 +3173,8 @@ process.on('SIGINT', () => {
     localShell.closeAll();
     // 关闭烧录调试会话
     flashDebug.closeAll();
+    // 关闭服务端串口代理会话
+    remoteSerial.closeAll();
     if (fs.existsSync(UPLOAD_DIR)) {
         fs.rmSync(UPLOAD_DIR, { recursive: true, force: true });
     }

@@ -3,6 +3,13 @@
                 <div class="content">
                     <div class="toolbar">
                         <div class="input-group">
+                            <label>连接方式</label>
+                            <select class="form-input" id="serialConnectionMode" style="width:130px">
+                                <option value="browser" selected>浏览器串口</option>
+                                <option value="server">服务端串口</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
                             <label>波特率</label>
                             <select class="form-input" id="serialBaudRate" style="width:120px">
                                 <option value="9600">9600</option>
