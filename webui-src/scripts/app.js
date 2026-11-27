@@ -431,7 +431,10 @@
                     '管理 SSH、SFTP、VNC 可访问的内网网段。点击后进入白名单页进行新增或删除。': 'Manage private CIDR ranges allowed for SSH, SFTP, and VNC. Click to open the allowlist page and add or remove entries.',
                     '进入管理': 'Manage',
                     '配色方案': 'Color Scheme',
-                    '选择 Material You Design 风格的强调色方案': 'Choose a Material You inspired accent color scheme',
+                    '外观': 'Appearance',
+                    '浅色': 'Light',
+                    '深色': 'Dark',
+                    '跟随系统': 'Follow system',
                     '语言': 'Language',
                     '选择界面语言，默认英文': 'Choose the interface language. English is the default.',
                     '新建文件夹': 'New Folder',
@@ -1526,21 +1529,29 @@
                 amber:    { label: '琥珀橙',   tone: '温暖日落' }
             },
             init() {
-                State.theme = Storage.getTheme();
-                State.colorScheme = Storage.getColorScheme();
-                this.apply();
-                this.applyColorScheme(State.colorScheme);
-                const themeToggle = document.getElementById('themeToggle');
-                if (themeToggle) {
-                    themeToggle.addEventListener('click', () => this.toggle());
-                }
+                const preference = document.getElementById('settingsTheme');
+                const saved = Storage.getTheme();
+                preference.value = ['light', 'dark', 'system'].includes(saved) ? saved : 'light';
+                const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+                const applyPreference = () => {
+                    State.theme = preference.value === 'system'
+                        ? (systemTheme.matches ? 'dark' : 'light')
+                        : preference.value;
+                    this.apply();
+                    this.renderSchemeGrid();
+                };
+                preference.addEventListener('change', () => {
+                    Storage.setTheme(preference.value);
+                    applyPreference();
+                });
+                systemTheme.addEventListener('change', () => {
+                    if (preference.value === 'system') applyPreference();
+                });
+                this.applyColorScheme(Storage.getColorScheme());
+                applyPreference();
             },
             apply() {
                 document.documentElement.setAttribute('data-theme', State.theme);
-                const icon = document.querySelector('#themeToggle i');
-                if (icon) {
-                    icon.className = State.theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-                }
                 [
                     ['Terminal_', Terminal_],
                     ['LocalShell', LocalShell],
@@ -1619,12 +1630,6 @@
                         badge.remove();
                     }
                 });
-            },
-            toggle() {
-                State.theme = State.theme === 'dark' ? 'light' : 'dark';
-                Storage.setTheme(State.theme);
-                this.apply();
-                this.renderSchemeGrid();
             },
             getTerminalTheme() {
                 return {
@@ -1803,9 +1808,16 @@
             },
             render() {
                 document.getElementById('settingsCurrentUser').textContent = State.username || '--';
-                document.getElementById('settingsNologinNotice').style.display = State.isNologin ? 'flex' : 'none';
-                document.getElementById('settingsLoginKeepNologinNotice').style.display = State.isNologin ? 'flex' : 'none';
-                document.getElementById('settingsPasswordForm').style.display = State.isNologin ? 'none' : '';
+                document.querySelector('.settings-layout').classList.toggle('no-login', State.isNologin);
+                const passwordSection = document.getElementById('settingsPasswordSection');
+                const loginKeepSection = document.getElementById('settingsLoginKeepSection');
+                if (State.isNologin) {
+                    passwordSection.style.display = 'none';
+                    loginKeepSection.style.display = 'none';
+                } else {
+                    passwordSection.style.display = '';
+                    loginKeepSection.style.display = '';
+                }
                 document.getElementById('settingsPrivateNetworkSection').style.display = State.isAdmin ? '' : 'none';
                 this.renderLoginKeepControls();
                 Theme.renderSchemeGrid();
@@ -1817,9 +1829,6 @@
                 document.getElementById('settingsChangePasswordBtn').disabled = false;
                 document.getElementById('settingsSaveLoginKeepBtn').disabled = false;
                 document.getElementById('settingsCurrentUser').textContent = '--';
-                document.getElementById('settingsNologinNotice').style.display = 'none';
-                document.getElementById('settingsLoginKeepNologinNotice').style.display = 'none';
-                document.getElementById('settingsPasswordForm').style.display = '';
                 document.getElementById('settingsPrivateNetworkSection').style.display = 'none';
                 this.renderLoginKeepControls();
             },

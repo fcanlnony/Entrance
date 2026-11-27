@@ -1217,81 +1217,76 @@
                 <div class="header"><h2><i class="fas fa-gear"></i> 设置</h2></div>
                 <div class="content">
                     <div class="settings-layout">
-                        <div class="settings-stack">
-                            <section class="settings-card">
-                                <h3><i class="fas fa-key"></i> 修改密码</h3>
-                                <p class="settings-desc">当前账户：<strong id="settingsCurrentUser">--</strong></p>
-                                <div class="settings-note" id="settingsNologinNotice" style="display:none">
-                                    <i class="fas fa-ban"></i>
-                                    <span>桌面应用不允许修改密码</span>
-                                </div>
-                                <div id="settingsPasswordForm">
-                                    <div class="settings-password-grid">
-                                        <div class="form-group">
-                                            <label>新密码</label>
-                                            <input type="password" class="form-input" id="settingsNewPassword" placeholder="输入新密码">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>确认密码</label>
-                                            <input type="password" class="form-input" id="settingsConfirmPassword" placeholder="再次输入新密码">
-                                        </div>
-                                    </div>
-                                    <div class="settings-actions">
-                                        <button class="btn" id="settingsChangePasswordBtn"><i class="fas fa-key"></i> 修改密码</button>
-                                    </div>
-                                </div>
-                            </section>
-                            <section class="settings-card">
-                                <h3><i class="fas fa-hourglass-half"></i> 登录保持</h3>
-                                <p class="settings-desc">默认保持 7 天，支持预设或自定义输入，例如 7d、14d、1m、12h、never</p>
-                                <div class="settings-note" id="settingsLoginKeepNologinNotice" style="display:none">
-                                    <i class="fas fa-info-circle"></i>
-                                    <span>免登录模式下不会使用登录保持时间</span>
-                                </div>
-                                <div class="settings-keep-grid">
+                        <section class="settings-card" id="settingsPasswordSection">
+                            <h3><i class="fas fa-key"></i> 修改密码</h3>
+                            <p class="settings-desc">当前账户：<strong id="settingsCurrentUser">--</strong></p>
+                            <div id="settingsPasswordForm">
+                                <div class="settings-password-grid">
                                     <div class="form-group">
-                                        <label>预设</label>
-                                        <select class="form-input" id="settingsLoginKeepPreset">
-                                            <option value="7d">7d</option>
-                                            <option value="14d">14d</option>
-                                            <option value="1m">1m</option>
-                                            <option value="never">never</option>
-                                            <option value="custom">自定义</option>
-                                        </select>
+                                        <label>新密码</label>
+                                        <input type="password" class="form-input" id="settingsNewPassword" placeholder="输入新密码">
                                     </div>
                                     <div class="form-group">
-                                        <label>时长表达式</label>
-                                        <input type="text" class="form-input" id="settingsLoginKeepInput" placeholder="7d / 14d / 1m / never">
+                                        <label>确认密码</label>
+                                        <input type="password" class="form-input" id="settingsConfirmPassword" placeholder="再次输入新密码">
                                     </div>
                                 </div>
                                 <div class="settings-actions">
-                                    <button class="btn" id="settingsSaveLoginKeepBtn"><i class="fas fa-hourglass-half"></i> 保存登录保持时间</button>
+                                    <button class="btn" id="settingsChangePasswordBtn"><i class="fas fa-key"></i> 修改密码</button>
                                 </div>
-                                <div class="settings-keep-status" id="settingsLoginKeepStatus">当前登录保持时间：7d</div>
-                            </section>
-                            <section class="settings-card" id="settingsPrivateNetworkSection" style="display:none">
-                                <h3><i class="fas fa-shield-halved"></i> 内网白名单</h3>
-                                <button type="button" class="settings-link-panel" id="settingsOpenPrivateNetworksBtn">
-                                    <span class="settings-link-copy">
-                                        <span class="settings-link-title"><i class="fas fa-shield-halved"></i> 内网白名单</span>
-                                        <span class="settings-link-desc">管理 SSH、SFTP、VNC 可访问的内网网段。点击后进入白名单页进行新增或删除。</span>
-                                    </span>
-                                    <span class="settings-link-action">进入管理 <i class="fas fa-arrow-right"></i></span>
-                                </button>
-                            </section>
-                        </div>
-                        <div class="settings-stack">
-                            <section class="settings-card">
-                                <h3><i class="fas fa-palette"></i> 配色方案</h3>
-                                <p class="settings-desc">选择 Material You Design 风格的强调色方案</p>
-                                <div class="scheme-grid" id="colorSchemeGrid"></div>
-                            </section>
-                            <section class="settings-card">
-                                <h3><i class="fas fa-language"></i> 语言</h3>
-                                <p class="settings-desc">选择界面语言，默认英文</p>
-                                <div class="language-grid" id="languageGrid"></div>
-                            </section>
-                        </div>
+                            </div>
+                        </section>
+                        <section class="settings-card" id="settingsSchemeSection">
+                            <h3><i class="fas fa-palette"></i> 配色方案</h3>
+                            <div class="form-group">
+                                <label for="settingsTheme">外观</label>
+                                <select class="form-input" id="settingsTheme">
+                                    <option value="light">浅色</option>
+                                    <option value="dark">深色</option>
+                                    <option value="system">跟随系统</option>
+                                </select>
+                            </div>
+                            <div class="scheme-grid" id="colorSchemeGrid"></div>
+                        </section>
+                        <section class="settings-card" id="settingsLoginKeepSection">
+                            <h3><i class="fas fa-hourglass-half"></i> 登录保持</h3>
+                            <p class="settings-desc">默认保持 7 天，支持预设或自定义输入，例如 7d、14d、1m、12h、never</p>
+                            <div class="settings-keep-grid">
+                                <div class="form-group">
+                                    <label>预设</label>
+                                    <select class="form-input" id="settingsLoginKeepPreset">
+                                        <option value="7d">7d</option>
+                                        <option value="14d">14d</option>
+                                        <option value="1m">1m</option>
+                                        <option value="never">never</option>
+                                        <option value="custom">自定义</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>时长表达式</label>
+                                    <input type="text" class="form-input" id="settingsLoginKeepInput" placeholder="7d / 14d / 1m / never">
+                                </div>
+                            </div>
+                            <div class="settings-actions">
+                                <button class="btn" id="settingsSaveLoginKeepBtn"><i class="fas fa-hourglass-half"></i> 保存登录保持时间</button>
+                            </div>
+                            <div class="settings-keep-status" id="settingsLoginKeepStatus">当前登录保持时间：7d</div>
+                        </section>
+                        <section class="settings-card" id="settingsLanguageSection">
+                            <h3><i class="fas fa-language"></i> 语言</h3>
+                            <p class="settings-desc">选择界面语言，默认英文</p>
+                            <div class="language-grid" id="languageGrid"></div>
+                        </section>
+                        <section class="settings-card" id="settingsPrivateNetworkSection" style="display:none">
+                            <h3><i class="fas fa-shield-halved"></i> 内网白名单</h3>
+                            <button type="button" class="settings-link-panel" id="settingsOpenPrivateNetworksBtn">
+                                <span class="settings-link-copy">
+                                    <span class="settings-link-title"><i class="fas fa-shield-halved"></i> 内网白名单</span>
+                                    <span class="settings-link-desc">管理 SSH、SFTP、VNC 可访问的内网网段。点击后进入白名单页进行新增或删除。</span>
+                                </span>
+                                <span class="settings-link-action">进入管理 <i class="fas fa-arrow-right"></i></span>
+                            </button>
+                        </section>
                     </div>
                 </div>
             </div>

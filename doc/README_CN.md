@@ -7,6 +7,8 @@
 
 安装脚本请见 [Install](https://github.com/EntranceToolBox/Entrance-Installer)。
 
+桌面客户端请见 [Entrance Desktop](https://github.com/EntranceToolBox/Entrance-Desktop)。
+
 ## 功能特性
 
 ### SSH 终端
