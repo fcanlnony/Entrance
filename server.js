@@ -453,6 +453,7 @@ function verifyToken(token) {
         const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
         const now = Math.floor(Date.now() / 1000);
         if (payload.exp && payload.exp < now) return null;
+        if (payload.nologin && !DESKTOP_NOLOGIN) return null;
         return payload;
     } catch (err) {
         return null;
@@ -461,7 +462,7 @@ function verifyToken(token) {
 
 // ENTRANCE_DESKTOP_NOLOGIN: 跳过登录，自动以 admin 身份访问
 function getNoLoginPayload() {
-    return DESKTOP_NOLOGIN ? { sub: 'admin', role: 'admin' } : null;
+    return DESKTOP_NOLOGIN ? { sub: 'admin', role: 'admin', nologin: true } : null;
 }
 
 function timingSafeEqualText(left, right) {
