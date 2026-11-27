@@ -12,9 +12,10 @@
 </head>
 <body>
     <!-- 登录遮罩 -->
-    <div class="auth-overlay" id="authOverlay">
+    <div class="auth-overlay hidden" id="authOverlay">
         <div class="auth-card">
-            <div class="auth-panel" id="authLoginPanel">
+            <p id="authStartupError" role="alert" hidden></p>
+            <div class="auth-panel hidden" id="authLoginPanel">
                 <div class="auth-title">Entrance Tools</div>
                 <div class="auth-sub">请使用账户登录</div>
                 <div class="form-group">

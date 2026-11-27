@@ -494,7 +494,7 @@
                     '已退出登录': 'Signed out',
                     '正在连接桌面会话...': 'Connecting desktop session...',
                     '正在验证桌面包装器注入的本地会话。': 'Validating the local session injected by the desktop wrapper.',
-                    '桌面会话初始化失败': 'Desktop session initialization failed',
+                    '无法读取登录配置，请刷新页面重试。': 'Unable to load the login settings. Refresh the page to try again.',
                     '未能建立受保护的桌面免登录会话，请重新启动桌面应用。': 'Unable to establish the protected desktop no-login session. Restart the desktop app.',
                     '桌面免登录由桌面包装器托管，不能在页面内退出': 'Desktop no-login is managed by the wrapper and cannot be signed out from the page.',
                     '登录已过期，请重新登录': 'The session expired. Please sign in again.',
@@ -2257,51 +2257,46 @@
             getToken() {
                 return State.token || Storage.getToken();
             },
-            init() {
-                document.getElementById('loginBtn').addEventListener('click', () => this.login());
-                document.getElementById('loginPass').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.login();
-                });
-                document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
-
-                this._bootstrap();
-            },
-            async _bootstrap() {
-                if (usesInjectedDesktopAuth()) {
-                    this.showLoading('正在连接桌面会话...', '正在验证桌面包装器注入的本地会话。');
-                    this.verify({ expectNoLogin: true });
+            async init() {
+                let info;
+                try {
+                    const res = await fetch(`${Config.API}/api/auth/nologin`, { cache: 'no-store' });
+                    if (!res.ok) throw new Error();
+                    info = await res.json();
+                    applyPublicAppInfo(info);
+                } catch {
+                    this.showStartupError('无法读取登录配置，请刷新页面重试。');
                     return;
                 }
 
-                let publicInfo = null;
-                try {
-                    const res = await fetch(`${Config.API}/api/auth/nologin`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        applyPublicAppInfo(data);
-                        publicInfo = data;
-                        if (data && data.nologin) {
-                            State.isNologin = true;
-                            this.setSession(data);
-                            UI.showDashboard({ showBootOverlay: false });
-                            return;
-                        }
+                State.isNologin = info.desktopNoLogin === true;
+                if (State.isNologin) {
+                    document.getElementById('logoutBtn').style.display = 'none';
+                    if (info.nologin && info.token) {
+                        this.setSession(info);
+                        UI.showDashboard({ showBootOverlay: false });
+                    } else {
+                        // API-only wrappers supply the session through a header or a saved bootstrap token.
+                        State.token = Storage.getToken();
+                        await this.verify();
                     }
-                } catch {}
+                } else {
+                    document.getElementById('loginBtn').addEventListener('click', () => this.login());
+                    document.getElementById('loginPass').addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') this.login();
+                    });
+                    document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
 
-                const savedToken = Storage.getToken();
-                if (savedToken) {
-                    const savedFingerprint = Storage.getAuthSecretFingerprint();
-                    const currentFingerprint = (publicInfo && publicInfo.authSecretFingerprint) || State.authSecretFingerprint;
-                    if (savedFingerprint && currentFingerprint && savedFingerprint !== currentFingerprint) {
+                    const savedToken = Storage.getToken();
+                    const fingerprint = Storage.getAuthSecretFingerprint();
+                    if (savedToken && fingerprint && info.authSecretFingerprint && fingerprint !== info.authSecretFingerprint) {
                         this.clearSession();
-                        this.showLogin();
+                    } else if (savedToken) {
+                        State.token = savedToken;
+                        this.showLoading();
+                        await this.verify();
                         return;
                     }
-                    State.token = savedToken;
-                    this.showLoading('正在恢复登录状态...', '正在验证本地保存的登录态，请稍候。');
-                    this.verify();
-                } else {
                     this.showLogin();
                 }
             },
@@ -2339,34 +2334,29 @@
                     this.showError(`登录失败: ${err.message}`);
                 }
             },
-            async verify(options = {}) {
-                const expectNoLogin = options.expectNoLogin === true;
+            async verify() {
                 try {
-                    const res = await apiFetch(`${Config.API}/api/auth/verify`, { method: 'POST' });
+                    const headers = State.token ? { Authorization: `Bearer ${State.token}` } : {};
+                    const res = await fetch(`${Config.API}/api/auth/verify`, { method: 'POST', headers });
                     if (res.ok) {
                         const data = await res.json();
-                        this.setSession({ token: State.token, nologin: expectNoLogin || data.nologin === true, ...data });
-                        this.showLoading('正在启动工作台...', '先载入界面，再分阶段连接服务模块。');
-                        UI.showDashboard();
-                        return;
+                        if (!State.isNologin || data.nologin === true) {
+                            this.setSession(data);
+                            UI.showDashboard({ showBootOverlay: !State.isNologin });
+                            return;
+                        }
                     }
                 } catch {}
-                this.clearSession();
-                if (expectNoLogin) {
-                    this.showLoading('桌面会话初始化失败', '未能建立受保护的桌面免登录会话，请重新启动桌面应用。');
-                    return;
-                }
-                this.showLogin();
+                this.handleUnauthorized();
             },
             setSession(session = {}) {
-                const { token, username, role, keepSeconds, nologin } = session;
+                const { token, username, role, keepSeconds } = session;
                 if (token) {
                     State.token = token;
                     Storage.setToken(token);
                 }
                 applyPublicAppInfo(session);
                 State.loggedIn = true;
-                State.isNologin = Boolean(nologin);
                 State.username = username || State.username;
                 State.isAdmin = role === 'admin';
                 if (State.authSecretFingerprint) {
@@ -2379,7 +2369,6 @@
             clearSession() {
                 State.loggedIn = false;
                 State.isAdmin = false;
-                State.isNologin = false;
                 State.username = '';
                 State.token = '';
                 State.hosts = [];
@@ -2397,7 +2386,7 @@
                 UI.hideDashboard();
             },
             logout() {
-                if (usesInjectedDesktopAuth()) {
+                if (State.isNologin) {
                     Toast.info('桌面免登录由桌面包装器托管，不能在页面内退出');
                     return;
                 }
@@ -2406,15 +2395,21 @@
                 Toast.info('已退出登录');
             },
             handleUnauthorized() {
-                if (State.loggedIn) {
+                if (State.loggedIn && !State.isNologin) {
                     Toast.error('登录已过期，请重新登录');
                 }
                 this.clearSession();
-                if (usesInjectedDesktopAuth()) {
-                    this.showLoading('桌面会话初始化失败', '未能建立受保护的桌面免登录会话，请重新启动桌面应用。');
-                    return;
+                if (State.isNologin) {
+                    this.showStartupError('未能建立受保护的桌面免登录会话，请重新启动桌面应用。');
+                } else {
+                    this.showLogin();
                 }
-                this.showLogin();
+            },
+            showStartupError(message) {
+                const error = document.getElementById('authStartupError');
+                error.textContent = I18n.auto(message);
+                error.hidden = false;
+                document.getElementById('authOverlay').classList.remove('hidden');
             },
             showLogin() {
                 document.getElementById('authOverlay').classList.remove('hidden');
@@ -2460,7 +2455,7 @@
             },
             hideLogin() {
                 document.getElementById('authOverlay').classList.add('hidden');
-                document.getElementById('authLoginPanel').classList.remove('hidden');
+                document.getElementById('authLoginPanel').classList.add('hidden');
                 document.getElementById('authLoadingPanel').classList.add('hidden');
                 this.showError('');
             },
