@@ -1,3 +1,5 @@
+
+
 # Entrance Tools
 
 Default documentation is in English. For Simplified Chinese, see [doc/README_CN.md](doc/README_CN.md).
@@ -226,8 +228,7 @@ For behavior-focused notes, defaults, side effects, and deployment guidance, see
 ├── Dockerfile           # Docker image build file
 ├── public/              # Frontend static assets
 │   ├── assets/          # Generated CSS/JS bundles built from webui-src/
-│   ├── index.html       # Generated frontend entrypoint
-│   └── vnc-client.js
+│   └── index.html       # Generated frontend entrypoint
 ├── api/                 # Plugin package contract examples
 ├── plugins_examples/    # Standalone plugin examples for plugin authoring
 ├── webui-src/           # Editable WebUI source files and HTML partials
