@@ -1,11 +1,12 @@
 
-        :root {
+        :root, [data-theme="dark"] {
+            color-scheme: dark;
             /* 暗色主题 */
-            --color-bg-deep: #111;
-            --color-bg-1: #1a1a1a;
-            --color-bg-2: #202020;
-            --color-bg-3: #2a2a2a;
-            --color-bg-acrylic: rgba(32, 32, 32, 0.85);
+            --color-bg-deep: color-mix(in srgb, #111, var(--color-accent) 14%);
+            --color-bg-1: color-mix(in srgb, #1a1a1a, var(--color-accent) 6%);
+            --color-bg-2: color-mix(in srgb, #202020, var(--color-accent) 10%);
+            --color-bg-3: color-mix(in srgb, #2a2a2a, var(--color-accent) 14%);
+            --color-bg-acrylic: color-mix(in srgb, var(--color-bg-2) 85%, transparent);
             --color-accent: #6b7280;
             --color-accent-hover: #7c8594;
             --color-accent-light: rgba(148, 163, 184, 0.18);
@@ -15,7 +16,7 @@
             --color-text: #fff;
             --color-text-2: #a0a0a0;
             --color-text-3: #6a6a6a;
-            --color-border: #3a3a3a;
+            --color-border: color-mix(in srgb, #3a3a3a, var(--color-accent) 18%);
             --color-success: #107c10;
             --color-warning: #ff8c00;
             --color-error: #e81123;
@@ -38,11 +39,12 @@
 
         /* 亮色主题 */
         [data-theme="light"] {
-            --color-bg-deep: #ebedf0;
-            --color-bg-1: #fafafb;
-            --color-bg-2: #f1f3f5;
-            --color-bg-3: #e4e7eb;
-            --color-bg-acrylic: rgba(250, 250, 251, 0.9);
+            color-scheme: light;
+            --color-bg-deep: color-mix(in srgb, #ebedf0, var(--color-accent) 14%);
+            --color-bg-1: color-mix(in srgb, #fafafb, var(--color-accent) 6%);
+            --color-bg-2: color-mix(in srgb, #f1f3f5, var(--color-accent) 10%);
+            --color-bg-3: color-mix(in srgb, #e4e7eb, var(--color-accent) 14%);
+            --color-bg-acrylic: color-mix(in srgb, var(--color-bg-1) 90%, transparent);
             --color-accent: #4b5563;
             --color-accent-hover: #374151;
             --color-accent-light: rgba(75, 85, 99, 0.16);
@@ -52,7 +54,7 @@
             --color-text: #1f2937;
             --color-text-2: #5f6875;
             --color-text-3: #8a94a3;
-            --color-border: #d8dde3;
+            --color-border: color-mix(in srgb, #d8dde3, var(--color-accent) 18%);
             --terminal-bg: #f8fafb;
             --terminal-screen-bg: #f4f5f7;
             --terminal-screen-text: #1f2937;
@@ -1812,13 +1814,14 @@
         /* Settings */
         .settings-layout {
             display: grid;
-            grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-            gap: 20px; align-items: start;
-        }
-        .settings-stack {
-            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 20px;
-            align-content: start;
+        }
+        @media (min-width: 961px) {
+            #settingsPrivateNetworkSection { grid-column: 1 / -1; }
+            .settings-layout.no-login #settingsPrivateNetworkSection { grid-column: 1; grid-row: 1 / 3; }
+            .settings-layout.no-login #settingsSchemeSection,
+            .settings-layout.no-login #settingsLanguageSection { grid-column: 2; }
         }
         .settings-card {
             background: var(--color-bg-1); border: 1px solid var(--color-border);
