@@ -7,6 +7,8 @@ Web-based server management tools with SSH terminal access, local shell terminal
 
 For the installer script, see [Install](https://github.com/EntranceToolBox/Entrance-Installer).
 
+For the desktop client, see [Entrance Desktop](https://github.com/EntranceToolBox/Entrance-Desktop).
+
 ## Features
 
 ### SSH Terminal
